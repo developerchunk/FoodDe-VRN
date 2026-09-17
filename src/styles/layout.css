@@ -1,4 +1,8 @@
-/* ===== announcement ticker ===== */
+/* ===== announcement ticker =====================================
+   On a phone the three notes are far wider than the screen, so the track
+   scrolls itself. Two identical passes sit side by side and the track slides by
+   half its width, which loops seamlessly. It settles into a static centred row
+   once there is room for it. */
 .ticker {
   background: linear-gradient(
     90deg,
@@ -9,19 +13,35 @@
   color: #dceee9;
   font-size: 12.5px;
   letter-spacing: 0.02em;
+  overflow: hidden;
 }
-.ticker__inner {
+.ticker__viewport {
+  display: flex;
+  overflow: hidden;
+}
+.ticker__track {
+  display: flex;
+  width: max-content;
+  animation: ticker-drift 26s linear infinite;
+}
+.ticker:hover .ticker__track,
+.ticker:focus-within .ticker__track {
+  animation-play-state: paused;
+}
+@keyframes ticker-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker__run {
   display: flex;
   align-items: center;
   gap: 14px;
-  justify-content: flex-start;
-  padding-block: 8px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.ticker__inner::-webkit-scrollbar {
-  display: none;
+  padding: 8px 7px;
+  flex: none;
 }
 .ticker__item {
   display: inline-flex;
@@ -29,13 +49,32 @@
   gap: 7px;
   color: #e8f4f0;
   white-space: nowrap;
-  flex: none;
 }
 .ticker__item svg {
   color: var(--marigold);
+  flex: none;
 }
 .ticker__dot {
   color: var(--gold);
+}
+
+/* Without motion the track would sit still and clip the notes, so let the
+   reader swipe them instead. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker__viewport {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ticker__viewport::-webkit-scrollbar {
+    display: none;
+  }
+  .ticker__track {
+    animation: none !important;
+    transform: none !important;
+  }
+  .ticker__run[aria-hidden="true"] {
+    display: none;
+  }
 }
 
 /* ===== header ===== */
@@ -707,9 +746,23 @@
 }
 
 @media (min-width: 900px) {
-  .ticker__inner {
+  .ticker__track {
+    animation: none;
+    width: 100%;
     justify-content: center;
+  }
+  .ticker__run {
     flex-wrap: wrap;
+    justify-content: center;
+    max-width: var(--wrap);
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+  .ticker__run[aria-hidden="true"] {
+    display: none;
+  }
+  .ticker__run > .ticker__dot:last-child {
+    display: none;
   }
   .locality {
     display: flex;

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import { MorPankh, Lotus } from "./Motifs";
@@ -24,6 +25,35 @@ function CartIcon() {
   );
 }
 
+const TICKER_NOTES = [
+  "100% pure vegetarian — no onion & garlic kitchen available on every dish",
+  "Free delivery across Vrindavan on orders above ₹299",
+  "Order status on WhatsApp — no app, no sign-up needed",
+];
+
+/**
+ * One pass of the announcements. Two identical passes sit side by side in the
+ * track, so sliding the track by half its width loops seamlessly on a phone,
+ * where the three notes are far wider than the screen.
+ */
+function TickerRun({ duplicate = false }) {
+  return (
+    <div className="ticker__run" aria-hidden={duplicate || undefined}>
+      {TICKER_NOTES.map((note, i) => (
+        <Fragment key={note}>
+          <span className="ticker__item">
+            {i === 0 && <Lotus size={15} />}
+            {note}
+          </span>
+          <span className="ticker__dot" aria-hidden="true">
+            •
+          </span>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
 export default function Header() {
   const { bill } = useCart();
   const { pathname } = useLocation();
@@ -31,23 +61,11 @@ export default function Header() {
   return (
     <>
       <div className="ticker">
-        <div className="wrap ticker__inner">
-          <span className="ticker__item">
-            <Lotus size={15} /> 100% pure vegetarian — no onion &amp; garlic
-            kitchen available on every dish
-          </span>
-          <span className="ticker__dot" aria-hidden="true">
-            •
-          </span>
-          <span className="ticker__item">
-            Free delivery across Vrindavan on orders above ₹299
-          </span>
-          <span className="ticker__dot" aria-hidden="true">
-            •
-          </span>
-          <span className="ticker__item">
-            Order status on WhatsApp — no app, no sign-up needed
-          </span>
+        <div className="ticker__viewport">
+          <div className="ticker__track">
+            <TickerRun />
+            <TickerRun duplicate />
+          </div>
         </div>
       </div>
 
