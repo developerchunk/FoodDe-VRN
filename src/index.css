@@ -1,0 +1,423 @@
+/* ==========================================================================
+   Braj Rasoi — design tokens
+   Palette drawn from Braj / Pichwai visual culture:
+   peacock teal & indigo (mor pankh), marigold & haldi (temple garlands),
+   kumkum rose, tulsi green, and the cream of Vrindavan sandstone.
+   ========================================================================== */
+:root {
+  --teal-900: #08322f;
+  --teal-800: #0b3a38;
+  --teal-700: #13524e;
+  --teal-600: #1a6b64;
+  --teal-400: #4f9b92;
+  --teal-100: #d7ebe6;
+
+  --indigo: #1b2f57;
+  --indigo-soft: #33507f;
+
+  --marigold: #e39a2a;
+  --marigold-deep: #c3771a;
+  --marigold-soft: #f7dfae;
+
+  --lotus: #ab3f5b;
+  --lotus-soft: #f3d9de;
+
+  --tulsi: #4a7a3b;
+  --tulsi-soft: #dfeed4;
+
+  --gold: #c9a227;
+
+  --paper: #fffdf6;
+  --cream: #fbf3e2;
+  --sand: #f2e5c9;
+  --sand-deep: #e4d2ac;
+
+  --ink: #1d2a29;
+  --ink-soft: #55635f;
+  --ink-faint: #8b968f;
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-arch: 999px 999px 18px 18px;
+
+  --shadow-sm: 0 1px 2px rgba(8, 50, 47, 0.06), 0 2px 8px rgba(8, 50, 47, 0.05);
+  --shadow:
+    0 2px 6px rgba(8, 50, 47, 0.07), 0 12px 28px -14px rgba(8, 50, 47, 0.28);
+  --shadow-lg:
+    0 8px 20px rgba(8, 50, 47, 0.1), 0 28px 60px -28px rgba(8, 50, 47, 0.42);
+
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-body: "Jost", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-deva: "Tiro Devanagari Hindi", "Noto Sans Devanagari", serif;
+
+  --wrap: 1280px;
+  --header-h: 72px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+  background-color: var(--cream);
+  /* soft jaali (lattice) wash, the way sunlight falls through temple screens */
+  background-image:
+    radial-gradient(
+      circle at 12% -8%,
+      rgba(227, 154, 42, 0.13),
+      transparent 42%
+    ),
+    radial-gradient(circle at 92% 4%, rgba(31, 122, 115, 0.12), transparent 40%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--teal-900);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--marigold-deep);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--marigold-soft);
+  color: var(--teal-900);
+}
+
+/* ---------- shared utilities ---------- */
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+.deva {
+  font-family: var(--font-deva);
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--marigold-deep);
+}
+
+.section-title {
+  font-size: clamp(22px, 3vw, 30px);
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.rupee {
+  font-family: var(--font-body);
+  font-feature-settings: "tnum";
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+  white-space: nowrap;
+}
+.btn:active {
+  transform: translateY(1px) scale(0.995);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: linear-gradient(165deg, var(--teal-700), var(--teal-900));
+  color: var(--cream);
+  box-shadow: 0 8px 20px -10px rgba(8, 50, 47, 0.8);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 12px 26px -10px rgba(8, 50, 47, 0.75);
+}
+
+.btn-gold {
+  background: linear-gradient(165deg, #efb44a, var(--marigold-deep));
+  color: #3c2405;
+  box-shadow: 0 8px 20px -10px rgba(195, 119, 26, 0.9);
+  font-weight: 600;
+}
+.btn-gold:hover:not(:disabled) {
+  box-shadow: 0 12px 26px -10px rgba(195, 119, 26, 0.85);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--teal-800);
+  border: 1.5px solid rgba(11, 58, 56, 0.22);
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--teal-700);
+  background: rgba(255, 253, 246, 0.7);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* ---------- surfaces ---------- */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- veg / sattvic marks ---------- */
+.veg-mark {
+  width: 15px;
+  height: 15px;
+  border: 1.6px solid var(--tulsi);
+  border-radius: 3px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+.veg-mark::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tulsi);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+.pill-sattvic {
+  background: var(--tulsi-soft);
+  color: #33591f;
+}
+.pill-best {
+  background: var(--marigold-soft);
+  color: #7a4a05;
+}
+.pill-new {
+  background: var(--lotus-soft);
+  color: #7e2740;
+}
+.pill-spicy {
+  background: #fbe0d4;
+  color: #8e3c14;
+}
+.pill-jain {
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+
+/* ---------- forms ---------- */
+.field {
+  display: block;
+  margin-bottom: 18px;
+}
+.field-label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--teal-800);
+  margin-bottom: 7px;
+  letter-spacing: 0.01em;
+}
+.field-label .req {
+  color: var(--lotus);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 13px 15px;
+  background: var(--paper);
+  border: 1.5px solid var(--sand-deep);
+  border-radius: var(--radius-sm);
+  font-size: 15.5px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--ink-faint);
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--teal-600);
+  box-shadow: 0 0 0 3.5px rgba(31, 122, 115, 0.13);
+}
+.input.invalid,
+.textarea.invalid {
+  border-color: var(--lotus);
+  box-shadow: 0 0 0 3.5px rgba(171, 63, 91, 0.12);
+}
+.textarea {
+  resize: vertical;
+  min-height: 84px;
+  line-height: 1.5;
+}
+
+.field-hint {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  line-height: 1.45;
+}
+.field-error {
+  font-size: 12.5px;
+  color: var(--lotus);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.phone-group {
+  display: flex;
+  align-items: stretch;
+}
+.phone-prefix {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px;
+  background: var(--sand);
+  border: 1.5px solid var(--sand-deep);
+  border-right: none;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  font-size: 15px;
+  color: var(--teal-800);
+  font-weight: 500;
+}
+.phone-group .input {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* ---------- misc ---------- */
+.divider-feather {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--teal-400);
+}
+.divider-feather::before,
+.divider-feather::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--sand-deep),
+    transparent
+  );
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  background: var(--teal-900);
+  color: var(--cream);
+  padding: 12px 18px;
+  border-radius: 0 0 12px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
