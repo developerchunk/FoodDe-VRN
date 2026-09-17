@@ -113,7 +113,7 @@ export default function MenuPage() {
                 Everything here is <em>pure vegetarian</em>
               </h2>
               <p className="menu-band__note">
-                We run two kitchens. Dishes marked{" "}
+                Dishes marked{" "}
                 <span className="inline-flag">
                   <TulsiLeaf size={11} /> no onion–garlic
                 </span>{" "}

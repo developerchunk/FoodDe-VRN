@@ -94,7 +94,6 @@ export default function Hero({ onBrowse }) {
                 alt="A steel thali laid with dal, kadhi, sabzis, rice, hot parathas, halwa and a glass of lassi"
               />
             )}
-            <span className="hero__thali-ring" aria-hidden="true" />
           </div>
           <p className="hero__card-cap">
             <strong>Braj Sattvic Thali</strong>

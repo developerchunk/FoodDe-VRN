@@ -113,9 +113,6 @@ export default function Header() {
             >
               Menu
             </NavLink>
-            <a className="site-nav__link" href="#kitchen">
-              Our kitchen
-            </a>
           </nav>
 
           <Link
