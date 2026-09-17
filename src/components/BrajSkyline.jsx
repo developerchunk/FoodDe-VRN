@@ -27,7 +27,7 @@ export default function BrajSkyline() {
   return (
     <svg
       className="braj-skyline"
-      viewBox="0 0 1440 360"
+      viewBox="0 26 1440 334"
       preserveAspectRatio="xMidYMax slice"
       aria-hidden="true"
       focusable="false"

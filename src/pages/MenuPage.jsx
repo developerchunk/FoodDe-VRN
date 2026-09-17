@@ -7,34 +7,7 @@ import CategorySheet from "../components/CategorySheet";
 import MobileDock from "../components/MobileDock";
 import MenuItemCard from "../components/MenuItemCard";
 import CartPanel from "../components/CartPanel";
-import {
-  FeatherDivider,
-  MorPankh,
-  TulsiLeaf,
-  Matka,
-  Diya,
-} from "../components/Motifs";
-
-const HOW_STEPS = [
-  {
-    n: "01",
-    title: "Pick your dishes",
-    body: "Flip the No Onion–Garlic switch if you eat sattvic — the menu rearranges itself around you.",
-    icon: <TulsiLeaf size={20} />,
-  },
-  {
-    n: "02",
-    title: "Leave three details",
-    body: "Your name, a WhatsApp number and where to bring it. No account, no password, no OTP wall.",
-    icon: <Matka size={20} />,
-  },
-  {
-    n: "03",
-    title: "We cook and call",
-    body: "Order status lands on WhatsApp. Our rider rings the number you gave if the gali gets confusing.",
-    icon: <Diya size={20} />,
-  },
-];
+import { FeatherDivider, MorPankh, TulsiLeaf } from "../components/Motifs";
 
 export default function MenuPage() {
   const [query, setQuery] = useState("");
@@ -130,27 +103,6 @@ export default function MenuPage() {
   return (
     <>
       <Hero onBrowse={() => scrollTo(menuTopRef.current)} />
-
-      <section className="how" id="how-it-works" aria-labelledby="how-title">
-        <div className="wrap">
-          <div className="how__head">
-            <p className="eyebrow">Simple as it sounds</p>
-            <h2 id="how-title" className="section-title">
-              Three steps, no account
-            </h2>
-          </div>
-          <ol className="how__steps">
-            {HOW_STEPS.map((s) => (
-              <li key={s.n} className="how__step">
-                <span className="how__icon">{s.icon}</span>
-                <span className="how__n">{s.n}</span>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
 
       <div className="menu-band" ref={menuTopRef} id="menu">
         <div className="wrap">

@@ -60,9 +60,6 @@ export default function Footer() {
               <li>
                 <Link to="/orders">Past orders &amp; receipts</Link>
               </li>
-              <li>
-                <a href="#how-it-works">How delivery works</a>
-              </li>
             </ul>
           </div>
 

@@ -53,22 +53,24 @@ const emptyForm = {
   remember: true,
 };
 
+/* If they have ordered here before, pre-fill — still never forced to sign up. */
+function loadProfile() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PROFILE_KEY));
+    return saved
+      ? { ...emptyForm, ...saved, payment: emptyForm.payment }
+      : emptyForm;
+  } catch {
+    return emptyForm;
+  }
+}
+
 export default function CheckoutPage() {
   const { lines, bill, instructions, coupon, donate, clear } = useCart();
   const navigate = useNavigate();
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
-
-  /* If they have ordered here before, pre-fill — still never forced to sign up. */
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(PROFILE_KEY));
-      if (saved) setForm((f) => ({ ...f, ...saved, payment: f.payment }));
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   useEffect(() => {
     if (lines.length === 0 && !placing) navigate("/cart", { replace: true });
@@ -114,7 +116,7 @@ export default function CheckoutPage() {
 
     if (form.remember) {
       try {
-        const { payment, ...keep } = form;
+        const { payment: _payment, ...keep } = form;
         localStorage.setItem(PROFILE_KEY, JSON.stringify(keep));
       } catch {
         /* ignore */

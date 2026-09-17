@@ -50,9 +50,6 @@ export default function Hero({ onBrowse }) {
                 />
               </svg>
             </button>
-            <a className="btn btn-ghost" href="#how-it-works">
-              How it works
-            </a>
           </div>
 
           <ul className="hero__points">

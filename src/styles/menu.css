@@ -398,19 +398,47 @@
 
 .dish-grid {
   display: grid;
+  gap: 14px;
+  padding-top: 16px;
 }
 
 /* ===== dish row: info left, dish right, Add across the foot ===== */
+/* A calm card: a translucent wash of the paper tone over the cream page, so it
+   lifts off the background without going stark white or fully opaque. */
 .dish {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 108px;
   gap: 16px;
-  padding: 18px 0 22px;
-  border-bottom: 1px dashed var(--sand-deep);
-  transition: background-color 0.18s ease;
+  padding: 16px 16px 24px;
+  border-radius: 18px;
+  background: linear-gradient(
+    168deg,
+    rgba(255, 253, 246, 0.72),
+    rgba(251, 243, 226, 0.5)
+  );
+  border: 1px solid rgba(228, 210, 172, 0.62);
+  box-shadow:
+    0 1px 1px rgba(8, 50, 47, 0.02),
+    0 10px 24px -20px rgba(8, 50, 47, 0.3);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
-.dish:last-child {
-  border-bottom: none;
+.dish:hover {
+  border-color: rgba(201, 162, 39, 0.5);
+  box-shadow:
+    0 1px 1px rgba(8, 50, 47, 0.02),
+    0 16px 30px -22px rgba(8, 50, 47, 0.42);
+}
+.dish.is-in-cart {
+  border-color: rgba(74, 122, 59, 0.55);
+  background: linear-gradient(
+    168deg,
+    rgba(253, 255, 248, 0.82),
+    rgba(223, 238, 212, 0.42)
+  );
 }
 
 .dish__info {
@@ -479,7 +507,7 @@
   width: 108px;
   height: 108px;
   border-radius: 14px;
-  border: 1px solid var(--sand-deep);
+  border: 1px solid rgba(228, 210, 172, 0.75);
   background: var(--cream);
   object-fit: cover;
 }
@@ -937,10 +965,7 @@
   }
   .dish-grid {
     grid-template-columns: repeat(2, 1fr);
-    column-gap: 28px;
-  }
-  .dish {
-    border-bottom: 1px dashed var(--sand-deep);
+    gap: 16px;
   }
 }
 
