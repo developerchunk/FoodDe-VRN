@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { getOrder } from "../utils/orders";
-import { getItem } from "../data/menu";
 import { useCart } from "../context/cart-context";
 import { rupees, maskPhone, formatDateTime } from "../utils/format";
 import { MorPankh, TulsiLeaf, Diya, Lotus } from "../components/Motifs";
@@ -79,8 +78,7 @@ export default function OrderSuccessPage() {
 
   const reorder = () => {
     order.lines.forEach((l) => {
-      const item = getItem(l.id);
-      if (item) for (let i = 0; i < l.qty; i++) add(item);
+      for (let i = 0; i < l.qty; i++) add(l);
     });
     navigate("/cart");
   };
@@ -194,7 +192,7 @@ export default function OrderSuccessPage() {
                 <span className="mini-lines__name">
                   {l.name} <em>× {l.qty}</em>
                 </span>
-                <span className="rupee">{rupees(l.price * l.qty)}</span>
+                <span className="rupee">{rupees(l.pricePaise * l.qty)}</span>
               </li>
             ))}
           </ul>

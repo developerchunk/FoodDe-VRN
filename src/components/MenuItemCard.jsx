@@ -21,7 +21,9 @@ export default function MenuItemCard({ item }) {
   const qty = qtyOf(item.id);
 
   return (
-    <article className={`dish ${qty ? "is-in-cart" : ""}`}>
+    <article
+      className={`dish ${qty ? "is-in-cart" : ""} ${item.availableNow ? "" : "is-unavailable"}`}
+    >
       <div className="dish__info">
         <div className="dish__head">
           <span
@@ -39,7 +41,6 @@ export default function MenuItemCard({ item }) {
         </div>
 
         <h3 className="dish__name">{item.name}</h3>
-        <p className="dish__hindi deva">{item.hindi}</p>
 
         {item.sattvic && (
           <p className="dish__sattvic">
@@ -48,7 +49,7 @@ export default function MenuItemCard({ item }) {
         )}
 
         <p className="dish__price">
-          <strong className="rupee">{rupees(item.price)}</strong>
+          <strong className="rupee">{rupees(item.pricePaise)}</strong>
           {item.serves && <span className="dish__serves">{item.serves}</span>}
         </p>
 
@@ -59,7 +60,9 @@ export default function MenuItemCard({ item }) {
         <DishArt item={item} className="dish__art" />
 
         <div className="dish__action">
-          {qty > 0 ? (
+          {!item.availableNow ? (
+            <span className="dish__closed">Unavailable</span>
+          ) : qty > 0 ? (
             <QtyStepper
               qty={qty}
               label={item.name}

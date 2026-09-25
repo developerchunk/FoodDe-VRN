@@ -1,7 +1,8 @@
 import { Fragment } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../context/cart-context";
-import { MorPankh, Lotus } from "./Motifs";
+import { useProperty } from "../utils/property";
+import { Lotus } from "./Motifs";
 
 function CartIcon() {
   return (
@@ -57,6 +58,7 @@ function TickerRun({ duplicate = false }) {
 export default function Header() {
   const { bill } = useCart();
   const { pathname } = useLocation();
+  const house = useProperty();
 
   return (
     <>
@@ -71,37 +73,19 @@ export default function Header() {
 
       <header className="site-header">
         <div className="wrap site-header__inner">
-          <Link to="/" className="brand" aria-label="Braj Rasoi — home">
-            <span className="brand__mark">
-              <MorPankh size={20} />
-            </span>
-            <span className="brand__text">
-              <strong>Braj Rasoi</strong>
-              <em className="deva">वृन्दावन धाम</em>
-            </span>
+          {/* No IRD branding: the rest house's own name is the title, with
+              the room it was scanned from underneath. */}
+          <Link to="/" className="house">
+            <span className="house__name">{house.property}</span>
+            {house.room && (
+              <span className="house__room">
+                Room {house.room}
+                {house.address && (
+                  <span className="house__address"> · {house.address}</span>
+                )}
+              </span>
+            )}
           </Link>
-
-          <div className="locality" title="Delivery area">
-            <svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"
-                strokeLinejoin="round"
-              />
-              <circle cx="12" cy="10" r="2.4" />
-            </svg>
-            <span>
-              <small>Delivering to</small>
-              <strong>Vrindavan, Mathura</strong>
-            </span>
-          </div>
 
           <nav className="site-nav" aria-label="Primary">
             <NavLink

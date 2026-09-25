@@ -79,8 +79,7 @@ export default function Footer() {
             orders are placed and no payment is taken.
           </p>
           <p className="site-footer__legal">
-            FSSAI (demo) 1234567890123 · Prices inclusive of applicable taxes
-            where shown
+            Prices inclusive of applicable taxes where shown
           </p>
         </div>
       </div>

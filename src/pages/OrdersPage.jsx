@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { getOrders } from "../utils/orders";
-import { getItem } from "../data/menu";
 import { useCart } from "../context/cart-context";
 import { rupees, formatDateTime, maskPhone } from "../utils/format";
 import { MorPankh } from "../components/Motifs";
@@ -67,8 +66,7 @@ export default function OrdersPage() {
                 className="btn btn-ghost"
                 onClick={() =>
                   o.lines.forEach((l) => {
-                    const item = getItem(l.id);
-                    if (item) for (let i = 0; i < l.qty; i++) add(item);
+                    for (let i = 0; i < l.qty; i++) add(l);
                   })
                 }
               >

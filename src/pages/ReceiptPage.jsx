@@ -238,8 +238,7 @@ export default function ReceiptPage() {
             </p>
           )}
           <p className="receipt__demo">
-            Demo receipt · FSSAI (demo) 1234567890123 · GSTIN (demo)
-            09ABCDE1234F1Z5 · Not a valid tax invoice
+            Demo receipt · Not a valid tax invoice
           </p>
         </footer>
       </article>

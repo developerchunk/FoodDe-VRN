@@ -1,6 +1,7 @@
 import { MorPankh, Lotus, Matka, Diya } from "./Motifs";
 import BrajSkyline from "./BrajSkyline";
 import { useMinWidth } from "../utils/useMinWidth";
+import thaliImg from "../assets/thali.webp";
 
 export default function Hero({ onBrowse }) {
   /* the thali only ever shows from 900px up — see useMinWidth */
@@ -86,7 +87,7 @@ export default function Hero({ onBrowse }) {
             {showThali && (
               <img
                 className="hero__thali-img"
-                src="/thali.webp"
+                src={thaliImg}
                 width="720"
                 height="720"
                 decoding="async"

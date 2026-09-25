@@ -94,39 +94,33 @@
   min-height: var(--header-h);
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 11px;
-  flex: none;
-}
-.brand__mark {
-  width: 42px;
-  height: 42px;
+.house {
   display: grid;
-  place-items: center;
-  border-radius: 50% 50% 46% 46%;
-  background: linear-gradient(160deg, var(--teal-600), var(--teal-900));
-  color: var(--marigold-soft);
-  box-shadow: 0 6px 14px -8px rgba(8, 50, 47, 0.9);
-  flex: none;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
-.brand__text {
-  display: grid;
-  line-height: 1.1;
-}
-.brand__text strong {
+.house__name {
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: clamp(17px, 4vw, 21px);
   font-weight: 600;
-  color: var(--teal-900);
   letter-spacing: -0.015em;
+  color: var(--teal-900);
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.brand__text em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--marigold-deep);
-  letter-spacing: 0.08em;
+.house__room {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.house__address {
+  color: var(--ink-faint);
+  display: none;
 }
 
 .locality {

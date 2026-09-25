@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart-context";
-import { getItem, MENU } from "../data/menu";
+import { useMenu } from "../hooks/useMenu";
 import QtyStepper from "../components/QtyStepper";
 import DishArt from "../components/DishArt";
 import BillSummary from "../components/BillSummary";
@@ -28,11 +28,11 @@ export default function CartPage() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
 
-  const suggestions = MENU.filter(
-    (m) =>
-      !lines.some((l) => l.id === m.id) &&
-      ["vr-07", "sw-01", "sw-03", "sm-08", "vr-03", "ff-09"].includes(m.id),
-  ).slice(0, 4);
+  /* Add-ons come from the live menu, and only from kitchens that are open. */
+  const { items: menu } = useMenu();
+  const suggestions = menu
+    .filter((m) => m.availableNow && !lines.some((l) => l.id === m.id))
+    .slice(0, 4);
 
   if (lines.length === 0) {
     return (
@@ -78,11 +78,10 @@ export default function CartPage() {
         <section className="cart-grid__main" aria-label="Items in your order">
           <ul className="order-lines card">
             {lines.map((line) => {
-              const item = getItem(line.id);
               return (
                 <li key={line.id} className="order-line">
                   <div className="order-line__art">
-                    {item && <DishArt item={item} />}
+                    <DishArt item={line} />
                   </div>
 
                   <div className="order-line__body">
@@ -90,16 +89,13 @@ export default function CartPage() {
                       <span className="veg-mark" aria-hidden="true" />
                       <h3>{line.name}</h3>
                     </div>
-                    {line.hindi && (
-                      <p className="order-line__hindi deva">{line.hindi}</p>
-                    )}
                     {line.sattvic && (
                       <span className="pill pill-sattvic">
                         <TulsiLeaf size={10} /> No onion–garlic
                       </span>
                     )}
                     <p className="order-line__unit muted">
-                      {rupees(line.price)} each
+                      {rupees(line.pricePaise)} each
                     </p>
                     <button
                       type="button"
@@ -114,11 +110,11 @@ export default function CartPage() {
                     <QtyStepper
                       qty={line.qty}
                       label={line.name}
-                      onAdd={() => item && add(item)}
+                      onAdd={() => add(line)}
                       onRemove={() => decrement(line.id)}
                     />
                     <strong className="order-line__amount rupee">
-                      {rupees(line.price * line.qty)}
+                      {rupees(line.pricePaise * line.qty)}
                     </strong>
                   </div>
                 </li>
@@ -139,7 +135,7 @@ export default function CartPage() {
                     </div>
                     <div className="addon__body">
                       <p className="addon__name">{s.name}</p>
-                      <p className="addon__price rupee">{rupees(s.price)}</p>
+                      <p className="addon__price rupee">{rupees(s.pricePaise)}</p>
                     </div>
                     <button
                       type="button"

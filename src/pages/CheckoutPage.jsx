@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import BillSummary from "../components/BillSummary";
+import SignUpPrompt from "../components/SignUpPrompt";
 import { rupees, formatPhone } from "../utils/format";
 import { makeOrderId, saveOrder } from "../utils/orders";
 import { TulsiLeaf, MorPankh, Matka } from "../components/Motifs";
 
 const PROFILE_KEY = "brajrasoi.profile.v1";
+const PROMPT_KEY = "brajrasoi.signupPrompt.v1";
 
 const AREAS = [
   "Parikrama Marg",
@@ -48,6 +50,8 @@ const emptyForm = {
   area: AREAS[0],
   landmark: "",
   pincode: "281121",
+  email: "",
+  emailOptIn: false,
   note: "",
   payment: "cod",
   remember: true,
@@ -66,11 +70,35 @@ function loadProfile() {
 }
 
 export default function CheckoutPage() {
-  const { lines, bill, instructions, coupon, donate, clear } = useCart();
+  const { lines, bill, instructions, coupon, donate, clear, flash } = useCart();
   const navigate = useNavigate();
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
+
+  /* Becomes the Supabase session once auth lands. Until then nobody is signed
+     in, so the prompt and the e-mail opt-in always show. */
+  const user = null;
+
+  /* Offered once per browsing session — declining must not mean being asked
+     again on the way back from the cart. */
+  const [prompt, setPrompt] = useState(() => {
+    if (user) return false;
+    try {
+      return sessionStorage.getItem(PROMPT_KEY) !== "seen";
+    } catch {
+      return true;
+    }
+  });
+
+  const closePrompt = useCallback(() => {
+    setPrompt(false);
+    try {
+      sessionStorage.setItem(PROMPT_KEY, "seen");
+    } catch {
+      /* private mode — it simply asks again next visit */
+    }
+  }, []);
 
   useEffect(() => {
     if (lines.length === 0 && !placing) navigate("/cart", { replace: true });
@@ -132,6 +160,8 @@ export default function CheckoutPage() {
       customer: {
         name: form.name.trim(),
         phone: phoneDigits,
+        email: form.email.trim(),
+        emailOptIn: !!(form.email.trim() && form.emailOptIn),
         house: form.house.trim(),
         area: form.area,
         landmark: form.landmark.trim(),
@@ -158,6 +188,16 @@ export default function CheckoutPage() {
 
   return (
     <main className="wrap page" id="main">
+      <SignUpPrompt
+        open={prompt}
+        onSkip={closePrompt}
+        onGoogle={() => {
+          closePrompt();
+          /* wired to supabase.auth.signInWithOAuth once the project exists */
+          flash("Google sign-in is not connected yet — carry on as a guest.");
+        }}
+      />
+
       <nav className="crumbs" aria-label="Breadcrumb">
         <Link to="/">Menu</Link>
         <span aria-hidden="true">›</span>
@@ -254,6 +294,43 @@ export default function CheckoutPage() {
                 </span>
               )}
             </div>
+
+            <label className="field" htmlFor="email">
+              <span className="field-label">
+                E-mail address <span className="opt">optional</span>
+              </span>
+              <input
+                id="email"
+                type="email"
+                className={`input ${errors.email ? "invalid" : ""}`}
+                value={form.email}
+                onChange={set("email")}
+                placeholder="radhika@example.com"
+                autoComplete="email"
+                inputMode="email"
+              />
+              {errors.email ? (
+                <span className="field-error">{errors.email}</span>
+              ) : (
+                <span className="field-hint">
+                  Only used to send you this receipt — never for marketing.
+                </span>
+              )}
+            </label>
+
+            {/* an account already keeps the receipt, so this is only for guests */}
+            {!user && (
+              <label className="remember remember--email">
+                <input
+                  type="checkbox"
+                  checked={form.emailOptIn}
+                  onChange={set("emailOptIn")}
+                  disabled={!form.email.trim()}
+                />
+                <span className="donate__box" aria-hidden="true" />
+                <span>Save this order to this e-mail</span>
+              </label>
+            )}
 
             <div className="consent-note">
               <span className="consent-note__mark" aria-hidden="true">

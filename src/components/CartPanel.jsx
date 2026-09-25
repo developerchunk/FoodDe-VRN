@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import QtyStepper from "./QtyStepper";
 import { rupees } from "../utils/format";
-import { getItem } from "../data/menu";
 import { MorPankh, TulsiLeaf } from "./Motifs";
 
 export default function CartPanel() {
@@ -37,7 +36,6 @@ export default function CartPanel() {
           <>
             <ul className="cart-panel__lines">
               {lines.map((line) => {
-                const item = getItem(line.id);
                 return (
                   <li key={line.id} className="cart-line">
                     <span className="veg-mark" aria-hidden="true" />
@@ -49,7 +47,7 @@ export default function CartPanel() {
                         </p>
                       )}
                       <p className="cart-line__unit">
-                        {rupees(line.price)}{" "}
+                        {rupees(line.pricePaise)}{" "}
                         {line.qty > 1 && <span>× {line.qty}</span>}
                       </p>
                     </div>
@@ -58,11 +56,11 @@ export default function CartPanel() {
                         size="sm"
                         qty={line.qty}
                         label={line.name}
-                        onAdd={() => item && add(item)}
+                        onAdd={() => add(line)}
                         onRemove={() => decrement(line.id)}
                       />
                       <strong className="cart-line__amt rupee">
-                        {rupees(line.price * line.qty)}
+                        {rupees(line.pricePaise * line.qty)}
                       </strong>
                     </div>
                   </li>

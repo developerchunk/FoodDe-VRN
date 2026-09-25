@@ -1,13 +1,25 @@
-export const rupees = (n) =>
-  "₹" +
-  Number(n || 0).toLocaleString("en-IN", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-  });
+/**
+ * Amounts arrive as integer paise and are only turned into rupees at the very
+ * last moment, for display. Nothing downstream does arithmetic on the result.
+ */
+export const rupees = (paise) => {
+  const n = Number(paise || 0);
+  /* A whole number of rupees needs no decimals; anything else shows both, so
+     an amount is never rendered as "₹72.3". Totals are never rounded — ₹201.47
+     stays ₹201.47. */
+  const exact = n % 100 === 0;
+  return (
+    "₹" +
+    (n / 100).toLocaleString("en-IN", {
+      minimumFractionDigits: exact ? 0 : 2,
+      maximumFractionDigits: 2,
+    })
+  );
+};
 
-export const rupeesExact = (n) =>
+export const rupeesExact = (paise) =>
   "₹" +
-  Number(n || 0).toLocaleString("en-IN", {
+  (Number(paise || 0) / 100).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

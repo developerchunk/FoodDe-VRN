@@ -29,6 +29,8 @@ export default function App() {
       <Header />
       <Routes>
         <Route path="/" element={<MenuPage />} />
+        {/* the QR route: /r/<opaque code> resolves to a rest house and room */}
+        <Route path="/r/:code" element={<MenuPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order/:id" element={<OrderSuccessPage />} />

@@ -106,8 +106,8 @@
 .addon__add {
   padding: 7px 15px;
   border-radius: 999px;
-  border: 1.5px solid var(--teal-700);
-  color: var(--teal-800);
+  border: 1.5px solid var(--ember);
+  color: var(--ember-deep);
   font-size: 13px;
   font-weight: 500;
   background: var(--paper);
@@ -115,8 +115,8 @@
   flex: none;
 }
 .addon__add:hover {
-  background: var(--teal-800);
-  color: var(--cream);
+  background: var(--ember);
+  color: #fff;
 }
 
 .note-block {
@@ -1313,4 +1313,150 @@ select.input {
 .phone-prefix {
   gap: 8px;
   padding-inline: 14px;
+}
+
+.field-label .opt {
+  font-weight: 400;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-left: 4px;
+}
+.remember--email {
+  margin: -8px 0 18px;
+  font-size: 13.5px;
+}
+.remember--email input:disabled ~ .donate__box {
+  opacity: 0.45;
+}
+.remember--email input:disabled ~ span {
+  color: var(--ink-faint);
+}
+
+/* ===== optional sign-up prompt at checkout ===== */
+.prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.prompt__scrim {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(8, 50, 47, 0.45);
+  backdrop-filter: blur(2px);
+  animation: sheet-fade 0.2s ease;
+}
+.prompt__panel {
+  position: relative;
+  background: var(--paper);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 22px calc(24px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-lg);
+  animation: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  outline: none;
+  text-align: center;
+}
+.prompt__grip {
+  display: block;
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--sand-deep);
+  margin: 0 auto 18px;
+}
+.prompt__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50% 50% 46% 46%;
+  background: linear-gradient(160deg, var(--teal-600), var(--teal-900));
+  color: var(--marigold-soft);
+  margin-bottom: 14px;
+}
+.prompt__title {
+  font-size: 21px;
+  margin-bottom: 8px;
+}
+.prompt__sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  max-width: 44ch;
+  margin: 0 auto 20px;
+}
+.prompt__google {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--sand-deep);
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: 0 8px 20px -14px rgba(8, 50, 47, 0.6);
+  transition: border-color 0.16s ease;
+}
+.prompt__google:hover {
+  border-color: var(--teal-600);
+}
+.prompt__skip {
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px 20px;
+  border-radius: 999px;
+  background: none;
+  color: var(--teal-800);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prompt__skip:hover {
+  opacity: 0.75;
+}
+.prompt__note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  text-align: left;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--cream);
+  border: 1px dashed var(--sand-deep);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.prompt__note svg {
+  color: var(--tulsi);
+  flex: none;
+  margin-top: 2px;
+}
+
+@media (min-width: 620px) {
+  .prompt {
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+  }
+  .prompt__panel {
+    border-radius: 22px;
+    max-width: 440px;
+    width: 100%;
+    padding: 28px 28px 26px;
+  }
+  .prompt__grip {
+    display: none;
+  }
 }

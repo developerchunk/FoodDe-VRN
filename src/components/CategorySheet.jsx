@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { CATEGORIES } from "../data/menu";
 import { CategoryGlyph } from "./Motifs";
 
 /**
@@ -8,6 +7,7 @@ import { CategoryGlyph } from "./Motifs";
  */
 export default function CategorySheet({
   open,
+  categories,
   counts,
   active,
   onSelect,
@@ -31,7 +31,7 @@ export default function CategorySheet({
 
   if (!open) return null;
 
-  const rows = CATEGORIES.filter((c) => (counts[c.id] || 0) > 0);
+  const rows = categories.filter((c) => (counts[c.id] || 0) > 0);
   const total = rows.reduce((n, c) => n + counts[c.id], 0);
 
   return (
@@ -72,7 +72,6 @@ export default function CategorySheet({
                 </span>
                 <span className="sheet__text">
                   <strong>{c.name}</strong>
-                  <em className="deva">{c.hindi}</em>
                 </span>
                 <span className="sheet__count">{counts[c.id]}</span>
               </button>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORIES, MENU } from "../data/menu";
+import { useMenu } from "../hooks/useMenu";
 import Hero from "../components/Hero";
 import FilterBar from "../components/FilterBar";
 import CategoryRail from "../components/CategoryRail";
@@ -10,11 +10,12 @@ import CartPanel from "../components/CartPanel";
 import { FeatherDivider, MorPankh, TulsiLeaf } from "../components/Motifs";
 
 export default function MenuPage() {
+  const { items, categories, loading, error } = useMenu();
   const [query, setQuery] = useState("");
   const [sattvicOnly, setSattvicOnly] = useState(false);
   const [quick, setQuick] = useState(null);
   const [sort, setSort] = useState("default");
-  const [activeCat, setActiveCat] = useState(CATEGORIES[0].id);
+  const [activeCat, setActiveCat] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const sectionRefs = useRef({});
@@ -24,25 +25,25 @@ export default function MenuPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = MENU.filter((item) => {
+    let list = items.filter((item) => {
       if (sattvicOnly && !item.sattvic) return false;
-      if (quick === "under150" && item.price >= 150) return false;
+      if (quick === "under150" && item.pricePaise >= 15000) return false;
       if (quick && quick !== "under150" && !(item.tags || []).includes(quick))
         return false;
       if (!q) return true;
       return (
         item.name.toLowerCase().includes(q) ||
         item.desc.toLowerCase().includes(q) ||
-        (item.hindi || "").includes(query.trim())
+        (item.ingredients || "").toLowerCase().includes(q)
       );
     });
 
-    if (sort === "low") list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === "high") list = [...list].sort((a, b) => b.price - a.price);
+    if (sort === "low") list = [...list].sort((a, b) => a.pricePaise - b.pricePaise);
+    if (sort === "high") list = [...list].sort((a, b) => b.pricePaise - a.pricePaise);
     if (sort === "name")
       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [query, sattvicOnly, quick, sort]);
+  }, [items, query, sattvicOnly, quick, sort]);
 
   const counts = useMemo(() => {
     const map = {};
@@ -50,7 +51,12 @@ export default function MenuPage() {
     return map;
   }, [filtered]);
 
-  const visibleCats = CATEGORIES.filter((c) => (counts[c.id] || 0) > 0);
+  const visibleCats = categories.filter((c) => (counts[c.id] || 0) > 0);
+
+  /* Until the reader scrolls or picks one, the highlighted category is simply
+     the first that has dishes — derived, so the menu loading does not have to
+     trigger an extra render just to choose it. */
+  const currentCat = activeCat ?? visibleCats[0]?.id ?? null;
 
   /* Highlight the category whose section is currently under the header. */
   useEffect(() => {
@@ -147,7 +153,8 @@ export default function MenuPage() {
       <div className="wrap menu-layout">
         <div className="menu-layout__rail">
           <CategoryRail
-            active={activeCat}
+            categories={categories}
+            active={currentCat}
             counts={counts}
             onSelect={(id) => {
               setActiveCat(id);
@@ -157,13 +164,40 @@ export default function MenuPage() {
         </div>
 
         <main className="menu-layout__main" id="main" ref={listTopRef}>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="empty-state card">
+              <span className="spinner spinner--dark" aria-hidden="true" />
+              <h3>Loading the menu…</h3>
+            </div>
+          ) : error ? (
+            <div className="empty-state card">
+              <MorPankh size={38} />
+              <h3>The menu could not be loaded</h3>
+              <p className="muted">
+                The kitchen system is not reachable right now. Please try again in a
+                moment.
+              </p>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => window.location.reload()}
+              >
+                Try again
+              </button>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="empty-state card">
+              <MorPankh size={38} />
+              <h3>Nothing on the menu just yet</h3>
+              <p className="muted">Please check back shortly.</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="empty-state card">
               <MorPankh size={38} />
               <h3>Nothing matches that just yet</h3>
               <p className="muted">
                 Try a different spelling, or clear the filters to see all{" "}
-                {MENU.length} dishes.
+                {items.length} dishes.
               </p>
               <button
                 type="button"
@@ -218,8 +252,9 @@ export default function MenuPage() {
 
       <CategorySheet
         open={sheetOpen}
+        categories={categories}
         counts={counts}
-        active={activeCat}
+        active={currentCat}
         onClose={() => setSheetOpen(false)}
         onSelect={(id) => {
           setActiveCat(id);

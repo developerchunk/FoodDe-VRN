@@ -7,7 +7,6 @@ import {
   useCallback,
 } from "react";
 import { CartContext } from "./cart-context";
-import { MENU } from "../data/menu";
 import { computeBill, COUPONS } from "../utils/pricing";
 
 const CART_KEY = "brajrasoi.cart.v1";
@@ -18,8 +17,13 @@ const loadInitial = () => {
     if (!saved)
       return { lines: [], coupon: null, donate: false, instructions: "" };
     return {
+      /* A line carries everything it needs to render and to price itself, so
+         a stale cart never has to be reconciled against a menu that may have
+         changed underneath it. Anything malformed is simply dropped. */
       lines: Array.isArray(saved.lines)
-        ? saved.lines.filter((l) => MENU.some((m) => m.id === l.id))
+        ? saved.lines.filter(
+            (l) => l && typeof l.id === "string" && Number.isInteger(l.pricePaise) && l.qty > 0,
+          )
         : [],
       coupon: saved.coupon && COUPONS[saved.coupon] ? saved.coupon : null,
       donate: !!saved.donate,
@@ -34,21 +38,23 @@ const loadInitial = () => {
 function reducer(state, action) {
   switch (action.type) {
     case "add": {
-      const item = MENU.find((m) => m.id === action.id);
+      const item = action.item;
       if (!item) return state;
-      const existing = state.lines.find((l) => l.id === action.id);
+      const existing = state.lines.find((l) => l.id === item.id);
       const lines = existing
         ? state.lines.map((l) =>
-            l.id === action.id ? { ...l, qty: Math.min(l.qty + 1, 20) } : l,
+            l.id === item.id ? { ...l, qty: Math.min(l.qty + 1, 20) } : l,
           )
         : [
             ...state.lines,
             {
               id: item.id,
               name: item.name,
-              hindi: item.hindi,
-              price: item.price,
+              pricePaise: item.pricePaise,
               sattvic: item.sattvic,
+              /* kept so the cart can draw the dish without re-fetching */
+              art: item.art,
+              palette: item.palette,
               qty: 1,
             },
           ];
@@ -116,8 +122,8 @@ export function CartProvider({ children }) {
       qtyOf,
       toast,
       add: (item) => {
-        dispatch({ type: "add", id: item.id });
-        flash(`${item.name} added to your thali`);
+        dispatch({ type: "add", item });
+        flash(`${item.name} added to your order`);
       },
       decrement: (id) => dispatch({ type: "decrement", id }),
       remove: (id) => dispatch({ type: "remove", id }),
@@ -133,8 +139,8 @@ export function CartProvider({ children }) {
           flash(`“${code}” is not a valid code`, "error");
           return false;
         }
-        if (bill.subtotal < c.minOrder) {
-          flash(`${code} needs a cart of ₹${c.minOrder} or more`, "error");
+        if (bill.subtotal < c.minOrderPaise) {
+          flash(`${code} needs a cart of ₹${c.minOrderPaise / 100} or more`, "error");
           return false;
         }
         dispatch({ type: "coupon", code });

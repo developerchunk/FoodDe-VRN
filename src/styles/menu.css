@@ -433,11 +433,11 @@
     0 16px 30px -22px rgba(8, 50, 47, 0.42);
 }
 .dish.is-in-cart {
-  border-color: rgba(74, 122, 59, 0.55);
+  border-color: rgba(217, 95, 63, 0.45);
   background: linear-gradient(
     168deg,
-    rgba(253, 255, 248, 0.82),
-    rgba(223, 238, 212, 0.42)
+    rgba(255, 255, 255, 0.92),
+    rgba(251, 228, 220, 0.4)
   );
 }
 
@@ -512,8 +512,8 @@
   object-fit: cover;
 }
 .dish.is-in-cart .dish__art {
-  border-color: var(--tulsi);
-  box-shadow: 0 0 0 1.5px var(--tulsi);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 1.5px var(--ember);
 }
 
 /* the Add control straddles the foot of the image */
@@ -529,18 +529,18 @@
   gap: 6px;
   padding: 9px 20px;
   border-radius: 12px;
-  border: 1.5px solid var(--teal-700);
+  border: 1.5px solid var(--ember);
   background: var(--paper);
-  color: var(--teal-800);
+  color: var(--ember-deep);
   font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  box-shadow: 0 6px 16px -8px rgba(8, 50, 47, 0.4);
+  box-shadow: 0 6px 16px -8px rgba(217, 95, 63, 0.42);
   transition: all 0.16s ease;
 }
 .dish__add:hover {
-  background: var(--teal-800);
-  color: var(--cream);
+  background: var(--ember);
+  color: #fff;
 }
 
 /* ===== quantity stepper ===== */
@@ -548,8 +548,8 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: linear-gradient(165deg, var(--teal-700), var(--teal-900));
-  color: var(--cream);
+  background: linear-gradient(165deg, #e2704f, var(--ember-deep));
+  color: #fff;
   flex: none;
   box-shadow: 0 6px 16px -10px rgba(8, 50, 47, 0.9);
 }
@@ -1014,4 +1014,29 @@
   .cart-panel {
     display: block;
   }
+}
+
+/* A dish whose kitchen is shut: still listed, so the menu does not appear to
+   shrink and grow, but plainly not orderable. */
+.dish.is-unavailable .dish__art,
+.dish.is-unavailable .dish__info {
+  opacity: 0.45;
+  filter: saturate(0.4);
+}
+.dish__closed {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  border-radius: 12px;
+  border: 1.5px dashed var(--sand-deep);
+  background: var(--paper);
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.spinner--dark {
+  border-color: rgba(7, 91, 85, 0.2);
+  border-top-color: var(--ird-teal);
 }
