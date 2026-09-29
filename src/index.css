@@ -86,6 +86,15 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Nothing on a phone should scroll sideways. A fixed bar, a long word or an
+   image a few pixels too wide all produce the same thing: the whole page slides
+   under the guest's thumb. This is the backstop, not a licence to overflow. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);

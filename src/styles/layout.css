@@ -402,6 +402,15 @@
   display: grid;
   line-height: 1.25;
   color: var(--cream);
+  /* A grid item will not shrink below its content without this, so a long
+     total pushes the bar wider than the screen instead of wrapping. */
+  min-width: 0;
+}
+.mobile-bar__info strong,
+.mobile-bar__info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .mobile-bar__info strong {
   font-size: 14.5px;
@@ -415,6 +424,9 @@
   margin-left: auto;
   padding: 11px 18px;
   font-size: 14px;
+  /* Never squashed, never the reason the bar grows. */
+  flex: none;
+  white-space: nowrap;
 }
 
 /* ===== shared page chrome ==================================== */
@@ -628,5 +640,70 @@
   }
   .mobile-bar {
     display: none;
+  }
+}
+
+/* ===== header menu for narrow screens ======================== */
+.nav-menu {
+  position: relative;
+  display: none;
+  margin-left: 10px;
+}
+.nav-menu__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(251, 247, 240, 0.28);
+  border-radius: 999px;
+  background: none;
+  color: var(--cream);
+  cursor: pointer;
+}
+.nav-menu__button:focus-visible {
+  outline: 2.5px solid var(--marigold-deep);
+  outline-offset: 2px;
+}
+.nav-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 95;
+  min-width: 168px;
+  display: grid;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  box-shadow: var(--shadow-lg);
+}
+.nav-menu__item {
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--ink);
+  text-align: left;
+}
+.nav-menu__item:hover {
+  background: color-mix(in srgb, var(--teal) 7%, transparent);
+}
+/* The sign-in control styles itself for the dark header; inside this light
+   panel it has to look like the other rows. */
+.nav-menu__item--auth {
+  padding: 0;
+}
+.nav-menu__item--auth .site-nav__link {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  color: var(--ink);
+  text-align: left;
+}
+
+/* Only where the inline nav is hidden. */
+@media (max-width: 619px) {
+  .nav-menu {
+    display: block;
   }
 }

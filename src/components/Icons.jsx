@@ -368,3 +368,21 @@ export function GoogleMark() {
     </svg>
   );
 }
+
+/** Three lines, for the header menu on small screens. */
+export function MenuIcon({ size = 20 }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}

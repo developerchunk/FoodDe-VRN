@@ -8,6 +8,7 @@ import { isOpenNow, sellerHoursShort } from "../utils/seller";
 import { BuildingIcon, CartIcon, ClockIcon } from "./Icons";
 import Logo from "./Logo";
 import SignInButton from "./SignInButton";
+import NavMenu from "./NavMenu";
 
 export default function Header() {
   const { bill } = useCart();
@@ -95,6 +96,9 @@ export default function Header() {
             <span className="cart-button__count">{bill.itemCount}</span>
           )}
         </Link>
+
+        {/* Same links as the nav, for the widths where the nav is hidden. */}
+        <NavMenu hasOrders={hasOrders} />
       </div>
     </header>
   );

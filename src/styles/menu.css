@@ -650,6 +650,9 @@
   left: 0;
   right: 0;
   bottom: 0;
+  /* left/right alone should be enough, but a fixed bar is the last thing that
+     should ever be the reason a page scrolls sideways. */
+  max-width: 100%;
   z-index: 85;
   display: flex;
   align-items: center;
@@ -700,6 +703,7 @@
   align-items: center;
   gap: 8px;
   flex: none;
+  white-space: nowrap;
   padding: 13px 20px;
   border-radius: 999px;
   background: var(--ird-teal);
