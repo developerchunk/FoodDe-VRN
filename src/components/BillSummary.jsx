@@ -10,9 +10,9 @@ export default function BillSummary({ bill, title = "Bill details" }) {
           <dd className="rupee">{rupees(bill.subtotal)}</dd>
         </div>
         {bill.discount > 0 && (
-          <div className="bill__row bill__row--save">
-            <dt>Coupon {bill.couponCode}</dt>
-            <dd className="rupee">− {rupees(bill.discount)}</dd>
+          <div className="bill__row bill__row--off">
+            <dt>{bill.couponCode}</dt>
+            <dd className="rupee">−{rupees(bill.discount)}</dd>
           </div>
         )}
         <div className="bill__row">
@@ -33,12 +33,6 @@ export default function BillSummary({ bill, title = "Bill details" }) {
           <dt>GST (5%)</dt>
           <dd className="rupee">{rupees(bill.gst)}</dd>
         </div>
-        {bill.donation > 0 && (
-          <div className="bill__row">
-            <dt>Gaushala contribution</dt>
-            <dd className="rupee">{rupees(bill.donation)}</dd>
-          </div>
-        )}
         <div className="bill__row bill__row--total">
           <dt>To pay</dt>
           <dd className="rupee">{rupees(bill.total)}</dd>

@@ -1,35 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import BillSummary from "../components/BillSummary";
 import SignUpPrompt from "../components/SignUpPrompt";
 import { rupees, formatPhone } from "../utils/format";
 import { placeOrder } from "../lib/orders";
-import { useProperty } from "../utils/property";
-import { TulsiLeaf, Cloche, BuildingIcon } from "../components/Icons";
+import {
+  codeFromScanned,
+  useProperty,
+  useResolveRoom,
+} from "../utils/property";
+import { BuildingIcon, QrIcon, TulsiLeaf } from "../components/Icons";
 import { SELLER } from "../utils/seller";
 import { useCartAvailability } from "../hooks/useCartAvailability";
+import { useAuth } from "../hooks/useAuth";
+import { signInWithGoogle } from "../lib/auth";
+import QrScanner from "../components/QrScanner";
+import { canScanQr } from "../utils/qr";
 
 const PROFILE_KEY = "brajrasoi.profile.v1";
 const PROMPT_KEY = "brajrasoi.signupPrompt.v1";
-
-const PAYMENTS = [
-  {
-    id: "cod",
-    label: "Cash on delivery",
-    note: "Pay the rider when the food reaches you",
-  },
-  {
-    id: "upi",
-    label: "UPI on delivery",
-    note: "Scan the rider’s QR at the door",
-  },
-  {
-    id: "online",
-    label: "Pay online now",
-    note: "Demo only — no payment gateway is connected",
-  },
-];
 
 const emptyForm = {
   name: "",
@@ -37,7 +27,6 @@ const emptyForm = {
   email: "",
   emailOptIn: false,
   note: "",
-  payment: "cod",
   remember: true,
 };
 
@@ -46,7 +35,7 @@ function loadProfile() {
   try {
     const saved = JSON.parse(localStorage.getItem(PROFILE_KEY));
     return saved
-      ? { ...emptyForm, ...saved, payment: emptyForm.payment }
+      ? { ...emptyForm, ...saved }
       : emptyForm;
   } catch {
     return emptyForm;
@@ -54,7 +43,7 @@ function loadProfile() {
 }
 
 export default function CheckoutPage() {
-  const { lines, bill, instructions, coupon, donate, clear, flash, remove } =
+  const { lines, bill, instructions, coupon, flash, remove } =
     useCart();
 
   /* A cart can outlive the hours that made its dishes orderable. place_order
@@ -64,19 +53,56 @@ export default function CheckoutPage() {
   const unavailable = availability.unavailable;
   const blocked = availability.status === "ok" && unavailable.length > 0;
   const navigate = useNavigate();
+  /* Sent here by the order page when a payment failed or timed out. */
+  const failedPayment = useLocation().state?.paymentFailed ?? null;
   const house = useProperty();
+  const resolveRoom = useResolveRoom();
+  const [roomCode, setRoomCode] = useState("");
+  const [roomLookup, setRoomLookup] = useState({ busy: false, error: null });
+  /* Held separately from "we have no room at all": a guest correcting a room
+     still has a good one, and must be able to change their mind. */
+  const [changingRoom, setChangingRoom] = useState(false);
+  const [scanning, setScanning] = useState(false);
+
+  /* A scanned sticker gives back the whole link, not the bare id. */
+  async function onScanned(text) {
+    setScanning(false);
+    const code = codeFromScanned(text);
+    setRoomLookup({ busy: true, error: null });
+    const result = await resolveRoom(code);
+    setRoomLookup({
+      busy: false,
+      error: result.ok ? null : "That QR code is not one of ours.",
+    });
+    if (result.ok) setChangingRoom(false);
+  }
+
+  async function findRoom(e) {
+    e.preventDefault();
+    setRoomLookup({ busy: true, error: null });
+    const result = await resolveRoom(roomCode);
+    setRoomLookup({ busy: false, error: result.ok ? null : result.error });
+    if (result.ok) {
+      setRoomCode("");
+      setChangingRoom(false);
+    }
+  }
+
+  function cancelChange() {
+    setChangingRoom(false);
+    setRoomCode("");
+    setRoomLookup({ busy: false, error: null });
+  }
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
 
-  /* Becomes the Supabase session once auth lands. Until then nobody is signed
-     in, so the prompt and the e-mail opt-in always show. */
-  const user = null;
+  /* A real account, not the anonymous session every guest already has. */
+  const { signedIn } = useAuth();
 
   /* Offered once per browsing session — declining must not mean being asked
      again on the way back from the cart. */
   const [prompt, setPrompt] = useState(() => {
-    if (user) return false;
     try {
       return sessionStorage.getItem(PROMPT_KEY) !== "seen";
     } catch {
@@ -155,7 +181,7 @@ export default function CheckoutPage() {
 
     if (form.remember) {
       try {
-        const { payment: _payment, ...keep } = form;
+        const keep = { ...form };
         localStorage.setItem(PROFILE_KEY, JSON.stringify(keep));
       } catch {
         /* ignore */
@@ -166,19 +192,20 @@ export default function CheckoutPage() {
       const placed = await placeOrder({
         addressCode: house.addressId,
         lines,
+        coupon,
         guest: {
           name: form.name.trim(),
           phone: phoneDigits,
           email: form.email.trim() || null,
         },
-        coupon,
-        donate,
         note: [instructions.trim(), form.note.trim()]
           .filter(Boolean)
           .join(" · "),
       });
 
-      clear();
+      /* The cart stays until the payment succeeds. An unpaid order is not an
+         order, and a guest sent back here to try again must still have their
+         food in front of them. OrderSuccessPage clears it once paid. */
       navigate(`/order/${placed.receipt_token}`, { replace: true });
     } catch (err) {
       /* The order was not created, so the cart is deliberately left intact. */
@@ -192,12 +219,18 @@ export default function CheckoutPage() {
   return (
     <main className="wrap page" id="main">
       <SignUpPrompt
-        open={prompt}
+        /* The session arrives a tick after mount, and again on the way
+           back from Google, so this is derived rather than stored: someone
+           signed in is never asked to sign in. */
+        open={prompt && !signedIn}
         onSkip={closePrompt}
-        onGoogle={() => {
+        onGoogle={async () => {
           closePrompt();
-          /* wired to supabase.auth.signInWithOAuth once the project exists */
-          flash("Google sign-in is not connected yet — carry on as a guest.");
+          /* Leaves for Google and comes back to this page; the cart is in
+             localStorage and the room in sessionStorage, both of which survive
+             a redirect in the same tab. */
+          const result = await signInWithGoogle();
+          if (!result.ok) flash(result.error, "error");
         }}
       />
 
@@ -214,8 +247,7 @@ export default function CheckoutPage() {
           <p className="eyebrow">Step 2 of 2</p>
           <h1 className="page__title">Where should we bring it?</h1>
           <p className="page__sub">
-            No account, no password, no OTP. Three details and the kitchen gets
-            going.
+            Three details and we get going.
           </p>
         </div>
       </header>
@@ -228,7 +260,7 @@ export default function CheckoutPage() {
               <div>
                 <h2 className="form-card__title">Your details</h2>
                 <p className="form-card__sub">
-                  Only what we need to cook, call and reach your door.
+                  Just enough to reach your door.
                 </p>
               </div>
             </div>
@@ -292,8 +324,7 @@ export default function CheckoutPage() {
                 <span className="field-error">{errors.phone}</span>
               ) : (
                 <span className="field-hint" id="phone-hint">
-                  We send order status and notifications to this number on
-                  WhatsApp.
+                  We send order updates here on WhatsApp.
                 </span>
               )}
             </div>
@@ -316,13 +347,15 @@ export default function CheckoutPage() {
                 <span className="field-error">{errors.email}</span>
               ) : (
                 <span className="field-hint">
-                  Only used to send you this receipt — never for marketing.
+                  To save this order to your email.
                 </span>
               )}
             </label>
 
-            {/* an account already keeps the receipt, so this is only for guests */}
-            {!user && (
+            {/* An account already keeps the receipt, so this is only for
+                guests. Every guest has an anonymous user, so this asks whether
+                they are signed in, not whether a user object exists. */}
+            {!signedIn && (
               <label className="remember remember--email">
                 <input
                   type="checkbox"
@@ -330,7 +363,7 @@ export default function CheckoutPage() {
                   onChange={set("emailOptIn")}
                   disabled={!form.email.trim()}
                 />
-                <span className="donate__box" aria-hidden="true" />
+                <span className="checkbox__box" aria-hidden="true" />
                 <span>Save this order to this e-mail</span>
               </label>
             )}
@@ -342,9 +375,8 @@ export default function CheckoutPage() {
               <p>
                 We will use this mobile number to{" "}
                 <strong>call and coordinate with you</strong> for your order
-                delivery. You can always sign up later with the same number to
-                see your <strong>order history, receipts and support</strong> —
-                it is never required to place an order.
+                delivery, and send you{" "}
+                <strong>order history, receipts and support</strong>.
               </p>
             </div>
           </div>
@@ -369,29 +401,107 @@ export default function CheckoutPage() {
               <div>
                 <h2 className="form-card__title">Delivering to</h2>
                 <p className="form-card__sub">
-                  Taken from the QR code you scanned — nothing to type.
+                  From the code you scanned.
                 </p>
               </div>
             </div>
 
-            {house.addressId ? (
+            {house.addressId && !changingRoom ? (
               <div className="room-card">
                 <p className="room-card__place">{house.property}</p>
                 <p className="room-card__room">Room {house.room}</p>
                 {house.address && (
                   <p className="room-card__addr">{house.address}</p>
                 )}
+                {/* Scanning the code in the wrong room, or ordering for a
+                    different one, should not mean hunting for another QR. */}
+                <button
+                  type="button"
+                  className="room-card__change"
+                  onClick={() => setChangingRoom(true)}
+                >
+                  Change room
+                </button>
               </div>
             ) : (
-              <p className="side-card__error" role="alert">
-                We do not know which room you are in. Please scan the QR code in
-                your room to order.
-              </p>
+              <div className="room-find">
+                <p className="room-find__lead">
+                  There is a QR code in your room. Scan it.
+                </p>
+
+                {scanning ? (
+                  <QrScanner onCode={onScanned} onClose={() => setScanning(false)} />
+                ) : (
+                  <>
+                    {canScanQr() && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-teal btn-block"
+                          onClick={() => setScanning(true)}
+                        >
+                          <QrIcon size={17} /> Scan QR code
+                        </button>
+                        <p className="room-find__or">
+                          <span>or</span>
+                        </p>
+                      </>
+                    )}
+
+                    <label className="field-label" htmlFor="roomCode">
+                      QR Code ID
+                    </label>
+                    <div className="room-find__row">
+                      <input
+                        id="roomCode"
+                        className="input"
+                        value={roomCode}
+                        onChange={(e) => setRoomCode(e.target.value)}
+                        placeholder="e.g. 25dhh3fgsq"
+                        autoComplete="off"
+                        autoCapitalize="none"
+                        spellCheck="false"
+                        aria-invalid={roomLookup.error ? "true" : undefined}
+                        onKeyDown={(e) => {
+                          /* The checkout form is around this: Enter would
+                             submit an order that has nowhere to go. */
+                          if (e.key === "Enter") findRoom(e);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-teal"
+                        onClick={findRoom}
+                        disabled={roomLookup.busy || !roomCode.trim()}
+                      >
+                        {roomLookup.busy ? "Checking…" : "Find room"}
+                      </button>
+                    </div>
+                    <p className="field-hint">
+                      Not your room number. It is printed under the QR code.
+                    </p>
+                  </>
+                )}
+                {roomLookup.error && (
+                  <p className="side-card__error" role="alert">
+                    {roomLookup.error}
+                  </p>
+                )}
+                {changingRoom && (
+                  <button
+                    type="button"
+                    className="room-find__cancel"
+                    onClick={cancelChange}
+                  >
+                    Keep {house.property} · Room {house.room}
+                  </button>
+                )}
+              </div>
             )}
 
             <label className="field" htmlFor="note">
               <span className="field-label">
-                Anything for the kitchen or the rider?
+  Anything we should know?
               </span>
               <textarea
                 id="note"
@@ -409,48 +519,11 @@ export default function CheckoutPage() {
                 checked={form.remember}
                 onChange={set("remember")}
               />
-              <span className="donate__box" aria-hidden="true" />
+              <span className="checkbox__box" aria-hidden="true" />
               <span>Remember my details on this device for next time</span>
             </label>
           </div>
 
-          <div className="card form-card">
-            <div className="form-card__head">
-              <Cloche size={20} />
-              <div>
-                <h2 className="form-card__title">Payment</h2>
-                <p className="form-card__sub">
-                  This is a demo storefront — nothing is actually charged.
-                </p>
-              </div>
-            </div>
-
-            <div
-              className="pay-options"
-              role="radiogroup"
-              aria-label="Payment method"
-            >
-              {PAYMENTS.map((p) => (
-                <label
-                  key={p.id}
-                  className={`pay ${form.payment === p.id ? "is-on" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value={p.id}
-                    checked={form.payment === p.id}
-                    onChange={set("payment")}
-                  />
-                  <span className="pay__dot" aria-hidden="true" />
-                  <span className="pay__text">
-                    <strong>{p.label}</strong>
-                    <small>{p.note}</small>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
         </section>
 
         <aside className="checkout-grid__side">
@@ -482,6 +555,13 @@ export default function CheckoutPage() {
             )}
 
             <BillSummary bill={bill} />
+
+            {failedPayment && (
+              <p className="side-card__retry" role="alert">
+                <strong>{failedPayment}</strong> Your food is still here — try
+                again.
+              </p>
+            )}
 
             {blocked && (
               <div className="side-card__blocked" role="alert">
@@ -532,8 +612,8 @@ export default function CheckoutPage() {
               </p>
             )}
             <p className="side-card__fine">
-              By placing this order you agree to receive delivery updates on
-              WhatsApp. Payment is taken before the kitchen is notified.
+              Pay now — nothing reaches the kitchen until it goes through.
+              Order updates come on WhatsApp.
             </p>
           </div>
         </aside>

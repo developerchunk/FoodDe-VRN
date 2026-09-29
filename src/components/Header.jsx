@@ -1,17 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../context/cart-context";
+import { listReceipts } from "../lib/orders";
 import { useProperty } from "../utils/property";
 import { isMenuPath } from "../utils/routes";
 import { isOpenNow, sellerHoursShort } from "../utils/seller";
 import { BuildingIcon, CartIcon, ClockIcon } from "./Icons";
 import Logo from "./Logo";
+import SignInButton from "./SignInButton";
 
 export default function Header() {
   const { bill } = useCart();
   const { pathname } = useLocation();
   const house = useProperty();
   const open = isOpenNow();
+
+  /* Orders are remembered on the device, so a guest who has never ordered from
+     this browser has nothing behind that link. Recomputed on navigation, which
+     is when it can change: placing an order moves you to the order page. */
+  const hasOrders = useMemo(() => {
+    /* pathname is genuinely the dependency, even though it is not read: what
+       localStorage holds can only have changed between navigations, and
+       placing an order navigates. */
+    void pathname;
+    return listReceipts().length > 0;
+  }, [pathname]);
 
   /* the browser tab names the guest house too, once it is known */
   useEffect(() => {
@@ -58,6 +71,17 @@ export default function Header() {
           >
             Menu
           </NavLink>
+          {hasOrders && (
+            <NavLink
+              to="/orders"
+              className={({ isActive }) =>
+                `site-nav__link ${isActive ? "is-active" : ""}`
+              }
+            >
+              Orders
+            </NavLink>
+          )}
+          <SignInButton />
         </nav>
 
         <Link

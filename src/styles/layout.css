@@ -535,7 +535,10 @@
     grid-template-columns: repeat(4, 1fr);
   }
   .site-nav {
+    /* Two links now; with no gap they read as one word, "MenuOrders". */
     display: flex;
+    align-items: center;
+    gap: 22px;
   }
   .site-nav + .cart-button {
     margin-left: 10px;

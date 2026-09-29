@@ -17,10 +17,12 @@
     "check:bundle": "node scripts/check-bundle.mjs",
     "check:menu": "node scripts/check-menu-ids.mjs",
     "verify:webhook": "node scripts/verify-webhook.mjs",
+    "verify:payment": "node scripts/verify-payment.mjs",
     "verify:order": "node scripts/verify-order-flow.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
+    "jsqr": "^1.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"

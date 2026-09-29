@@ -18,7 +18,7 @@ import "dotenv/config";
 
 const url = process.env.VITE_SUPABASE_URL;
 const secret = process.env.SUPABASE_SECRET_KEY;
-const base = process.env.IRD_SITE_URL || "https://food-vrn.vercel.app";
+const base = process.env.IRD_SITE_URL || "https://www.inroomdining.in";
 
 if (!url || !secret) {
   console.error("Missing VITE_SUPABASE_URL or SUPABASE_SECRET_KEY — see scripts/import-addresses.mjs");

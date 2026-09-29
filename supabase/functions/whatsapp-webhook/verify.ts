@@ -1,3 +1,9 @@
+import { hmacHex, safeEqual } from "../_shared/hmac.ts";
+
+/* Re-exported so the tests, and any caller that already imports from here,
+   keep working unchanged. */
+export { safeEqual };
+
 /**
  * The two security decisions Meta's webhook turns on, kept apart from the
  * handler so they can be tested without Docker or a deployment.
@@ -25,18 +31,6 @@ export function handshake(
   return { status: 200, body: challenge };
 }
 
-const hex = (buf: ArrayBuffer) =>
-  Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-/** Constant-time compare; returns false on length mismatch without leaking where. */
-export function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
 
 /**
  * X-Hub-Signature-256 is an HMAC-SHA256 of the RAW request body. It must be
@@ -50,13 +44,6 @@ export async function signatureIsValid(
 ): Promise<boolean> {
   if (!appSecret) return false;
   if (!header || !header.startsWith("sha256=")) return false;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(appSecret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
-  return safeEqual(header.slice("sha256=".length).toLowerCase(), hex(mac));
+  const expected = await hmacHex(appSecret, rawBody);
+  return safeEqual(header.slice("sha256=".length).toLowerCase(), expected);
 }

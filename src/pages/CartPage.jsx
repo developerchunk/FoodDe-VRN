@@ -1,32 +1,32 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart-context";
+import { useCoupons } from "../hooks/useCoupons";
+import CouponBox from "../components/CouponBox";
 import { useMenu } from "../hooks/useMenu";
 import QtyStepper from "../components/QtyStepper";
 import DishArt from "../components/DishArt";
 import BillSummary from "../components/BillSummary";
 import { rupees } from "../utils/format";
-import { COUPONS } from "../utils/pricing";
-import { Cloche, TulsiLeaf, LeafIcon } from "../components/Icons";
+import { Cloche, TulsiLeaf } from "../components/Icons";
 
 export default function CartPage() {
+  const offers = useCoupons();
   const {
     lines,
     bill,
     coupon,
-    donate,
+    applyCoupon,
+    removeCoupon,
+    couponPending,
+    couponRejected,
     instructions,
     add,
     decrement,
     remove,
     clear,
-    applyCoupon,
-    removeCoupon,
-    setDonate,
     setInstructions,
   } = useCart();
   const navigate = useNavigate();
-  const [code, setCode] = useState("");
 
   /* Add-ons come from the live menu, and only from kitchens that are open. */
   const { items: menu } = useMenu();
@@ -167,77 +167,15 @@ export default function CartPage() {
 
         <aside className="cart-grid__side">
           <div className="card side-card">
-            <section className="coupon" aria-labelledby="coupon-title">
-              <h3 id="coupon-title" className="side-card__title">
-                Have a code?
-              </h3>
-              {coupon ? (
-                <div className="coupon__applied">
-                  <div>
-                    <strong>{coupon}</strong>
-                    <p>{COUPONS[coupon].label}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="linkish linkish--danger"
-                    onClick={removeCoupon}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <form
-                    className="coupon__form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (applyCoupon(code)) setCode("");
-                    }}
-                  >
-                    <input
-                      className="input"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.toUpperCase())}
-                      placeholder="RADHE50"
-                      aria-label="Coupon code"
-                    />
-                    <button type="submit" className="btn btn-ghost">
-                      Apply
-                    </button>
-                  </form>
-                  <ul className="coupon__hints">
-                    {Object.values(COUPONS).map((c) => (
-                      <li key={c.code}>
-                        <button
-                          type="button"
-                          onClick={() => applyCoupon(c.code)}
-                        >
-                          <strong>{c.code}</strong>
-                          <span>{c.label}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </section>
-
-            <label className="donate">
-              <input
-                type="checkbox"
-                checked={donate}
-                onChange={(e) => setDonate(e.target.checked)}
-              />
-              <span className="donate__box" aria-hidden="true" />
-              <span className="donate__text">
-                <strong>
-                  <LeafIcon size={15} /> Add ₹5 for the local gaushala
-                </strong>
-                <small>
-                  We pass it on to the gaushala at Raman Reti every Purnima.
-                </small>
-              </span>
-            </label>
+            <CouponBox
+              coupon={coupon}
+              offers={offers}
+              pending={couponPending}
+              rejected={couponRejected}
+              subtotal={bill.subtotal}
+              onApply={applyCoupon}
+              onRemove={removeCoupon}
+            />
 
             <BillSummary bill={bill} />
 

@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useReceipt } from "../hooks/useReceipt";
 import {
   rupees,
@@ -22,6 +22,9 @@ const STATUS_LABEL = {
 
 export default function ReceiptPage() {
   const { id } = useParams();
+  /* Where this receipt was opened from, so "Back" returns there instead of
+     sending a guest to the menu and losing their order. */
+  const from = useLocation().state?.from ?? null;
   const { order, loading } = useReceipt(id);
 
   if (loading) {
@@ -42,10 +45,10 @@ export default function ReceiptPage() {
           <Cloche size={42} />
           <h1 className="section-title">Receipt not found</h1>
           <p className="muted">
-            Demo receipts are stored in this browser only.
+            Receipts are kept on this device.
           </p>
-          <Link to="/menu" className="btn btn-primary">
-            Back to the menu
+          <Link to={from ?? "/orders"} className="btn btn-primary">
+            {from ? "Back to your order" : "Your orders"}
           </Link>
         </div>
       </main>
@@ -67,7 +70,9 @@ export default function ReceiptPage() {
       <nav className="crumbs no-print" aria-label="Breadcrumb">
         <Link to="/menu">Menu</Link>
         <span aria-hidden="true">›</span>
-        <Link to={`/order/${order.order_no}`}>Order {order.order_no}</Link>
+        {/* `id` is the receipt token, which is also what /order/:id wants.
+            order_no is for humans to read, never for a URL. */}
+        <Link to={`/order/${id}`}>Order {order.order_no}</Link>
         <span aria-hidden="true">›</span>
         <span aria-current="page">Receipt</span>
       </nav>
@@ -253,18 +258,22 @@ export default function ReceiptPage() {
 
         <footer className="receipt__foot">
           <p>
-            Thank you for eating with us. Questions about this order? WhatsApp
-            us the receipt number and we will pick it up from there.
+            Thank you for eating with us. Any questions, WhatsApp us this
+            receipt number.
           </p>
-          <p className="receipt__demo">
-            Demo receipt · Not a valid tax invoice
+          <p className="receipt__legal">
+            Not a valid tax invoice
           </p>
         </footer>
       </article>
 
+      {/* Back to whatever opened this, and one plain way out to the menu. */}
       <div className="receipt-back no-print">
-        <Link to="/menu" className="btn btn-primary">
-          Order something else
+        <Link to={from ?? "/orders"} className="btn btn-primary">
+          {from ? "Back to your order" : "Your orders"}
+        </Link>
+        <Link to="/menu" className="btn btn-ghost">
+          Menu
         </Link>
       </div>
     </main>

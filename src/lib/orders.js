@@ -33,7 +33,7 @@ export async function ensureGuestSession() {
  * total are recomputed in the database — whatever this browser believes the
  * total to be is irrelevant, which is the point.
  */
-export async function placeOrder({ addressCode, lines, guest, coupon, donate, note }) {
+export async function placeOrder({ addressCode, lines, guest, coupon, note }) {
   await ensureGuestSession();
 
   const { data, error } = await supabase.rpc("place_order", {
@@ -41,7 +41,6 @@ export async function placeOrder({ addressCode, lines, guest, coupon, donate, no
     p_items: lines.map((l) => ({ id: l.id, qty: l.qty })),
     p_guest: guest,
     p_coupon: coupon || null,
-    p_donate: !!donate,
     p_note: note || null,
   });
 
@@ -58,9 +57,47 @@ export async function fetchReceipt(token) {
   return error ? null : data;
 }
 
+/**
+ * The coupons on offer: code, label and the minimum they need. Deliberately not
+ * their value — what a coupon is worth is decided by the database, never here.
+ */
 export async function fetchCoupons() {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc("get_coupons");
+  return error ? [] : data || [];
+}
+
+/**
+ * The bill, priced by the database.
+ *
+ * The browser never works out a discount. It asks price_order, which reads the
+ * coupon's real rule, and shows what comes back — so the cart cannot promise a
+ * discount the order will not honour.
+ */
+export async function priceOrder(subtotalPaise, coupon) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("price_order", {
+    p_subtotal_paise: subtotalPaise,
+    p_coupon: coupon || null,
+  });
+  return error ? null : data;
+}
+
+/**
+ * Every order belonging to whoever is signed in.
+ *
+ * Two ways an order can be theirs: it was placed by this account — including
+ * the anonymous session that later linked Google, which keeps its id — or it
+ * carries an e-mail address this account has verified.
+ *
+ * The database decides both. The function takes no arguments, reads the
+ * confirmed address from auth.users, and never trusts an e-mail the browser
+ * supplies. Typing an address at checkout proves nothing; signing in with it
+ * does.
+ */
+export async function fetchMyOrders() {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("get_my_orders");
   return error ? [] : data || [];
 }
 

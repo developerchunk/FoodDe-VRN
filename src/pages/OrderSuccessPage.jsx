@@ -1,49 +1,98 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useReceipt } from "../hooks/useReceipt";
 import { useCart } from "../context/cart-context";
+import { PAY_WINDOW_S, closePayment, payForOrder } from "../lib/payments";
 import { rupees, maskPhone, formatDateTime } from "../utils/format";
-import { Cloche, TulsiLeaf, ClockIcon } from "../components/Icons";
+import { Cloche, ClockIcon } from "../components/Icons";
 
 const STAGES = [
-  {
-    id: "confirmed",
-    title: "Order received",
-    body: "The kitchen has your order and the WhatsApp confirmation is on its way.",
-  },
-  {
-    id: "cooking",
-    title: "On the chulha",
-    body: "Your dishes are being cooked fresh — nothing is pre-plated here.",
-  },
-  {
-    id: "packed",
-    title: "Packed & sealed",
-    body: "Sealed in paper and clay, with the note you left us.",
-  },
-  {
-    id: "out",
-    title: "Out for delivery",
-    body: "Our rider has left the kitchen. Keep your phone close.",
-  },
+  { id: "confirmed", title: "Order received", body: "We have your order." },
+  { id: "cooking", title: "On the chulha", body: "Cooking fresh." },
+  { id: "packed", title: "Packed & sealed", body: "Sealed in paper and clay." },
+  { id: "out", title: "Out for delivery", body: "On its way. Keep your phone close." },
 ];
 
-/* The demo walks the order through its stages so the flow can be seen end to end. */
-const STAGE_MS = 7000;
+/* The stage comes from the order's real status, never from a timer. A tracker
+   that advances on its own tells a guest their food is on the way when nobody
+   has cooked it. */
+const STAGE_FOR = {
+  paid: 0,
+  sent_to_kitchen: 0,
+  preparing: 1,
+  out_for_delivery: 3,
+  delivered: 3,
+};
+
+/* Where the order has got to, read from its status. */
 
 export default function OrderSuccessPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { add } = useCart();
-  const { order, loading } = useReceipt(id);
-  const [stage, setStage] = useState(0);
+  const { add, clear } = useCart();
+  const { order, loading, refresh } = useReceipt(id);
+  const [paying, setPaying] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(PAY_WINDOW_S);
+  const [payNote, setPayNote] = useState(null);
+  const unpaid = order?.status === "pending_payment";
 
+  /* Back to the cart they still have, with a reason. The cart is deliberately
+     not cleared until a payment succeeds, so trying again costs nothing. */
+  const backToCheckout = useCallback(
+    (reason) => {
+      /* Shut the payment window first, or it stays over the checkout page. */
+      closePayment();
+      navigate("/checkout", { replace: true, state: { paymentFailed: reason } });
+    },
+    [navigate],
+  );
+
+  const pay = useCallback(async () => {
+    setPaying(true);
+    setPayNote(null);
+    try {
+      const result = await payForOrder({ token: id });
+      if (result.paid) {
+        /* Only now is the order real. */
+        clear();
+        await refresh();
+        return;
+      }
+      if (result.reason === "dismissed") {
+        /* They closed the window themselves; leave them here to try again. */
+        setPayNote(null);
+      } else {
+        backToCheckout(result.message ?? "Your last payment did not go through.");
+      }
+    } catch (err) {
+      setPayNote(err.message ?? "Could not start the payment.");
+    } finally {
+      setPaying(false);
+    }
+  }, [id, refresh, clear, backToCheckout]);
+
+  /* Open the modal once, as soon as the order is known to be unpaid. Placing
+     the order and paying for it are one act from the guest's side. */
+  const autoOpened = useRef(false);
   useEffect(() => {
-    if (!order) return;
-    if (stage >= STAGES.length - 1) return;
-    const t = setTimeout(() => setStage((s) => s + 1), STAGE_MS);
+    if (!unpaid || autoOpened.current) return;
+    autoOpened.current = true;
+    pay();
+  }, [unpaid, pay]);
+
+  /* Nobody waits forever in front of a payment window. */
+  useEffect(() => {
+    if (!unpaid) return undefined;
+    if (secondsLeft <= 0) {
+      backToCheckout("Your last payment timed out.");
+      return undefined;
+    }
+    const t = setTimeout(() => setSecondsLeft((n) => n - 1), 1000);
     return () => clearTimeout(t);
-  }, [stage, order]);
+  }, [unpaid, secondsLeft, backToCheckout]);
+
+  /* Derived, not animated. */
+  const stage = STAGE_FOR[order?.status] ?? 0;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -56,6 +105,45 @@ export default function OrderSuccessPage() {
           <span className="spinner spinner--dark" aria-hidden="true" />
           <h1 className="section-title">Fetching your order…</h1>
         </div>
+      </main>
+    );
+  }
+
+  /* Unpaid: no tick, no order number to keep, no tracker, no arriving-by. None
+     of that is true yet — no money has moved and no kitchen has been told. All
+     there is to show is that we are waiting for the payment. */
+  if (order && unpaid) {
+    const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+    const ss = String(secondsLeft % 60).padStart(2, "0");
+    return (
+      <main className="wrap page page--narrow" id="main">
+        <section className="card waiting" aria-live="polite">
+          <span className="spinner spinner--dark" aria-hidden="true" />
+          <h1 className="waiting__title">Waiting for your payment</h1>
+          <p className="waiting__sub">
+            Finish the payment in the window that opened. Nothing is ordered
+            until it goes through.
+          </p>
+
+          <p className="waiting__amount rupees">{rupees(order.total_paise)}</p>
+          <p className="waiting__timer" aria-label={`${mm} minutes ${ss} seconds left`}>
+            <ClockIcon size={15} /> {mm}:{ss}
+          </p>
+
+          <button
+            type="button"
+            className="btn btn-gold btn-block"
+            onClick={pay}
+            disabled={paying}
+          >
+            {paying ? "Opening payment…" : "Open payment again"}
+          </button>
+          {payNote && (
+            <p className="side-card__error" role="alert">
+              {payNote}
+            </p>
+          )}
+        </section>
       </main>
     );
   }
@@ -138,8 +226,17 @@ export default function OrderSuccessPage() {
         </div>
 
         <div className="success__actions">
-          <Link to={`/receipt/${order.order_no}`} className="btn btn-primary">
+          {/* /receipt/:id is the receipt TOKEN, which is what `id` already is
+              here. Passing order_no instead looked right and found nothing. */}
+          <Link
+            to={`/receipt/${id}`}
+            state={{ from: `/order/${id}` }}
+            className="btn btn-primary"
+          >
             View receipt
+          </Link>
+          <Link to="/orders" state={{ from: `/order/${id}` }} className="btn btn-ghost">
+            Your orders
           </Link>
           <button type="button" className="btn btn-ghost" onClick={reorder}>
             Order this again
@@ -151,6 +248,36 @@ export default function OrderSuccessPage() {
       </section>
 
       <div className="success-grid">
+        {unpaid && (
+          <section className="card pay-card" aria-label="Payment">
+            <h2 className="pay-card__title">This order is not paid yet</h2>
+            <p className="pay-card__body">
+              Nothing is sent to be cooked until the payment goes through. If
+              the payment window did not open, or you closed it, you can open it
+              again here.
+            </p>
+            <button
+              type="button"
+              className="btn btn-gold btn-block"
+              onClick={pay}
+              disabled={paying}
+            >
+              {paying ? (
+                <>
+                  <span className="spinner" aria-hidden="true" /> Opening
+                  payment…
+                </>
+              ) : (
+                <>Pay {rupees(order.total_paise)}</>
+              )}
+            </button>
+            {payNote && (
+              <p className="pay-card__note" role="alert">
+                {payNote}
+              </p>
+            )}
+          </section>
+        )}
         <section className="card track" aria-label="Order progress">
           <h2 className="track__title">Following your order</h2>
           <ol className="track__list">
@@ -182,11 +309,7 @@ export default function OrderSuccessPage() {
               </li>
             ))}
           </ol>
-          <p className="track__note">
-            <TulsiLeaf size={13} /> This demo advances the status on its own
-            every few seconds. In the real storefront each step arrives as a
-            WhatsApp message.
-          </p>
+
         </section>
 
         <section className="card summary-card" aria-label="Order summary">
@@ -223,23 +346,6 @@ export default function OrderSuccessPage() {
           </div>
         </section>
       </div>
-
-      <section className="signup-invite card">
-        <Cloche size={30} />
-        <div>
-          <h2>Want your receipts in one place?</h2>
-          <p>
-            You ordered as a guest — nothing more was needed. Whenever you feel
-            like it, sign up with the same number{" "}
-            <strong>{maskPhone(order.guest_phone)}</strong> and every past
-            order, receipt and support conversation will already be waiting
-            there.
-          </p>
-        </div>
-        <Link to="/orders" className="btn btn-ghost">
-          See orders on this device
-        </Link>
-      </section>
     </main>
   );
 }

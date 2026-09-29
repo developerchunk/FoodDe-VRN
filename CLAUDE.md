@@ -63,6 +63,14 @@ the order fan-out possible, so it is not optional metadata.
 - **Seller of record is In Room Dining.** GST and FSSAI registration are in
   progress; until the real numbers exist, **display no licence numbers at all**.
   Never put placeholder or example numbers in the interface.
+- **Nothing in the interface may call itself a demo.** No "demo", "test mode",
+  "sample", "nothing is actually charged", "no real orders are placed" — in any
+  copy, heading, badge or ribbon. Guests scan a QR in a real room and real money
+  moves. Wording like that also reaches Meta and Razorpay reviewers, who read the
+  site while deciding whether to approve the business. If something genuinely is
+  not finished, either finish it or leave it out — do not ship it with a label
+  admitting it. This also means no component whose purpose is to fake progress:
+  the order tracker reads the order's real status, never a timer.
 
 ## Architecture consequences
 

@@ -149,154 +149,57 @@
   text-align: center;
 }
 
-/* coupon */
-.coupon {
-  padding-bottom: 16px;
-  border-bottom: 1px dashed var(--sand-deep);
-  margin-bottom: 16px;
-}
-.coupon__form {
-  display: flex;
-  gap: 8px;
-}
-.coupon__form .input {
-  flex: 1;
-  padding-block: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.coupon__form .btn {
-  padding: 10px 18px;
-  font-size: 14px;
-}
-.coupon__hints {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
-}
-.coupon__hints button {
-  width: 100%;
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  padding: 8px 11px;
-  border-radius: 9px;
-  border: 1px dashed var(--sand-deep);
-  background: var(--cream);
-  text-align: left;
-  transition: all 0.16s ease;
-}
-.coupon__hints button:hover {
-  border-color: var(--marigold);
-  background: #fffaf0;
-}
-.coupon__hints strong {
-  font-size: 12.5px;
-  color: var(--marigold-deep);
-  letter-spacing: 0.06em;
-  flex: none;
-}
-.coupon__hints span {
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  line-height: 1.35;
-}
-.coupon__applied {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 11px 13px;
-  border-radius: 10px;
-  background: var(--tulsi-soft);
-  border: 1px dashed var(--tulsi);
-}
-.coupon__applied strong {
-  font-size: 13.5px;
-  color: #2f5c1e;
-  letter-spacing: 0.06em;
-}
-.coupon__applied p {
-  font-size: 12px;
-  color: #4a7a3b;
-  margin-top: 2px;
-}
-
-/* donate + remember checkboxes */
-.donate,
+/* checkboxes */
 .remember {
   display: flex;
   gap: 11px;
-  align-items: flex-start;
-  cursor: pointer;
-  margin-bottom: 18px;
-  user-select: none;
-}
-.remember {
-  margin-bottom: 0;
   align-items: center;
+  cursor: pointer;
+  margin-bottom: 0;
+  user-select: none;
   font-size: 13.5px;
   color: var(--ink-soft);
 }
-.donate input,
 .remember input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
-.donate__box {
+.checkbox__box {
   width: 19px;
   height: 19px;
   border-radius: 5px;
   border: 1.6px solid var(--sand-deep);
   background: var(--paper);
   flex: none;
-  margin-top: 2px;
   position: relative;
   transition: all 0.16s ease;
 }
-.donate__box::after {
+/* An actual tick: two borders of a box, rotated. The old rule filled the
+   middle with a paper-coloured square, so a checked box read as a box. */
+.checkbox__box::after {
   content: "";
   position: absolute;
-  inset: 3px;
-  border-radius: 2px;
-  background: var(--paper);
-  transform: scale(0);
-  transition: transform 0.16s ease;
+  left: 5.5px;
+  top: 2px;
+  width: 4px;
+  height: 8.5px;
+  border: solid var(--paper);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transform-origin: center;
+  transition: transform 0.14s ease;
 }
-.donate input:checked ~ .donate__box,
-.remember input:checked ~ .donate__box {
+.remember input:checked ~ .checkbox__box {
   background: var(--teal-700);
   border-color: var(--teal-700);
 }
-.donate input:checked ~ .donate__box::after,
-.remember input:checked ~ .donate__box::after {
-  transform: scale(1);
+.remember input:checked ~ .checkbox__box::after {
+  transform: rotate(45deg) scale(1);
 }
-.donate input:focus-visible ~ .donate__box,
-.remember input:focus-visible ~ .donate__box {
+.remember input:focus-visible ~ .checkbox__box {
   outline: 2.5px solid var(--marigold-deep);
   outline-offset: 2px;
-}
-.donate__text {
-  display: grid;
-  gap: 3px;
-}
-.donate__text strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--teal-900);
-}
-.donate__text strong svg {
-  color: var(--lotus);
-}
-.donate__text small {
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  line-height: 1.45;
 }
 
 /* ===== bill ===== */
@@ -441,76 +344,6 @@ select.input {
 }
 
 /* payment radios */
-.pay-options {
-  display: grid;
-  gap: 10px;
-}
-.pay {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 13px 15px;
-  border: 1.5px solid var(--sand-deep);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.16s ease;
-  background: var(--paper);
-}
-.pay:hover {
-  border-color: var(--teal-500);
-}
-.pay input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.pay__dot {
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  border: 2px solid var(--sand-deep);
-  flex: none;
-  position: relative;
-  transition: border-color 0.16s ease;
-}
-.pay__dot::after {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  background: var(--teal-700);
-  transform: scale(0);
-  transition: transform 0.18s cubic-bezier(0.3, 0.8, 0.4, 1.4);
-}
-.pay.is-on {
-  border-color: var(--teal-700);
-  background: rgba(215, 235, 230, 0.35);
-}
-.pay.is-on .pay__dot {
-  border-color: var(--teal-700);
-}
-.pay.is-on .pay__dot::after {
-  transform: scale(1);
-}
-.pay input:focus-visible ~ .pay__dot {
-  outline: 2.5px solid var(--marigold-deep);
-  outline-offset: 2px;
-}
-.pay__text {
-  display: grid;
-  line-height: 1.3;
-}
-.pay__text strong {
-  font-size: 14.5px;
-  font-weight: 500;
-  color: var(--teal-900);
-}
-.pay__text small {
-  font-size: 12px;
-  color: var(--ink-soft);
-  margin-top: 2px;
-}
-
 /* mini line list */
 .mini-lines {
   display: grid;
@@ -816,43 +649,6 @@ select.input {
   margin-top: 10px !important;
   font-style: italic;
   color: var(--teal-700) !important;
-}
-.summary-card__donate {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 16px;
-  font-size: 12.5px;
-  color: var(--lotus);
-  background: var(--lotus-soft);
-  padding: 10px 12px;
-  border-radius: 10px;
-}
-
-.signup-invite {
-  display: grid;
-  gap: 16px;
-  padding: 24px 22px;
-  margin-top: 22px;
-  align-items: center;
-  background: linear-gradient(160deg, var(--paper), var(--cream));
-  border-style: dashed;
-}
-.signup-invite > svg {
-  color: var(--teal-500);
-}
-.signup-invite h2 {
-  font-size: 19px;
-  margin-bottom: 7px;
-}
-.signup-invite p {
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.6;
-  max-width: 62ch;
-}
-.signup-invite strong {
-  color: var(--teal-800);
 }
 
 /* ===== order history ===== */
@@ -1201,14 +997,7 @@ select.input {
   max-width: 46ch;
   margin-inline: auto;
 }
-.receipt__gaushala {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 12px !important;
-  color: var(--lotus) !important;
-}
-.receipt__demo {
+.receipt__legal {
   margin-top: 16px !important;
   padding-top: 14px;
   border-top: 1px solid var(--sand-deep);
@@ -1219,7 +1008,10 @@ select.input {
 }
 .receipt-back {
   margin-top: 26px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 @media (min-width: 620px) {
@@ -1251,9 +1043,6 @@ select.input {
   }
   .addons__list {
     grid-template-columns: repeat(2, 1fr);
-  }
-  .signup-invite {
-    grid-template-columns: auto 1fr auto;
   }
 }
 
@@ -1322,7 +1111,7 @@ select.input {
   margin: -8px 0 18px;
   font-size: 13.5px;
 }
-.remember--email input:disabled ~ .donate__box {
+.remember--email input:disabled ~ .checkbox__box {
   opacity: 0.45;
 }
 .remember--email input:disabled ~ span {
@@ -1533,4 +1322,285 @@ select.input {
   font-size: 0.78rem;
   opacity: 0.72;
   white-space: nowrap;
+}
+
+/* An order that exists but has not been paid for. Gold, like the pay action
+   itself — this is a step still to take, not something that went wrong. */
+.pay-card {
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  background: color-mix(in srgb, var(--gold) 6%, var(--ivory, #fffdf6));
+}
+.pay-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.02rem;
+}
+.pay-card__body {
+  margin: 0 0 0.9rem;
+  font-size: 0.88rem;
+  opacity: 0.8;
+}
+.pay-card__note {
+  margin: 0.7rem 0 0;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--ember) 85%, #000);
+}
+
+/* There is no payment choice to make — this states the rule instead. */
+.pay-note {
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius-sm, 10px);
+  background: color-mix(in srgb, var(--teal) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 16%, transparent);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* No stay held: the guest can scan, or type the code printed beside the QR. */
+.room-find__lead {
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+.room-find__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.room-find__row .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  letter-spacing: 0.04em;
+}
+.room-find__row .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  .room-find__row {
+    flex-direction: column;
+  }
+}
+
+.room-card__change,
+.room-find__cancel {
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.room-card__change:hover,
+.room-find__cancel:hover {
+  opacity: 0.75;
+}
+.room-find__cancel {
+  display: block;
+}
+
+/* Waiting for payment. Nothing here claims an order exists yet. */
+.waiting {
+  text-align: center;
+  padding: 2.2rem 1.25rem 1.5rem;
+}
+.waiting__title {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 1.35rem;
+}
+.waiting__sub {
+  margin: 0 auto 1.3rem;
+  max-width: 30ch;
+  font-size: 0.92rem;
+  opacity: 0.8;
+}
+.waiting__amount {
+  margin: 0 0 0.2rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--teal);
+}
+.waiting__timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 1.4rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* A payment that failed or ran out of time, with the cart still intact. */
+.side-card__retry {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-sm, 10px);
+  border: 1px solid color-mix(in srgb, var(--ember) 35%, transparent);
+  background: color-mix(in srgb, var(--ember) 7%, transparent);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+/* Coupons. Offers come from the database, so this styles whatever is there. */
+.coupon {
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--teal) 12%, transparent);
+}
+.coupon__form {
+  display: flex;
+  gap: 0.5rem;
+}
+.coupon__form .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.coupon__form .btn {
+  flex: 0 0 auto;
+}
+.coupon__applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-sm, 10px);
+  background: color-mix(in srgb, var(--teal) 8%, transparent);
+}
+.coupon__applied strong {
+  font-family: var(--mono, ui-monospace, Menlo, monospace);
+  letter-spacing: 0.05em;
+}
+.coupon__applied p {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+.coupon__rejected {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.6rem 0 0;
+  font-size: 0.83rem;
+  color: color-mix(in srgb, var(--ember) 85%, #000);
+}
+.coupon__hints {
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+.coupon__hints button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: 1px dashed color-mix(in srgb, var(--teal) 28%, transparent);
+  border-radius: var(--radius-sm, 10px);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.coupon__hints button:hover {
+  background: color-mix(in srgb, var(--teal) 6%, transparent);
+}
+.coupon__hints strong {
+  font-family: var(--mono, ui-monospace, Menlo, monospace);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+}
+.coupon__hints span {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.72;
+}
+.bill__row--off dd {
+  color: var(--teal);
+}
+
+/* Scanning the sticker, or typing the id under it. */
+.room-find__or {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.8rem 0;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+.room-find__or::before,
+.room-find__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--teal) 15%, transparent);
+}
+.qr-scan__frame {
+  position: relative;
+  border-radius: var(--radius-sm, 10px);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 0.7rem;
+}
+.qr-scan__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* A square to aim with, rather than a full-bleed camera and no idea where. */
+.qr-scan__reticle {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 58%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.35);
+}
+
+/* The decode surface for browsers without BarcodeDetector. Never shown. */
+.qr-scan__canvas {
+  display: none;
+}
+
+
+/* Sign in / out. A nav item, not a link to a page. */
+.site-nav__link--plain {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.orders-auth {
+  margin: 0.9rem 0 0;
+}
+.orders-auth .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.signin__error {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--ember) 85%, #000);
+}
+
+.empty-state__actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }

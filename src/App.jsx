@@ -18,6 +18,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import ReceiptPage from "./pages/ReceiptPage";
 import OrdersPage from "./pages/OrdersPage";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -41,19 +42,22 @@ export default function App() {
       </a>
       <ScrollToTop />
       <Header />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/menu" element={<MenuPage />} />
-        {/* a room link is /menu?id=<opaque code>; the id resolves to the
-            guest house and room (see utils/property) */}
-        <Route path="/r/:code" element={<LegacyRoomLink />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order/:id" element={<OrderSuccessPage />} />
-        <Route path="/receipt/:id" element={<ReceiptPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/menu" element={<MenuPage />} />
+          {/* a room link is /menu?id=<opaque code>; the id resolves to the
+              guest house and room (see utils/property) */}
+          <Route path="/r/:code" element={<LegacyRoomLink />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order/:id" element={<OrderSuccessPage />} />
+          <Route path="/receipt/:id" element={<ReceiptPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+        </Routes>
+      </ErrorBoundary>
       <Footer />
       <MobileCartBar />
       <Toast />
