@@ -1460,3 +1460,82 @@ select.input {
     display: none;
   }
 }
+
+.side-card__error {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--ember-soft);
+  border: 1px solid rgba(217, 95, 63, 0.35);
+  color: var(--ember-deep);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* The room, confirmed back rather than asked for — in-room dining already
+   knows where the guest is from the code they scanned. */
+.room-card {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--cream);
+  border: 1px dashed var(--sand-deep);
+}
+.room-card__place {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--teal-900);
+}
+.room-card__room {
+  font-size: 15px;
+  color: var(--ember-deep);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.room-card__addr {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* An unpaid order must not be stamped as though money changed hands. */
+.receipt__stamp--unpaid {
+  border-color: var(--ember);
+  color: var(--ember);
+}
+
+/* Cart outlived the hours its dishes were orderable in. Warning rather than
+   error colouring: nothing has gone wrong, the guest just has to drop a line. */
+.side-card__blocked {
+  margin: 0.9rem 0 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--ember) 38%, transparent);
+  border-radius: var(--radius-sm, 10px);
+  background: color-mix(in srgb, var(--ember) 7%, var(--ivory, #fffdf6));
+}
+.side-card__blocked > strong {
+  display: block;
+  font-size: 0.92rem;
+  color: color-mix(in srgb, var(--ember) 82%, #000);
+}
+.side-card__blocked ul {
+  margin: 0.55rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+.side-card__blocked li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+.side-card__blocked li em {
+  font-style: normal;
+  font-size: 0.78rem;
+  opacity: 0.72;
+  white-space: nowrap;
+}

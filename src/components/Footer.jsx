@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { MorPankh, Bansuri, TulsiLeaf } from "./Motifs";
+import { maskPhone } from "../utils/format";
+import { SELLER, sellerHours } from "../utils/seller";
 
 export default function Footer() {
   return (
@@ -16,25 +18,20 @@ export default function Footer() {
                 <MorPankh size={20} />
               </span>
               <span className="brand__text">
-                <strong>Braj Rasoi</strong>
-                <em className="deva">वृन्दावन धाम</em>
+                <strong>{SELLER.name}</strong>
               </span>
             </div>
             <p className="site-footer__note">
-              A small kitchen off Parikrama Marg cooking the food of Braj —
-              sattvic, unhurried, in desi ghee. We deliver across Vrindavan,
-              Raman Reti, Chhatikara and Mathura Road.
+              Pure vegetarian food, cooked fresh in desi ghee and brought
+              straight to your room — with a no onion, no garlic option right
+              through the menu.
             </p>
             <p className="site-footer__greet deva">राधे राधे 🙏</p>
           </div>
 
           <div>
-            <h4 className="site-footer__head">Our kitchen</h4>
+            <h4 className="site-footer__head">How it&apos;s cooked</h4>
             <ul className="site-footer__list">
-              <li>
-                <TulsiLeaf size={13} /> Two separate kitchens — sattvic and
-                regular
-              </li>
               <li>
                 <TulsiLeaf size={13} /> Pure vegetarian, always. No egg, ever.
               </li>
@@ -66,20 +63,20 @@ export default function Footer() {
           <div>
             <h4 className="site-footer__head">Reach us</h4>
             <ul className="site-footer__list site-footer__list--plain">
-              <li>Gali No. 4, Parikrama Marg, Vrindavan 281121</li>
-              <li>WhatsApp: +91 98765 43210</li>
-              <li>Open daily, 7:00 am – 10:30 pm</li>
+              <li>{SELLER.address}</li>
+              <li>WhatsApp: {maskPhone(SELLER.phone)}</li>
+              <li>{sellerHours()}</li>
             </ul>
           </div>
         </div>
 
         <div className="site-footer__base">
           <p>
-            © {new Date().getFullYear()} Braj Rasoi. A demo storefront — no real
-            orders are placed and no payment is taken.
+            © {new Date().getFullYear()} {SELLER.name} · seller of record
           </p>
           <p className="site-footer__legal">
-            Prices inclusive of applicable taxes where shown
+            Prices inclusive of applicable taxes where shown. Online payment is
+            still being set up — orders placed here are not yet being fulfilled.
           </p>
         </div>
       </div>

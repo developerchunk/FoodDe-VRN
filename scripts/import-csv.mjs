@@ -13,27 +13,13 @@
  * the sheet and the database agree from then on.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { parse } from "csv-parse/sync";
 import { createClient } from "@supabase/supabase-js";
 import { makePublicCode } from "./lib/code.mjs";
+import { read, yes, orNull, toTime, toPaise, slugOf, menuId } from "./lib/sheets.mjs";
 import "dotenv/config";
 
 const dryRun = process.argv.includes("--dry-run");
 
-/* Headers in the sheets have stray spaces and a typo (menue_id). Normalise
-   rather than making whoever maintains the sheet fix it by hand. */
-const read = (name) =>
-  parse(readFileSync(`csv/${name}.csv`), {
-    columns: (hdrs) => hdrs.map((h) => h.trim().toLowerCase()),
-    skip_empty_lines: true,
-    trim: true,
-  });
-
-const yes = (v) => String(v || "").trim().toLowerCase() === "yes";
-const orNull = (v) => (v === "" || v == null ? null : v);
-const toTime = (v) => (v ? String(v).trim().padStart(5, "0") : null);
-/* Rupees in the sheet, paise in the database — money never touches a float. */
-const toPaise = (v) => Math.round(Number(String(v).replace(/[^\d.]/g, "")) * 100);
 
 const kitchens = read("kitchen_map");
 const menu = read("menu_map");
@@ -59,7 +45,6 @@ const kitchenRows = kitchens.map((k) => ({
 }));
 
 const categoryNames = [...new Set(menu.map((m) => m.category).filter(Boolean))];
-const slugOf = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 /* No id yet: a category that already exists must keep the id menu_items.
    category_id points at. Minting one here and upserting on slug would try to
    change a primary key out from under a foreign key. */
@@ -72,7 +57,7 @@ const categoryRows = categoryNames.map((name, i) => ({
 
 const mintedMenuIds = [];
 const menuRows = menu.map((m, i) => {
-  const existing = m.menue_id?.trim() || m.menu_id?.trim();
+  const existing = menuId(m);
   const id = existing || makePublicCode();
   if (!existing) mintedMenuIds.push({ dish: m.dish, id });
   return {
@@ -219,12 +204,26 @@ await step(`${addressRows.length} address(es)`, () =>
 if (mintedMenuIds.length) {
   const raw = readFileSync("csv/menu_map.csv", "utf8");
   const lines = raw.split("\n");
+  /* Only consume a minted id on a row that actually needs one. Advancing the
+     counter on every row — including rows that already carry an id — shifts the
+     whole column by one, so each dish inherits the id of the dish above it and
+     the last row is left blank. That silently renames dishes on the next import,
+     because menu_items upserts on id. */
   let n = 0;
+  const blanks = [];
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
-    const minted = mintedMenuIds[n++];
-    if (minted && lines[i].startsWith(",")) lines[i] = minted.id + lines[i];
+    if (lines[i].startsWith(",")) blanks.push(i);
   }
+  if (blanks.length !== mintedMenuIds.length) {
+    console.error(
+      `\n  Refusing to write back: ${blanks.length} row(s) without an id, but ` +
+        `${mintedMenuIds.length} id(s) were minted. csv/menu_map.csv is unchanged; ` +
+        `the database already has the new rows, so copy their ids across by hand.`,
+    );
+    process.exit(1);
+  }
+  for (const i of blanks) lines[i] = mintedMenuIds[n++].id + lines[i];
   writeFileSync("csv/menu_map.csv", lines.join("\n"));
   console.log(`\n  Wrote ${mintedMenuIds.length} minted menu id(s) back into csv/menu_map.csv`);
 }

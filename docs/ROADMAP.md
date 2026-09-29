@@ -75,12 +75,24 @@ Two ops tools support it:
 Both need `SUPABASE_SECRET_KEY`, because `addresses` is intentionally
 unreadable with the publishable key.
 
-## Phase 3 — Menu, rebuilt — *schema and import ready; UI next*
+`npm run check:menu` asserts that the sheets and the database still describe the
+same menu — same ids, names, prices, categories and no-onion-garlic flags — and
+refuses the import otherwise. `menu_items` upserts on id, so a sheet whose id
+column has slipped does not fail the import; it silently renames dishes. That
+happened once: a write-back bug shifted the column by one row, so eight ids
+pointed at the dish above them and a ninth dish was missing from the sheet
+altogether. Every id was individually well-formed, so only comparing the two
+sides revealed it. Run it before every import.
+
+With `SUPABASE_SECRET_KEY` it also compares the kitchen sheet's hours, Sunday-off
+flag and WhatsApp number against the database.
+
+## Phase 3 — Menu, rebuilt — *done*
 
 Menu comes from Supabase rather than the hardcoded file. Rebuild the cards to
 the reference UI: photography, ratings, category rail with counts. Per-item availability so a kitchen can go out of stock.
 
-## Phase 4 — Ordering, priced server-side
+## Phase 4 — Ordering, priced server-side — *done, verified end to end*
 
 An edge function `place_order` that:
 
@@ -89,6 +101,14 @@ An edge function `place_order` that:
 2. Recomputes the bill
 3. Splits the order by kitchen and writes one `order_ticket` each
 4. Returns the order id and an unguessable receipt token
+
+`npm run verify:order` places real orders against the live database and checks
+what landed — including that a forged total is not even an accepted parameter,
+that an absurd quantity is clamped, and that one order spanning two kitchens
+writes two `order_tickets` rows. It asserts the *written* ticket count, not the
+count the function intended, because the second proves nothing.
+
+Test orders are named "ZZ Verification Run" so they can be deleted afterwards.
 
 ## Phase 5 — The WhatsApp fan-out
 

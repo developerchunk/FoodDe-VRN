@@ -37,3 +37,6 @@ dist-ssr
 # Generated QR codes and the code map — regenerate, do not commit
 qr/
 address_codes.csv
+
+
+whatsapp-api-schema.txt

@@ -4,26 +4,14 @@ import { useCart } from "../context/cart-context";
 import BillSummary from "../components/BillSummary";
 import SignUpPrompt from "../components/SignUpPrompt";
 import { rupees, formatPhone } from "../utils/format";
-import { makeOrderId, saveOrder } from "../utils/orders";
+import { placeOrder } from "../lib/orders";
+import { useProperty } from "../utils/property";
 import { TulsiLeaf, MorPankh, Matka } from "../components/Motifs";
+import { SELLER } from "../utils/seller";
+import { useCartAvailability } from "../hooks/useCartAvailability";
 
 const PROFILE_KEY = "brajrasoi.profile.v1";
 const PROMPT_KEY = "brajrasoi.signupPrompt.v1";
-
-const AREAS = [
-  "Parikrama Marg",
-  "Raman Reti",
-  "Banke Bihari Temple area",
-  "Loi Bazaar",
-  "Chhatikara Road",
-  "Jait Road",
-  "Gopinath Bagh",
-  "Vrindavan Bypass",
-  "Chaitanya Vihar",
-  "Sunrakh Road",
-  "Mathura Road",
-  "Other (tell us in the note)",
-];
 
 const PAYMENTS = [
   {
@@ -46,10 +34,6 @@ const PAYMENTS = [
 const emptyForm = {
   name: "",
   phone: "",
-  house: "",
-  area: AREAS[0],
-  landmark: "",
-  pincode: "281121",
   email: "",
   emailOptIn: false,
   note: "",
@@ -70,8 +54,17 @@ function loadProfile() {
 }
 
 export default function CheckoutPage() {
-  const { lines, bill, instructions, coupon, donate, clear, flash } = useCart();
+  const { lines, bill, instructions, coupon, donate, clear, flash, remove } =
+    useCart();
+
+  /* A cart can outlive the hours that made its dishes orderable. place_order
+     refuses the whole order in that case; catching it here means the guest is
+     told before they fill anything in, not after. */
+  const availability = useCartAvailability(lines);
+  const unavailable = availability.unavailable;
+  const blocked = availability.status === "ok" && unavailable.length > 0;
   const navigate = useNavigate();
+  const house = useProperty();
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
@@ -123,20 +116,38 @@ export default function CheckoutPage() {
     if (phoneDigits.length !== 10) next.phone = "Enter the 10-digit number";
     else if (!/^[6-9]/.test(phoneDigits))
       next.phone = "Indian mobile numbers start with 6, 7, 8 or 9";
-    if (form.house.trim().length < 5)
-      next.house = "House / flat and street, please";
-    if (!/^\d{6}$/.test(form.pincode.trim()))
-      next.pincode = "Six-digit PIN code";
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
-  function placeOrder(e) {
+  const [placeError, setPlaceError] = useState(null);
+
+  async function submit(e) {
     e.preventDefault();
+    setPlaceError(null);
+
+    /* Belt and braces: the button is disabled, but a stale render or a keyboard
+       submit should not get past this either. The server would refuse anyway. */
+    if (blocked) {
+      setPlaceError(
+        "Some items are no longer available. Remove them to place the order.",
+      );
+      return;
+    }
+
     if (!validate()) {
       const first = document.querySelector(".input.invalid, .textarea.invalid");
       first?.focus();
       first?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    /* Room service needs a room. Without a scanned code there is nowhere to
+       deliver to, so there is nothing sensible to submit. */
+    if (!house.addressId) {
+      setPlaceError(
+        "Please scan the QR code in your room so we know where to bring your order.",
+      );
       return;
     }
 
@@ -151,37 +162,27 @@ export default function CheckoutPage() {
       }
     }
 
-    const placedAt = new Date();
-    const order = {
-      id: makeOrderId(),
-      placedAt: placedAt.toISOString(),
-      etaMinutes: 38,
-      status: "confirmed",
-      customer: {
-        name: form.name.trim(),
-        phone: phoneDigits,
-        email: form.email.trim(),
-        emailOptIn: !!(form.email.trim() && form.emailOptIn),
-        house: form.house.trim(),
-        area: form.area,
-        landmark: form.landmark.trim(),
-        pincode: form.pincode.trim(),
-        city: "Vrindavan, Mathura (U.P.)",
-      },
-      note: [instructions.trim(), form.note.trim()].filter(Boolean).join(" · "),
-      payment: PAYMENTS.find((p) => p.id === form.payment),
-      lines,
-      bill,
-      coupon,
-      donate,
-    };
+    try {
+      const placed = await placeOrder({
+        addressCode: house.addressId,
+        lines,
+        guest: {
+          name: form.name.trim(),
+          phone: phoneDigits,
+          email: form.email.trim() || null,
+        },
+        coupon,
+        donate,
+        note: [instructions.trim(), form.note.trim()].filter(Boolean).join(" · "),
+      });
 
-    saveOrder(order);
-    /* a beat of "sending to the kitchen" so the demo feels like the real thing */
-    setTimeout(() => {
       clear();
-      navigate(`/order/${order.id}`, { replace: true });
-    }, 900);
+      navigate(`/order/${placed.receipt_token}`, { replace: true });
+    } catch (err) {
+      /* The order was not created, so the cart is deliberately left intact. */
+      setPlaceError(err.message);
+      setPlacing(false);
+    }
   }
 
   const sattvicCount = lines.filter((l) => l.sattvic).length;
@@ -217,7 +218,7 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <form className="checkout-grid" onSubmit={placeOrder} noValidate>
+      <form className="checkout-grid" onSubmit={submit} noValidate>
         <section className="checkout-grid__main">
           <div className="card form-card">
             <div className="form-card__head">
@@ -364,93 +365,39 @@ export default function CheckoutPage() {
                 <circle cx="12" cy="10" r="2.4" />
               </svg>
               <div>
-                <h2 className="form-card__title">Delivery address</h2>
+                <h2 className="form-card__title">Delivering to</h2>
                 <p className="form-card__sub">
-                  We deliver across Vrindavan and up to Chhatikara.
+                  Taken from the QR code you scanned — nothing to type.
                 </p>
               </div>
             </div>
 
-            <label className="field" htmlFor="house">
-              <span className="field-label">
-                House / flat, building &amp; street{" "}
-                <span className="req">*</span>
-              </span>
-              <input
-                id="house"
-                className={`input ${errors.house ? "invalid" : ""}`}
-                value={form.house}
-                onChange={set("house")}
-                placeholder="e.g. 14/3 Gopal Kunj, Gali No. 4, behind the dharamshala"
-                autoComplete="address-line1"
-              />
-              {errors.house && (
-                <span className="field-error">{errors.house}</span>
-              )}
-            </label>
-
-            <div className="field-row">
-              <label className="field" htmlFor="area">
-                <span className="field-label">Area</span>
-                <select
-                  id="area"
-                  className="input"
-                  value={form.area}
-                  onChange={set("area")}
-                >
-                  {AREAS.map((a) => (
-                    <option key={a}>{a}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="field" htmlFor="pincode">
-                <span className="field-label">
-                  PIN code <span className="req">*</span>
-                </span>
-                <input
-                  id="pincode"
-                  className={`input ${errors.pincode ? "invalid" : ""}`}
-                  value={form.pincode}
-                  onChange={(e) => {
-                    setForm((f) => ({
-                      ...f,
-                      pincode: e.target.value.replace(/\D/g, "").slice(0, 6),
-                    }));
-                    setErrors((p) => (p.pincode ? { ...p, pincode: null } : p));
-                  }}
-                  inputMode="numeric"
-                  autoComplete="postal-code"
-                />
-                {errors.pincode && (
-                  <span className="field-error">{errors.pincode}</span>
+            {house.addressId ? (
+              <div className="room-card">
+                <p className="room-card__place">{house.property}</p>
+                <p className="room-card__room">Room {house.room}</p>
+                {house.address && (
+                  <p className="room-card__addr">{house.address}</p>
                 )}
-              </label>
-            </div>
-
-            <label className="field" htmlFor="landmark">
-              <span className="field-label">Landmark</span>
-              <input
-                id="landmark"
-                className="input"
-                value={form.landmark}
-                onChange={set("landmark")}
-                placeholder="e.g. opposite Prem Mandir gate 2"
-              />
-              <span className="field-hint">
-                Galis here are narrow — a landmark saves everyone a phone call.
-              </span>
-            </label>
+              </div>
+            ) : (
+              <p className="side-card__error" role="alert">
+                We do not know which room you are in. Please scan the QR code in
+                your room to order.
+              </p>
+            )}
 
             <label className="field" htmlFor="note">
-              <span className="field-label">Note for the rider</span>
+              <span className="field-label">
+                Anything for the kitchen or the rider?
+              </span>
               <textarea
                 id="note"
                 className="textarea"
                 value={form.note}
                 onChange={set("note")}
                 maxLength={180}
-                placeholder="Second floor, the green door. Cows usually sitting outside."
+                placeholder="Less chilli, please. Leave it at the door."
               />
             </label>
 
@@ -461,7 +408,7 @@ export default function CheckoutPage() {
                 onChange={set("remember")}
               />
               <span className="donate__box" aria-hidden="true" />
-              <span>Remember these details on this device for next time</span>
+              <span>Remember my details on this device for next time</span>
             </label>
           </div>
 
@@ -508,7 +455,8 @@ export default function CheckoutPage() {
           <div className="card side-card">
             <h2 className="side-card__title">
               {bill.itemCount} {bill.itemCount === 1 ? "item" : "items"} from
-              Braj Rasoi
+              {" "}
+              {SELLER.name}
             </h2>
 
             <ul className="mini-lines">
@@ -534,10 +482,39 @@ export default function CheckoutPage() {
 
             <BillSummary bill={bill} />
 
+            {blocked && (
+              <div className="side-card__blocked" role="alert">
+                <strong>
+                  {unavailable.length === 1
+                    ? "One item is no longer available"
+                    : `${unavailable.length} items are no longer available`}
+                </strong>
+                <ul>
+                  {unavailable.map((u) => (
+                    <li key={u.id}>
+                      <span>{u.name}</span>
+                      <em>
+                        {u.gone
+                          ? "no longer on the menu"
+                          : "not being served right now"}
+                      </em>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-block"
+                  onClick={() => unavailable.forEach((u) => remove(u.id))}
+                >
+                  Remove {unavailable.length === 1 ? "it" : "them"} and continue
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
               className="btn btn-gold btn-block"
-              disabled={placing}
+              disabled={placing || blocked}
             >
               {placing ? (
                 <>
@@ -548,10 +525,14 @@ export default function CheckoutPage() {
                 <>Place order · {rupees(bill.total)}</>
               )}
             </button>
+            {placeError && (
+              <p className="side-card__error" role="alert">
+                {placeError}
+              </p>
+            )}
             <p className="side-card__fine">
               By placing this order you agree to receive delivery updates on
-              WhatsApp. Demo only — no payment is taken and no food will
-              actually arrive.
+              WhatsApp. Payment is taken before the kitchen is notified.
             </p>
           </div>
         </aside>

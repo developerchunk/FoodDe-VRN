@@ -1,2 +1,11 @@
 menue_id,dish,description ,category,kitchen_id,base_price,ingredients,cooking_time_mins,is_satvik,is_spicy,is_loved
-8pm48hybfy,Paneer Butter Masala,Fresh paneer cubes in a silky tomato-cashew gravy,North Indian,83jdlpw78k,270,"Paneer, Tomoto, Butter, Milk Cream, Indian Masales",25,yes,no,no
+8pm48hybfy,Paneer Butter Masala,Fresh paneer cubes in a silky tomato-cashew gravy,North Indian,83jdlpw78k,270,"Paneer, Tomato, Butter, Milk Cream, Indian Masalas",25,yes,no,no
+4m5mp6hpx2,Vrindavan Special Thali,"Two sabzis with dal, kadhi, rice, four phulkas, salad and a sweet",Thali,ksqtmg3kkp,220,"Seasonal vegetables, Dal, Curd, Atta, Ghee",30,yes,no,yes
+qfxjjjv3qh,Sattvic Kadhi Chawal,Yellow kadhi simmered with soft besan pakodis over steamed rice,Thali,ksqtmg3kkp,160,"Besan, Curd, Rice, Ghee, Hing",25,yes,no,no
+zgzngdvk4k,Chole Bhature,Two puffed bhature with slow-cooked chole and pickled carrot,North Indian,ksqtmg3kkp,150,"Chickpeas, Maida, Onion, Tomato, Spices",20,no,yes,yes
+jswm5v59yf,Veg Biryani,Long-grain rice layered with vegetables and whole spices,Rice,ksqtmg3kkp,210,"Basmati Rice, Mixed Vegetables, Onion, Whole Spices",35,no,yes,no
+gvvtvyw9df,Moong Dal Halwa,Stirred in a kadhai with ghee and khoya until it turns deep gold,Sweets,ksqtmg3kkp,150,"Moong Dal, Ghee, Khoya, Sugar, Cardamom",40,yes,no,no
+rdhkk6z7cb,Dal Tadka,"Arhar dal with a ghee tadka of jeera, hing and dry red chilli",North Indian,83jdlpw78k,190,"Arhar Dal, Ghee, Jeera, Hing, Dry Red Chilli",20,yes,no,no
+j39knrp6dn,Jeera Rice,Basmati rice tossed with cumin in ghee,Rice,83jdlpw78k,140,"Basmati Rice, Jeera, Ghee",15,yes,no,no
+krqn992hrj,Tandoori Roti,"Whole-wheat roti from the tandoor, brushed with white butter",Breads,83jdlpw78k,30,"Whole Wheat Atta, Butter",8,yes,no,no
+nv7sxmjck3,Malai Kofta,Paneer and khoya dumplings resting in a saffron cream gravy,North Indian,83jdlpw78k,260,"Paneer, Khoya, Cashew, Cream, Saffron",30,yes,no,yes

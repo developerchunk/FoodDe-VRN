@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { getOrder } from "../utils/orders";
+import { useReceipt } from "../hooks/useReceipt";
 import { useCart } from "../context/cart-context";
 import { rupees, maskPhone, formatDateTime } from "../utils/format";
-import { MorPankh, TulsiLeaf, Diya, Lotus } from "../components/Motifs";
+import { MorPankh, TulsiLeaf, Diya } from "../components/Motifs";
 
 const STAGES = [
   {
@@ -35,7 +35,7 @@ export default function OrderSuccessPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { add } = useCart();
-  const order = useMemo(() => getOrder(id), [id]);
+  const { order, loading } = useReceipt(id);
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
@@ -49,6 +49,17 @@ export default function OrderSuccessPage() {
     window.scrollTo(0, 0);
   }, []);
 
+  if (loading) {
+    return (
+      <main className="wrap page page--narrow" id="main">
+        <div className="empty-state card empty-state--page">
+          <span className="spinner spinner--dark" aria-hidden="true" />
+          <h1 className="section-title">Fetching your order…</h1>
+        </div>
+      </main>
+    );
+  }
+
   if (!order) {
     return (
       <main className="wrap page page--narrow" id="main">
@@ -56,8 +67,8 @@ export default function OrderSuccessPage() {
           <MorPankh size={42} />
           <h1 className="section-title">We couldn’t find that order</h1>
           <p className="muted">
-            Demo orders live in this browser only. If you cleared your site
-            data, the order went with it.
+            That receipt link is not valid. Check the link, or scan the QR code
+            in your room to start again.
           </p>
           <Link to="/" className="btn btn-primary">
             Back to the menu
@@ -67,9 +78,9 @@ export default function OrderSuccessPage() {
     );
   }
 
-  const eta = new Date(
-    new Date(order.placedAt).getTime() + order.etaMinutes * 60000,
-  );
+  /* A rough promise while the kitchen has not accepted yet. Once tickets are
+     acknowledged this should come from the kitchen, not from a constant. */
+  const eta = new Date(new Date(order.created_at).getTime() + 40 * 60000);
   const etaText = eta.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
@@ -77,7 +88,7 @@ export default function OrderSuccessPage() {
   });
 
   const reorder = () => {
-    order.lines.forEach((l) => {
+    order.items.forEach((l) => {
       for (let i = 0; i < l.qty; i++) add(l);
     });
     navigate("/cart");
@@ -104,20 +115,20 @@ export default function OrderSuccessPage() {
         <p className="success__greet deva">राधे राधे 🙏</p>
         <h1 className="success__title">Your order is confirmed</h1>
         <p className="success__sub">
-          Thank you, <strong>{order.customer.name.split(" ")[0]}</strong>. We
+          Thank you, <strong>{order.guest_name.split(" ")[0]}</strong>. We
           have sent the confirmation to{" "}
-          <strong>{maskPhone(order.customer.phone)}</strong> on WhatsApp, and we
+          <strong>{maskPhone(order.guest_phone)}</strong> on WhatsApp, and we
           will call this number if the rider needs directions.
         </p>
 
         <div className="success__meta">
           <div>
             <small>Order number</small>
-            <strong>{order.id}</strong>
+            <strong>{order.order_no}</strong>
           </div>
           <div>
             <small>Placed at</small>
-            <strong>{formatDateTime(order.placedAt)}</strong>
+            <strong>{formatDateTime(order.created_at)}</strong>
           </div>
           <div>
             <small>Arriving by</small>
@@ -127,12 +138,12 @@ export default function OrderSuccessPage() {
           </div>
           <div>
             <small>To pay</small>
-            <strong className="rupee">{rupees(order.bill.total)}</strong>
+            <strong className="rupee">{rupees(order.total_paise)}</strong>
           </div>
         </div>
 
         <div className="success__actions">
-          <Link to={`/receipt/${order.id}`} className="btn btn-primary">
+          <Link to={`/receipt/${order.order_no}`} className="btn btn-primary">
             View receipt
           </Link>
           <button type="button" className="btn btn-ghost" onClick={reorder}>
@@ -186,7 +197,7 @@ export default function OrderSuccessPage() {
         <section className="card summary-card" aria-label="Order summary">
           <h2 className="summary-card__title">What is coming</h2>
           <ul className="mini-lines mini-lines--roomy">
-            {order.lines.map((l) => (
+            {order.items.map((l) => (
               <li key={l.id}>
                 <span className="veg-mark" aria-hidden="true" />
                 <span className="mini-lines__name">
@@ -198,31 +209,24 @@ export default function OrderSuccessPage() {
           </ul>
 
           <div className="summary-card__total">
-            <span>Total paid via {order.payment.label.toLowerCase()}</span>
-            <strong className="rupee">{rupees(order.bill.total)}</strong>
+            <span>
+              {order.status === "pending_payment" ? "Awaiting payment" : "Total"}
+            </span>
+            <strong className="rupee">{rupees(order.total_paise)}</strong>
           </div>
 
           <div className="summary-card__addr">
             <h3>Delivering to</h3>
             <p>
-              {order.customer.house}
+              {order.place_name}
               <br />
-              {order.customer.area}
-              {order.customer.landmark
-                ? `, near ${order.customer.landmark}`
-                : ""}
-              <br />
-              {order.customer.city} — {order.customer.pincode}
+              Room {order.room_number}
             </p>
-            {order.note && <p className="summary-card__note">“{order.note}”</p>}
+            {order.note && (
+              <p className="summary-card__note">“{order.note}”</p>
+            )}
           </div>
 
-          {order.donate && (
-            <p className="summary-card__donate">
-              <Lotus size={15} /> ₹5 of this order goes to the gaushala at Raman
-              Reti. Thank you.
-            </p>
-          )}
         </section>
       </div>
 
@@ -233,7 +237,7 @@ export default function OrderSuccessPage() {
           <p>
             You ordered as a guest — nothing more was needed. Whenever you feel
             like it, sign up with the same number{" "}
-            <strong>{maskPhone(order.customer.phone)}</strong> and every past
+            <strong>{maskPhone(order.guest_phone)}</strong> and every past
             order, receipt and support conversation will already be waiting
             there.
           </p>

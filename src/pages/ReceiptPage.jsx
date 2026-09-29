@@ -1,17 +1,39 @@
-import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getOrder } from "../utils/orders";
+import { useReceipt } from "../hooks/useReceipt";
 import {
   rupees,
   rupeesExact,
   maskPhone,
   formatDateTime,
 } from "../utils/format";
-import { MorPankh, Bansuri, TulsiLeaf, Lotus } from "../components/Motifs";
+import { MorPankh, Bansuri } from "../components/Motifs";
+import { SELLER } from "../utils/seller";
+
+const STATUS_LABEL = {
+  pending_payment: "Awaiting payment",
+  paid: "Paid",
+  sent_to_kitchen: "With the kitchen",
+  preparing: "Being prepared",
+  out_for_delivery: "On its way",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+  failed: "Failed",
+};
 
 export default function ReceiptPage() {
   const { id } = useParams();
-  const order = useMemo(() => getOrder(id), [id]);
+  const { order, loading } = useReceipt(id);
+
+  if (loading) {
+    return (
+      <main className="wrap page page--narrow" id="main">
+        <div className="empty-state card empty-state--page">
+          <span className="spinner spinner--dark" aria-hidden="true" />
+          <h1 className="section-title">Fetching your receipt…</h1>
+        </div>
+      </main>
+    );
+  }
 
   if (!order) {
     return (
@@ -30,9 +52,14 @@ export default function ReceiptPage() {
     );
   }
 
-  const { customer, bill, lines } = order;
+  /* get_receipt returns one flat row: line items in `items`, every amount in
+     integer paise, and the room rather than a street address. */
+  const items = order.items || [];
   const shareText = encodeURIComponent(
-    `Braj Rasoi — order ${order.id}\n${lines.map((l) => `${l.qty} × ${l.name}`).join("\n")}\nTotal ${rupees(bill.total)}`,
+    `In Room Dining — order ${order.order_no}\n` +
+      `${order.place_name}, Room ${order.room_number}\n` +
+      `${items.map((l) => `${l.qty} × ${l.name}`).join("\n")}\n` +
+      `Total ${rupees(order.total_paise)}`,
   );
 
   return (
@@ -40,7 +67,7 @@ export default function ReceiptPage() {
       <nav className="crumbs no-print" aria-label="Breadcrumb">
         <Link to="/">Menu</Link>
         <span aria-hidden="true">›</span>
-        <Link to={`/order/${order.id}`}>Order {order.id}</Link>
+        <Link to={`/order/${order.order_no}`}>Order {order.order_no}</Link>
         <span aria-hidden="true">›</span>
         <span aria-current="page">Receipt</span>
       </nav>
@@ -78,25 +105,24 @@ export default function ReceiptPage() {
         </div>
       </div>
 
-      <article className="receipt" aria-label={`Receipt for order ${order.id}`}>
+      <article className="receipt" aria-label={`Receipt for order ${order.order_no}`}>
         <header className="receipt__head">
-          <span className="receipt__stamp" aria-hidden="true">
-            Confirmed
+          <span
+            className={`receipt__stamp ${order.status === "pending_payment" ? "receipt__stamp--unpaid" : ""}`}
+            aria-hidden="true"
+          >
+            {order.status === "pending_payment" ? "Unpaid" : "Paid"}
           </span>
           <div className="receipt__brand">
             <span className="receipt__mark">
               <MorPankh size={22} />
             </span>
             <div>
-              <h2>Braj Rasoi</h2>
-              <p className="deva">वृन्दावन धाम</p>
+              <h2>{SELLER.name}</h2>
             </div>
           </div>
-          <p className="receipt__addr">
-            Gali No. 4, Parikrama Marg, Vrindavan 281121
-            <br />
-            WhatsApp +91 98765 43210 · Daily 7:00 am – 10:30 pm
-          </p>
+          <p className="receipt__addr">{SELLER.address}</p>
+          <p className="receipt__addr">{maskPhone(SELLER.phone)}</p>
           <div className="receipt__flute">
             <Bansuri width={140} />
           </div>
@@ -105,19 +131,25 @@ export default function ReceiptPage() {
         <div className="receipt__meta">
           <div>
             <small>Receipt no.</small>
-            <strong>{order.id}</strong>
+            <strong>{order.order_no}</strong>
           </div>
           <div>
             <small>Date</small>
-            <strong>{formatDateTime(order.placedAt)}</strong>
+            <strong>{formatDateTime(order.created_at)}</strong>
           </div>
           <div>
             <small>Payment</small>
-            <strong>{order.payment.label}</strong>
+            <strong>
+              {order.status === "pending_payment" ? "Not yet paid" : "Paid"}
+            </strong>
           </div>
           <div>
             <small>Status</small>
-            <strong className="receipt__paid">Confirmed</strong>
+            <strong
+              className={order.status === "pending_payment" ? "" : "receipt__paid"}
+            >
+              {STATUS_LABEL[order.status] ?? order.status}
+            </strong>
           </div>
         </div>
 
@@ -125,20 +157,17 @@ export default function ReceiptPage() {
           <div>
             <h3>Billed to</h3>
             <p>
-              {customer.name}
+              {order.guest_name}
               <br />
-              {maskPhone(customer.phone)}
+              {maskPhone(order.guest_phone)}
             </p>
           </div>
           <div>
             <h3>Delivered to</h3>
             <p>
-              {customer.house}
+              {order.place_name}
               <br />
-              {customer.area}
-              {customer.landmark ? `, near ${customer.landmark}` : ""}
-              <br />
-              {customer.city} — {customer.pincode}
+              Room {order.room_number}
             </p>
           </div>
         </div>
@@ -159,24 +188,19 @@ export default function ReceiptPage() {
             </tr>
           </thead>
           <tbody>
-            {lines.map((l) => (
+            {items.map((l) => (
               <tr key={l.id}>
                 <td>
                   <span className="receipt__item">
                     <span className="veg-mark" aria-hidden="true" />
                     <span>
                       {l.name}
-                      {l.sattvic && (
-                        <em className="receipt__sattvic">
-                          <TulsiLeaf size={9} /> no onion–garlic
-                        </em>
-                      )}
                     </span>
                   </span>
                 </td>
                 <td className="ta-c">{l.qty}</td>
-                <td className="ta-r rupee">{rupeesExact(l.price)}</td>
-                <td className="ta-r rupee">{rupeesExact(l.price * l.qty)}</td>
+                <td className="ta-r rupee">{rupeesExact(l.unit_price_paise)}</td>
+                <td className="ta-r rupee">{rupeesExact(l.line_total_paise)}</td>
               </tr>
             ))}
           </tbody>
@@ -185,37 +209,31 @@ export default function ReceiptPage() {
         <dl className="receipt__totals">
           <div>
             <dt>Item total</dt>
-            <dd className="rupee">{rupeesExact(bill.subtotal)}</dd>
+            <dd className="rupee">{rupeesExact(order.subtotal_paise)}</dd>
           </div>
-          {bill.discount > 0 && (
+          {order.discount_paise > 0 && (
             <div className="receipt__save">
-              <dt>Coupon {bill.couponCode}</dt>
-              <dd className="rupee">− {rupeesExact(bill.discount)}</dd>
+              <dt>Coupon {order.coupon_code}</dt>
+              <dd className="rupee">− {rupeesExact(order.discount_paise)}</dd>
             </div>
           )}
           <div>
             <dt>Delivery</dt>
             <dd className="rupee">
-              {bill.delivery === 0 ? "Free" : rupeesExact(bill.delivery)}
+              {order.delivery_paise === 0 ? "Free" : rupeesExact(order.delivery_paise)}
             </dd>
           </div>
           <div>
             <dt>Packing</dt>
-            <dd className="rupee">{rupeesExact(bill.packing)}</dd>
+            <dd className="rupee">{rupeesExact(order.packing_paise)}</dd>
           </div>
           <div>
             <dt>CGST 2.5% + SGST 2.5%</dt>
-            <dd className="rupee">{rupeesExact(bill.gst)}</dd>
+            <dd className="rupee">{rupeesExact(order.tax_paise)}</dd>
           </div>
-          {bill.donation > 0 && (
-            <div>
-              <dt>Gaushala contribution</dt>
-              <dd className="rupee">{rupeesExact(bill.donation)}</dd>
-            </div>
-          )}
           <div className="receipt__grand">
-            <dt>Total paid</dt>
-            <dd className="rupee">{rupeesExact(bill.total)}</dd>
+            <dt>{order.status === "pending_payment" ? "Total due" : "Total paid"}</dt>
+            <dd className="rupee">{rupeesExact(order.total_paise)}</dd>
           </div>
         </dl>
 
@@ -226,17 +244,10 @@ export default function ReceiptPage() {
         )}
 
         <footer className="receipt__foot">
-          <p className="receipt__thanks deva">राधे राधे 🙏</p>
           <p>
             Thank you for eating with us. Questions about this order? WhatsApp
             us the receipt number and we will pick it up from there.
           </p>
-          {bill.donation > 0 && (
-            <p className="receipt__gaushala">
-              <Lotus size={14} /> ₹{bill.donation} from this order goes to the
-              gaushala at Raman Reti.
-            </p>
-          )}
           <p className="receipt__demo">
             Demo receipt · Not a valid tax invoice
           </p>

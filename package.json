@@ -13,7 +13,10 @@
     "import": "node scripts/import-csv.mjs",
     "verify:hours": "node scripts/verify-hours.mjs",
     "check:migrations": "node scripts/check-migrations.mjs",
-    "check:bundle": "node scripts/check-bundle.mjs"
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "check:menu": "node scripts/check-menu-ids.mjs",
+    "verify:webhook": "node scripts/verify-webhook.mjs",
+    "verify:order": "node scripts/verify-order-flow.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
