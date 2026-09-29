@@ -707,3 +707,47 @@
     display: block;
   }
 }
+
+.nav-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.nav-menu__count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ird-ember, var(--ember));
+  color: var(--cream);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* The bottom bar carries the cart on a phone; two of them in one screen is
+   one too many. */
+@media (max-width: 619px) {
+  .cart-button {
+    display: none;
+  }
+}
+
+/* The wordmark, long or short. One is always hidden, never both. */
+.logo__word--short {
+  display: none;
+}
+.logo__word--short strong {
+  font-size: 22px;
+  letter-spacing: 0.06em;
+}
+/* Header only. The footer names the seller of record, and an abbreviation is
+   not a name — a guest checking who took their money should see it in full. */
+@media (max-width: 619px) {
+  .site-header .logo__word--full {
+    display: none;
+  }
+  .site-header .logo__word--short {
+    display: block;
+  }
+}

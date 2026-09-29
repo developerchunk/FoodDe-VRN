@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { MenuIcon } from "./Icons";
 import SignInButton from "./SignInButton";
+import { useCart } from "../context/cart-context";
 
 /**
  * The header nav, for screens too narrow to show it inline.
@@ -11,6 +12,7 @@ import SignInButton from "./SignInButton";
  * holding. This is the same set behind one button.
  */
 export default function NavMenu({ hasOrders }) {
+  const { bill } = useCart();
   const { pathname } = useLocation();
   /* Which page the menu was opened on. Derived rather than cleared in an
      effect: navigating away closes it because the path no longer matches. */
@@ -54,6 +56,15 @@ export default function NavMenu({ hasOrders }) {
         <div className="nav-menu__panel" id={panelId} role="menu">
           <Link to="/menu" role="menuitem" className="nav-menu__item">
             Menu
+          </Link>
+          {/* The header cart is hidden at this width and the bottom bar only
+              appears once something is in it, so without this an empty cart
+              would be unreachable. */}
+          <Link to="/cart" role="menuitem" className="nav-menu__item">
+            Cart
+            {bill.itemCount > 0 && (
+              <span className="nav-menu__count">{bill.itemCount}</span>
+            )}
           </Link>
           {hasOrders && (
             <Link to="/orders" role="menuitem" className="nav-menu__item">
