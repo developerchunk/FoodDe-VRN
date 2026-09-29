@@ -534,10 +534,11 @@
 
 /* ================================ breakpoints ============================ */
 
-/* On a phone the rest house's name matters more than ours: once a room is
-   known, the lockup shrinks to the cloche alone. */
+/* On a phone the rest house's name matters more than ours, so once a room is
+   known only the short mark stays beside the cloche — the full wordmark would
+   leave nothing for the name it sits next to. */
 @media (max-width: 619px) {
-  .logo:has(+ .stay) .logo__word {
+  .logo:has(+ .stay) .logo__word--full {
     display: none;
   }
 }
@@ -749,5 +750,27 @@
   }
   .site-header .logo__word--short {
     display: block;
+  }
+}
+
+@media (max-width: 619px) {
+  /* The cart button carried margin-left:auto and is hidden at this width, so
+     nothing was pushing the menu button to the edge any more. */
+  .nav-menu {
+    margin-left: auto;
+  }
+  /* A long rest house name must give way rather than shove the button off. */
+  .stay {
+    min-width: 0;
+  }
+  .stay__text {
+    min-width: 0;
+  }
+  .stay__text strong,
+  .stay__text small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
