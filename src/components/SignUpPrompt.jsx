@@ -53,8 +53,8 @@ export default function SignUpPrompt({ open, onGoogle, onSkip }) {
           Save this order to your account?
         </h2>
         <p className="prompt__sub">
-          Sign up with Google and your orders, receipts and addresses follow you
-          to any device — plus the offers we keep for regulars.
+          Sign in with Google and your orders and receipts follow you to any
+          device.
         </p>
 
         <button type="button" className="prompt__google" onClick={onGoogle}>
