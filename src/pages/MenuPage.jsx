@@ -1,35 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMenu } from "../hooks/useMenu";
-import Hero from "../components/Hero";
+import { useCart } from "../context/cart-context";
 import FilterBar from "../components/FilterBar";
 import CategoryRail from "../components/CategoryRail";
 import CategorySheet from "../components/CategorySheet";
 import MobileDock from "../components/MobileDock";
 import MenuItemCard from "../components/MenuItemCard";
 import CartPanel from "../components/CartPanel";
-import { FeatherDivider, MorPankh, TulsiLeaf } from "../components/Motifs";
+import StayCard from "../components/StayCard";
+import { Cloche } from "../components/Icons";
 
 export default function MenuPage() {
   const { items, categories, loading, error } = useMenu();
+  const { bill } = useCart();
   const [query, setQuery] = useState("");
-  const [sattvicOnly, setSattvicOnly] = useState(false);
   const [quick, setQuick] = useState(null);
   const [sort, setSort] = useState("default");
   const [activeCat, setActiveCat] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const sectionRefs = useRef({});
-  const menuTopRef = useRef(null);
+  const railRef = useRef(null);
   const listTopRef = useRef(null);
   const firstPass = useRef(true);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = items.filter((item) => {
-      if (sattvicOnly && !item.sattvic) return false;
       if (quick === "under150" && item.pricePaise >= 15000) return false;
-      if (quick && quick !== "under150" && !(item.tags || []).includes(quick))
-        return false;
+      if (quick === "sattvic" && !item.sattvic) return false;
+      if (quick === "bestseller" && !item.loved) return false;
+      if (quick === "spicy" && !item.spicy) return false;
       if (!q) return true;
       return (
         item.name.toLowerCase().includes(q) ||
@@ -38,12 +39,16 @@ export default function MenuPage() {
       );
     });
 
-    if (sort === "low") list = [...list].sort((a, b) => a.pricePaise - b.pricePaise);
-    if (sort === "high") list = [...list].sort((a, b) => b.pricePaise - a.pricePaise);
+    if (sort === "low")
+      list = [...list].sort((a, b) => a.pricePaise - b.pricePaise);
+    if (sort === "high")
+      list = [...list].sort((a, b) => b.pricePaise - a.pricePaise);
     if (sort === "name")
       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
-    return list;
-  }, [items, query, sattvicOnly, quick, sort]);
+    /* Dishes that can be ordered right now come first; the sort is stable, so
+       each group keeps the order chosen above. */
+    return [...list].sort((a, b) => b.availableNow - a.availableNow);
+  }, [items, query, quick, sort]);
 
   const counts = useMemo(() => {
     const map = {};
@@ -58,6 +63,12 @@ export default function MenuPage() {
      trigger an extra render just to choose it. */
   const currentCat = activeCat ?? visibleCats[0]?.id ?? null;
 
+  /* clear the sticky header and the sticky filter rail beneath it */
+  const stickyOffset = () =>
+    (document.querySelector(".site-header")?.offsetHeight ?? 0) +
+    (railRef.current?.offsetHeight ?? 0) +
+    16;
+
   /* Highlight the category whose section is currently under the header. */
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -67,17 +78,13 @@ export default function MenuPage() {
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         if (shown[0]) setActiveCat(shown[0].target.dataset.cat);
       },
-      { rootMargin: "-140px 0px -60% 0px", threshold: 0 },
+      { rootMargin: `-${stickyOffset()}px 0px -60% 0px`, threshold: 0 },
     );
     Object.values(sectionRefs.current).forEach(
       (el) => el && observer.observe(el),
     );
     return () => observer.disconnect();
   }, [visibleCats.length]);
-
-  /* clear the sticky header and the sticky filter rail beneath it */
-  const stickyOffset = () =>
-    window.matchMedia("(min-width: 1000px)").matches ? 152 : 146;
 
   const scrollTo = (el) => {
     if (!el) return;
@@ -98,49 +105,22 @@ export default function MenuPage() {
     const top =
       el.getBoundingClientRect().top + window.scrollY - stickyOffset();
     if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
-  }, [query, quick, sattvicOnly, sort]);
+  }, [query, quick, sort]);
 
   const clearAll = () => {
     setQuery("");
     setQuick(null);
-    setSattvicOnly(false);
   };
 
   return (
     <>
-      <Hero onBrowse={() => scrollTo(menuTopRef.current)} />
-
-      <div className="menu-band" ref={menuTopRef} id="menu">
-        <div className="wrap">
-          <div className="menu-band__head">
-            <div>
-              <p className="eyebrow">Our menu</p>
-              <h2 className="section-title">
-                Everything here is <em>pure vegetarian</em>
-              </h2>
-              <p className="menu-band__note">
-                Dishes marked{" "}
-                <span className="inline-flag">
-                  <TulsiLeaf size={11} /> no onion–garlic
-                </span>{" "}
-                are cooked the sattvic way, with hing instead — on separate
-                tawas, in separate kadhais.
-              </p>
-            </div>
-            <FeatherDivider className="menu-band__feather" />
-          </div>
-        </div>
-      </div>
-
       {/* travels with the reader: search and filters stay reachable at any
           scroll depth (on phones search lives in the bottom dock instead) */}
-      <div className="filter-rail">
+      <div className="filter-rail" ref={railRef}>
         <div className="wrap">
           <FilterBar
             query={query}
             onQuery={setQuery}
-            sattvicOnly={sattvicOnly}
-            onSattvicOnly={setSattvicOnly}
             quick={quick}
             onQuick={setQuick}
             sort={sort}
@@ -171,12 +151,9 @@ export default function MenuPage() {
             </div>
           ) : error ? (
             <div className="empty-state card">
-              <MorPankh size={38} />
+              <Cloche size={44} />
               <h3>The menu could not be loaded</h3>
-              <p className="muted">
-                The kitchen system is not reachable right now. Please try again in a
-                moment.
-              </p>
+              <p className="muted">Please try again in a moment.</p>
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -187,18 +164,14 @@ export default function MenuPage() {
             </div>
           ) : items.length === 0 ? (
             <div className="empty-state card">
-              <MorPankh size={38} />
+              <Cloche size={44} />
               <h3>Nothing on the menu just yet</h3>
               <p className="muted">Please check back shortly.</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="empty-state card">
-              <MorPankh size={38} />
-              <h3>Nothing matches that just yet</h3>
-              <p className="muted">
-                Try a different spelling, or clear the filters to see all{" "}
-                {items.length} dishes.
-              </p>
+              <Cloche size={44} />
+              <h3>No dishes match</h3>
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -217,16 +190,10 @@ export default function MenuPage() {
                 aria-labelledby={`cat-${cat.id}`}
               >
                 <header className="menu-section__head">
-                  <div>
-                    <h2 id={`cat-${cat.id}`} className="menu-section__title">
-                      {cat.name}
-                      <em className="deva">{cat.hindi}</em>
-                    </h2>
-                    <p className="menu-section__blurb">{cat.blurb}</p>
-                  </div>
-                  <span className="menu-section__count">
-                    {counts[cat.id]} {counts[cat.id] === 1 ? "dish" : "dishes"}
-                  </span>
+                  <h2 id={`cat-${cat.id}`} className="menu-section__title">
+                    {cat.name}
+                  </h2>
+                  <span className="menu-section__count">{counts[cat.id]}</span>
                 </header>
 
                 <div className="dish-grid">
@@ -241,7 +208,11 @@ export default function MenuPage() {
           )}
         </main>
 
-        <CartPanel />
+        <aside className="menu-layout__side" aria-label="Your order">
+          {/* once there is an order, the cart gets the whole column */}
+          {bill.itemCount === 0 && <StayCard />}
+          <CartPanel />
+        </aside>
       </div>
 
       <MobileDock

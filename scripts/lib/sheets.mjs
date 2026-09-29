@@ -26,3 +26,13 @@ export const slugOf = (n) =>
   n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 /* The sheet's id column is misspelled; accept either spelling. */
 export const menuId = (m) => (m.menue_id?.trim() || m.menu_id?.trim() || "");
+
+/* The meal slots menu_items.meal_time may hold. It is a foreign key in the
+   database, so a typo in the sheet aborts an import partway through; both the
+   import and check:menu normalise through here so they cannot disagree about
+   what counts as valid. */
+export const MEAL_SLOTS = ["all_day", "breakfast", "brunch", "lunch", "dinner"];
+export const mealSlot = (v) => {
+  const slot = String(v || "all_day").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return MEAL_SLOTS.includes(slot) ? slot : null;
+};

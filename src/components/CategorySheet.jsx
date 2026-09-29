@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { CategoryGlyph } from "./Motifs";
+import { CategoryGlyph } from "./Icons";
 
 /**
  * The category sheet behind the "Menu" button — thumb-reachable, one tap to
@@ -52,7 +52,7 @@ export default function CategorySheet({
         <span className="sheet__grip" aria-hidden="true" />
 
         <div className="sheet__head">
-          <h2>Our Menu</h2>
+          <h2>Categories</h2>
           <span>{total} dishes</span>
         </div>
 

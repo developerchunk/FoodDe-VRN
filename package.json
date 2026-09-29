@@ -12,6 +12,7 @@
     "verify:security": "node scripts/verify-security.mjs",
     "import": "node scripts/import-csv.mjs",
     "verify:hours": "node scripts/verify-hours.mjs",
+    "verify:meals": "node scripts/verify-meals.mjs",
     "check:migrations": "node scripts/check-migrations.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "check:menu": "node scripts/check-menu-ids.mjs",

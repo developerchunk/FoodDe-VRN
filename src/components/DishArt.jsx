@@ -1,9 +1,9 @@
 /**
  * Flat SVG dish illustrations.
  *
- * Instead of stock photography (which never looks like Braj food anyway), every
- * dish gets a hand-built illustration from one of these archetypes, tinted by
- * the item's own three-colour palette.
+ * The stand-in for a dish that has no photograph yet: a hand-built
+ * illustration from one of these archetypes, tinted by the item's own
+ * three-colour palette.
  */
 
 const V = "0 0 200 150";
@@ -709,11 +709,6 @@ export default function DishArt({ item, className = "", decorative = true }) {
         </radialGradient>
       </defs>
       <rect width="200" height="150" fill={`url(#${gid})`} />
-      {/* faint jaali lattice, like light through a temple screen */}
-      <g stroke="#0b3a38" strokeWidth="0.7" opacity="0.06">
-        <path d="M-10 40 L40 -10 M-10 90 L90 -10 M-10 140 L140 -10 M40 160 L190 10 M90 160 L210 40 M140 160 L210 90" />
-        <path d="M210 40 L160 -10 M210 90 L110 -10 M210 140 L60 -10 M160 160 L10 10 M110 160 L-10 40 M60 160 L-10 90" />
-      </g>
       {render(palette)}
     </svg>
   );

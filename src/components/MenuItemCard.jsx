@@ -2,19 +2,12 @@ import DishArt from "./DishArt";
 import QtyStepper from "./QtyStepper";
 import { useCart } from "../context/cart-context";
 import { rupees } from "../utils/format";
-import { TulsiLeaf } from "./Motifs";
-
-const TAG_META = {
-  bestseller: { label: "Most loved", cls: "pill-best" },
-  new: { label: "New", cls: "pill-new" },
-  spicy: { label: "Spicy", cls: "pill-spicy" },
-  seasonal: { label: "Seasonal", cls: "pill-jain" },
-  "sattvic-classic": { label: "Braj classic", cls: "pill-jain" },
-};
+import { CartIcon, ClockIcon, StarIcon, TulsiLeaf } from "./Icons";
 
 /**
- * Info on the left, dish on the right, Add button straddling the foot of the
- * image — the arrangement that reads fastest on a phone held in one hand.
+ * Picture on top, then name, a line of description, and price with the Add
+ * button along the foot. Every dish is vegetarian, so the green mark is the
+ * only diet sign there is.
  */
 export default function MenuItemCard({ item }) {
   const { add, decrement, qtyOf } = useCart();
@@ -24,42 +17,60 @@ export default function MenuItemCard({ item }) {
     <article
       className={`dish ${qty ? "is-in-cart" : ""} ${item.availableNow ? "" : "is-unavailable"}`}
     >
-      <div className="dish__info">
-        <div className="dish__head">
-          <span
-            className="veg-mark"
-            title="Pure vegetarian"
-            aria-label="Pure vegetarian"
+      <div className="dish__media">
+        {item.imageUrl ? (
+          <img
+            className="dish__art"
+            src={item.imageUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
           />
-          {(item.tags || []).map((t) =>
-            TAG_META[t] ? (
-              <span key={t} className={`pill ${TAG_META[t].cls}`}>
-                {TAG_META[t].label}
-              </span>
-            ) : null,
-          )}
-        </div>
+        ) : (
+          <DishArt item={item} className="dish__art" />
+        )}
 
+        {item.loved && (
+          <span className="badge badge--loved">
+            <StarIcon size={11} /> Most loved
+          </span>
+        )}
+        <span className="badge badge--veg" title="Pure vegetarian">
+          <span className="veg-mark" aria-hidden="true" />
+          <span className="sr-only">Pure vegetarian</span>
+        </span>
+      </div>
+
+      <div className="dish__body">
         <h3 className="dish__name">{item.name}</h3>
+        {item.desc && <p className="dish__desc">{item.desc}</p>}
 
-        {item.sattvic && (
-          <p className="dish__sattvic">
-            <TulsiLeaf size={11} /> No onion–garlic
+        {item.mealWindow && (
+          <p className="dish__meal" title="When this dish is served">
+            <ClockIcon size={11} /> {item.mealWindow}
           </p>
         )}
 
-        <p className="dish__price">
-          <strong className="rupee">{rupees(item.pricePaise)}</strong>
-          {item.serves && <span className="dish__serves">{item.serves}</span>}
-        </p>
+        {(item.sattvic || item.serves) && (
+          <p className="dish__meta">
+            {item.sattvic && (
+              <span className="dish__sattvic">
+                <TulsiLeaf size={10} /> No onion–garlic
+              </span>
+            )}
+            {item.serves && (
+              <span className="dish__time">
+                <ClockIcon size={13} /> {item.serves}
+              </span>
+            )}
+          </p>
+        )}
 
-        <p className="dish__desc">{item.desc}</p>
-      </div>
+        <div className="dish__foot">
+          <strong className="dish__price rupee">
+            {rupees(item.pricePaise)}
+          </strong>
 
-      <div className="dish__media">
-        <DishArt item={item} className="dish__art" />
-
-        <div className="dish__action">
           {!item.availableNow ? (
             <span className="dish__closed">Unavailable</span>
           ) : qty > 0 ? (
@@ -75,30 +86,8 @@ export default function MenuItemCard({ item }) {
               className="dish__add"
               onClick={() => add(item)}
             >
-              ADD
-              <svg
-                viewBox="0 0 16 16"
-                width="11"
-                height="11"
-                aria-hidden="true"
-              >
-                <rect
-                  x="2.5"
-                  y="7"
-                  width="11"
-                  height="2"
-                  rx="1"
-                  fill="currentColor"
-                />
-                <rect
-                  x="7"
-                  y="2.5"
-                  width="2"
-                  height="11"
-                  rx="1"
-                  fill="currentColor"
-                />
-              </svg>
+              <CartIcon size={16} />
+              Add to Cart
             </button>
           )}
         </div>

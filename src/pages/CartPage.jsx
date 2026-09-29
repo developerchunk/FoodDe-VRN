@@ -7,7 +7,7 @@ import DishArt from "../components/DishArt";
 import BillSummary from "../components/BillSummary";
 import { rupees } from "../utils/format";
 import { COUPONS } from "../utils/pricing";
-import { MorPankh, TulsiLeaf, Lotus } from "../components/Motifs";
+import { Cloche, TulsiLeaf, LeafIcon } from "../components/Icons";
 
 export default function CartPage() {
   const {
@@ -38,13 +38,9 @@ export default function CartPage() {
     return (
       <main className="wrap page page--narrow" id="main">
         <div className="empty-state card empty-state--page">
-          <MorPankh size={44} />
-          <h1 className="section-title">Your thali is empty</h1>
-          <p className="muted">
-            Nothing added yet. The kachoris are still warm if you would like to
-            start there.
-          </p>
-          <Link to="/" className="btn btn-primary">
+          <Cloche size={44} />
+          <h1 className="section-title">Your cart is empty</h1>
+          <Link to="/menu" className="btn btn-primary">
             Back to the menu
           </Link>
         </div>
@@ -55,7 +51,7 @@ export default function CartPage() {
   return (
     <main className="wrap page" id="main">
       <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to="/">Menu</Link>
+        <Link to="/menu">Menu</Link>
         <span aria-hidden="true">›</span>
         <span aria-current="page">Your order</span>
       </nav>
@@ -135,7 +131,9 @@ export default function CartPage() {
                     </div>
                     <div className="addon__body">
                       <p className="addon__name">{s.name}</p>
-                      <p className="addon__price rupee">{rupees(s.pricePaise)}</p>
+                      <p className="addon__price rupee">
+                        {rupees(s.pricePaise)}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -233,7 +231,7 @@ export default function CartPage() {
               <span className="donate__box" aria-hidden="true" />
               <span className="donate__text">
                 <strong>
-                  <Lotus size={15} /> Add ₹5 for the local gaushala
+                  <LeafIcon size={15} /> Add ₹5 for the local gaushala
                 </strong>
                 <small>
                   We pass it on to the gaushala at Raman Reti every Purnima.
@@ -272,9 +270,6 @@ export default function CartPage() {
                 />
               </svg>
             </button>
-            <p className="side-card__fine">
-              No sign-up needed. We only ask for three things on the next page.
-            </p>
           </div>
         </aside>
       </div>

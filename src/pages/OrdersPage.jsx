@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listReceipts, fetchReceipt } from "../lib/orders";
 import { rupees, formatDateTime } from "../utils/format";
-import { MorPankh } from "../components/Motifs";
+import { Cloche } from "../components/Icons";
 
 /**
  * Orders placed from this device.
@@ -47,13 +47,9 @@ export default function OrdersPage() {
     return (
       <main className="wrap page page--narrow" id="main">
         <div className="empty-state card empty-state--page">
-          <MorPankh size={42} />
+          <Cloche size={42} />
           <h1 className="section-title">No orders from this device yet</h1>
-          <p className="muted">
-            Scan the QR code in your room to order. Your receipts will appear
-            here afterwards.
-          </p>
-          <Link to="/" className="btn btn-primary">
+          <Link to="/menu" className="btn btn-primary">
             Browse the menu
           </Link>
         </div>

@@ -6,7 +6,7 @@ import SignUpPrompt from "../components/SignUpPrompt";
 import { rupees, formatPhone } from "../utils/format";
 import { placeOrder } from "../lib/orders";
 import { useProperty } from "../utils/property";
-import { TulsiLeaf, MorPankh, Matka } from "../components/Motifs";
+import { TulsiLeaf, Cloche, BuildingIcon } from "../components/Icons";
 import { SELLER } from "../utils/seller";
 import { useCartAvailability } from "../hooks/useCartAvailability";
 
@@ -173,7 +173,9 @@ export default function CheckoutPage() {
         },
         coupon,
         donate,
-        note: [instructions.trim(), form.note.trim()].filter(Boolean).join(" · "),
+        note: [instructions.trim(), form.note.trim()]
+          .filter(Boolean)
+          .join(" · "),
       });
 
       clear();
@@ -200,7 +202,7 @@ export default function CheckoutPage() {
       />
 
       <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to="/">Menu</Link>
+        <Link to="/menu">Menu</Link>
         <span aria-hidden="true">›</span>
         <Link to="/cart">Your order</Link>
         <span aria-hidden="true">›</span>
@@ -222,7 +224,7 @@ export default function CheckoutPage() {
         <section className="checkout-grid__main">
           <div className="card form-card">
             <div className="form-card__head">
-              <Matka size={22} />
+              <BuildingIcon size={22} />
               <div>
                 <h2 className="form-card__title">Your details</h2>
                 <p className="form-card__sub">
@@ -414,7 +416,7 @@ export default function CheckoutPage() {
 
           <div className="card form-card">
             <div className="form-card__head">
-              <MorPankh size={20} />
+              <Cloche size={20} />
               <div>
                 <h2 className="form-card__title">Payment</h2>
                 <p className="form-card__sub">
@@ -454,8 +456,7 @@ export default function CheckoutPage() {
         <aside className="checkout-grid__side">
           <div className="card side-card">
             <h2 className="side-card__title">
-              {bill.itemCount} {bill.itemCount === 1 ? "item" : "items"} from
-              {" "}
+              {bill.itemCount} {bill.itemCount === 1 ? "item" : "items"} from{" "}
               {SELLER.name}
             </h2>
 

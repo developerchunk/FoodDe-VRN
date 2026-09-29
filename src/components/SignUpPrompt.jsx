@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { MorPankh, TulsiLeaf } from "./Motifs";
+import { Cloche, TulsiLeaf } from "./Icons";
 
 function GoogleMark() {
   return (
@@ -67,7 +67,7 @@ export default function SignUpPrompt({ open, onGoogle, onSkip }) {
         <span className="prompt__grip" aria-hidden="true" />
 
         <span className="prompt__mark" aria-hidden="true">
-          <MorPankh size={26} />
+          <Cloche size={26} />
         </span>
 
         <h2 id="prompt-title" className="prompt__title">

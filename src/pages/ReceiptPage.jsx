@@ -6,7 +6,7 @@ import {
   maskPhone,
   formatDateTime,
 } from "../utils/format";
-import { MorPankh, Bansuri } from "../components/Motifs";
+import { Cloche } from "../components/Icons";
 import { SELLER } from "../utils/seller";
 
 const STATUS_LABEL = {
@@ -39,12 +39,12 @@ export default function ReceiptPage() {
     return (
       <main className="wrap page page--narrow" id="main">
         <div className="empty-state card empty-state--page">
-          <MorPankh size={42} />
+          <Cloche size={42} />
           <h1 className="section-title">Receipt not found</h1>
           <p className="muted">
             Demo receipts are stored in this browser only.
           </p>
-          <Link to="/" className="btn btn-primary">
+          <Link to="/menu" className="btn btn-primary">
             Back to the menu
           </Link>
         </div>
@@ -65,7 +65,7 @@ export default function ReceiptPage() {
   return (
     <main className="wrap page page--narrow" id="main">
       <nav className="crumbs no-print" aria-label="Breadcrumb">
-        <Link to="/">Menu</Link>
+        <Link to="/menu">Menu</Link>
         <span aria-hidden="true">›</span>
         <Link to={`/order/${order.order_no}`}>Order {order.order_no}</Link>
         <span aria-hidden="true">›</span>
@@ -105,7 +105,10 @@ export default function ReceiptPage() {
         </div>
       </div>
 
-      <article className="receipt" aria-label={`Receipt for order ${order.order_no}`}>
+      <article
+        className="receipt"
+        aria-label={`Receipt for order ${order.order_no}`}
+      >
         <header className="receipt__head">
           <span
             className={`receipt__stamp ${order.status === "pending_payment" ? "receipt__stamp--unpaid" : ""}`}
@@ -115,7 +118,7 @@ export default function ReceiptPage() {
           </span>
           <div className="receipt__brand">
             <span className="receipt__mark">
-              <MorPankh size={22} />
+              <Cloche size={22} />
             </span>
             <div>
               <h2>{SELLER.name}</h2>
@@ -123,9 +126,6 @@ export default function ReceiptPage() {
           </div>
           <p className="receipt__addr">{SELLER.address}</p>
           <p className="receipt__addr">{maskPhone(SELLER.phone)}</p>
-          <div className="receipt__flute">
-            <Bansuri width={140} />
-          </div>
         </header>
 
         <div className="receipt__meta">
@@ -146,7 +146,9 @@ export default function ReceiptPage() {
           <div>
             <small>Status</small>
             <strong
-              className={order.status === "pending_payment" ? "" : "receipt__paid"}
+              className={
+                order.status === "pending_payment" ? "" : "receipt__paid"
+              }
             >
               {STATUS_LABEL[order.status] ?? order.status}
             </strong>
@@ -193,14 +195,16 @@ export default function ReceiptPage() {
                 <td>
                   <span className="receipt__item">
                     <span className="veg-mark" aria-hidden="true" />
-                    <span>
-                      {l.name}
-                    </span>
+                    <span>{l.name}</span>
                   </span>
                 </td>
                 <td className="ta-c">{l.qty}</td>
-                <td className="ta-r rupee">{rupeesExact(l.unit_price_paise)}</td>
-                <td className="ta-r rupee">{rupeesExact(l.line_total_paise)}</td>
+                <td className="ta-r rupee">
+                  {rupeesExact(l.unit_price_paise)}
+                </td>
+                <td className="ta-r rupee">
+                  {rupeesExact(l.line_total_paise)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -220,7 +224,9 @@ export default function ReceiptPage() {
           <div>
             <dt>Delivery</dt>
             <dd className="rupee">
-              {order.delivery_paise === 0 ? "Free" : rupeesExact(order.delivery_paise)}
+              {order.delivery_paise === 0
+                ? "Free"
+                : rupeesExact(order.delivery_paise)}
             </dd>
           </div>
           <div>
@@ -232,7 +238,9 @@ export default function ReceiptPage() {
             <dd className="rupee">{rupeesExact(order.tax_paise)}</dd>
           </div>
           <div className="receipt__grand">
-            <dt>{order.status === "pending_payment" ? "Total due" : "Total paid"}</dt>
+            <dt>
+              {order.status === "pending_payment" ? "Total due" : "Total paid"}
+            </dt>
             <dd className="rupee">{rupeesExact(order.total_paise)}</dd>
           </div>
         </dl>
@@ -255,7 +263,7 @@ export default function ReceiptPage() {
       </article>
 
       <div className="receipt-back no-print">
-        <Link to="/" className="btn btn-primary">
+        <Link to="/menu" className="btn btn-primary">
           Order something else
         </Link>
       </div>

@@ -2,72 +2,67 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import QtyStepper from "./QtyStepper";
 import { rupees } from "../utils/format";
-import { MorPankh, TulsiLeaf } from "./Motifs";
+import { ArrowIcon, CartIcon } from "./Icons";
 
+/**
+ * The cart beside the menu. The head and the foot (total and Review order)
+ * stay put; only the list of lines scrolls, so a long order never pushes the
+ * button out of reach.
+ */
 export default function CartPanel() {
   const { lines, bill, add, decrement, clear } = useCart();
 
   return (
-    <aside className="cart-panel" aria-label="Your order">
-      <div className="cart-panel__inner card">
-        <div className="cart-panel__head">
-          <h2 className="cart-panel__title">Your Thali</h2>
-          {lines.length > 0 && (
-            <button
-              type="button"
-              className="linkish linkish--danger"
-              onClick={clear}
-            >
-              Clear
-            </button>
+    <div className="cart-panel card" aria-label="Your order">
+      <div className="cart-panel__head">
+        <h2 className="cart-panel__title">
+          Your order
+          {bill.itemCount > 0 && (
+            <span className="cart-panel__count">{bill.itemCount}</span>
           )}
+        </h2>
+        {lines.length > 0 && (
+          <button
+            type="button"
+            className="linkish linkish--danger"
+            onClick={clear}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {lines.length === 0 ? (
+        <div className="cart-panel__empty">
+          <CartIcon size={26} />
+          <p>Your cart is empty</p>
         </div>
+      ) : (
+        <>
+          <ul className="cart-panel__lines">
+            {lines.map((line) => (
+              <li key={line.id} className="cart-line">
+                <span className="veg-mark" aria-hidden="true" />
+                <p className="cart-line__name">{line.name}</p>
+                <strong className="cart-line__amt rupee">
+                  {rupees(line.pricePaise * line.qty)}
+                </strong>
+                {/* the unit price only adds anything once there are several */}
+                <p className="cart-line__unit">
+                  {line.qty > 1 && `${rupees(line.pricePaise)} × ${line.qty}`}
+                </p>
+                <QtyStepper
+                  size="sm"
+                  qty={line.qty}
+                  label={line.name}
+                  onAdd={() => add(line)}
+                  onRemove={() => decrement(line.id)}
+                />
+              </li>
+            ))}
+          </ul>
 
-        {lines.length === 0 ? (
-          <div className="cart-panel__empty">
-            <MorPankh size={34} />
-            <p className="cart-panel__empty-title">Your thali is empty</p>
-            <p className="cart-panel__empty-sub">
-              Add a kachori, a thali, a kulhad of lassi — whatever the day is
-              asking for.
-            </p>
-          </div>
-        ) : (
-          <>
-            <ul className="cart-panel__lines">
-              {lines.map((line) => {
-                return (
-                  <li key={line.id} className="cart-line">
-                    <span className="veg-mark" aria-hidden="true" />
-                    <div className="cart-line__body">
-                      <p className="cart-line__name">{line.name}</p>
-                      {line.sattvic && (
-                        <p className="cart-line__flag">
-                          <TulsiLeaf size={10} /> no onion–garlic
-                        </p>
-                      )}
-                      <p className="cart-line__unit">
-                        {rupees(line.pricePaise)}{" "}
-                        {line.qty > 1 && <span>× {line.qty}</span>}
-                      </p>
-                    </div>
-                    <div className="cart-line__right">
-                      <QtyStepper
-                        size="sm"
-                        qty={line.qty}
-                        label={line.name}
-                        onAdd={() => add(line)}
-                        onRemove={() => decrement(line.id)}
-                      />
-                      <strong className="cart-line__amt rupee">
-                        {rupees(line.pricePaise * line.qty)}
-                      </strong>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-
+          <div className="cart-panel__foot">
             {bill.freeDeliveryGap > 0 && (
               <div className="freeship">
                 <div className="freeship__bar">
@@ -85,34 +80,20 @@ export default function CartPanel() {
             )}
 
             <div className="cart-panel__total">
-              <span>Item total</span>
+              <span>
+                Item total
+                <small>+ delivery &amp; taxes</small>
+              </span>
               <strong className="rupee">{rupees(bill.subtotal)}</strong>
             </div>
-            <p className="cart-panel__fineprint">
-              Delivery, packing &amp; taxes calculated at checkout
-            </p>
 
             <Link to="/cart" className="btn btn-gold btn-block">
               Review order
-              <svg
-                viewBox="0 0 20 20"
-                width="15"
-                height="15"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                aria-hidden="true"
-              >
-                <path
-                  d="M4 10h11M11 5l5 5-5 5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ArrowIcon size={16} />
             </Link>
-          </>
-        )}
-      </div>
-    </aside>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

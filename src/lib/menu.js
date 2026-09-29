@@ -59,6 +59,43 @@ const artFor = (name, categoryName) => {
   return "curry";
 };
 
+/* The sidebar glyph for a category, chosen from its name the same way. */
+const CATEGORY_ICON = [
+  [/thali|combo|meal/i, "thali"],
+  [/south|dosa|idli/i, "dosa"],
+  [/chinese|noodle|indo/i, "noodles"],
+  [/rice|biryani|pulao/i, "bowl"],
+  [/bread|roti|naan|paratha/i, "bread"],
+  [/sweet|dessert|mithai/i, "sweet"],
+  [/drink|beverage|lassi|shake|juice|tea|coffee/i, "cup"],
+  [/snack|starter|chaat|street/i, "snack"],
+  [/burger|sandwich|pizza|continental|fast/i, "burger"],
+];
+
+const iconFor = (name) =>
+  CATEGORY_ICON.find(([re]) => re.test(name))?.[1] ?? "kadhai";
+
+/* "07:00:00" -> "7" / "7:30". Compact on purpose: this sits on a dish card
+   next to the price, and "7:00 am – 11:00 am" crowds it out. */
+const clock12 = (t) => {
+  if (!t) return null;
+  const [h, m] = String(t).split(":").map(Number);
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return m === 0 ? `${hour}` : `${hour}:${String(m).padStart(2, "0")}`;
+};
+const suffix = (t) => (Number(String(t).split(":")[0]) < 12 ? "am" : "pm");
+
+/** "Breakfast · 7 – 11 am", or null when the dish is served all day. */
+const mealWindow = (row) => {
+  if (!row.meal_time || row.meal_time === "all_day") return null;
+  if (!row.meal_starts_at || !row.meal_ends_at) return row.meal_label || null;
+  const a = suffix(row.meal_starts_at);
+  const b = suffix(row.meal_ends_at);
+  /* Both in the same half of the day: say "am" once. */
+  const from = a === b ? clock12(row.meal_starts_at) : `${clock12(row.meal_starts_at)} ${a}`;
+  return `${row.meal_label} · ${from} – ${clock12(row.meal_ends_at)} ${b}`;
+};
+
 /** One row of `get_menu()`, in the shape the components expect. */
 const shape = (row) => ({
   id: row.id,
@@ -73,6 +110,9 @@ const shape = (row) => ({
   loved: row.is_loved,
   imageUrl: row.image_url,
   availableNow: row.is_available_now,
+  mealTime: row.meal_time || "all_day",
+  /* null when served all day, so the card can simply not render the chip */
+  mealWindow: mealWindow(row),
   ingredients: row.ingredients,
   serves: row.cooking_time_mins ? `${row.cooking_time_mins} min` : null,
   art: artFor(row.name, row.category_name),
@@ -97,6 +137,7 @@ export async function fetchMenu() {
       seen.set(row.category_slug, {
         id: row.category_slug,
         name: row.category_name,
+        icon: iconFor(row.category_name),
         sort: row.category_sort ?? 0,
       });
     }

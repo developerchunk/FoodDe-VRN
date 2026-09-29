@@ -1,4 +1,4 @@
-import { CategoryGlyph } from "./Motifs";
+import { CategoryGlyph } from "./Icons";
 
 export default function CategoryRail({ categories, active, counts, onSelect }) {
   return (
@@ -12,13 +12,12 @@ export default function CategoryRail({ categories, active, counts, onSelect }) {
               className={`rail__item ${active === c.id ? "is-active" : ""}`}
               onClick={() => onSelect(c.id)}
               aria-current={active === c.id ? "true" : undefined}
+              disabled={!counts[c.id]}
             >
               <span className="rail__glyph">
-                <CategoryGlyph icon={c.icon} size={24} />
+                <CategoryGlyph icon={c.icon} size={22} />
               </span>
-              <span className="rail__text">
-                <strong>{c.name}</strong>
-              </span>
+              <span className="rail__name">{c.name}</span>
               <span className="rail__count">{counts[c.id] ?? 0}</span>
             </button>
           </li>

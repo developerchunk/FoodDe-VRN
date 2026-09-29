@@ -23,7 +23,7 @@ export default function MobileDock({ query, onQuery, onOpenMenu }) {
           type="search"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search “kachori”"
+          placeholder="Search dishes"
           aria-label="Search the menu"
         />
         {query && (

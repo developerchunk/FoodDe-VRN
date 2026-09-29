@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useReceipt } from "../hooks/useReceipt";
 import { useCart } from "../context/cart-context";
 import { rupees, maskPhone, formatDateTime } from "../utils/format";
-import { MorPankh, TulsiLeaf, Diya } from "../components/Motifs";
+import { Cloche, TulsiLeaf, ClockIcon } from "../components/Icons";
 
 const STAGES = [
   {
@@ -64,13 +64,9 @@ export default function OrderSuccessPage() {
     return (
       <main className="wrap page page--narrow" id="main">
         <div className="empty-state card empty-state--page">
-          <MorPankh size={42} />
+          <Cloche size={42} />
           <h1 className="section-title">We couldn’t find that order</h1>
-          <p className="muted">
-            That receipt link is not valid. Check the link, or scan the QR code
-            in your room to start again.
-          </p>
-          <Link to="/" className="btn btn-primary">
+          <Link to="/menu" className="btn btn-primary">
             Back to the menu
           </Link>
         </div>
@@ -112,11 +108,10 @@ export default function OrderSuccessPage() {
           </svg>
         </div>
 
-        <p className="success__greet deva">राधे राधे 🙏</p>
         <h1 className="success__title">Your order is confirmed</h1>
         <p className="success__sub">
-          Thank you, <strong>{order.guest_name.split(" ")[0]}</strong>. We
-          have sent the confirmation to{" "}
+          Thank you, <strong>{order.guest_name.split(" ")[0]}</strong>. We have
+          sent the confirmation to{" "}
           <strong>{maskPhone(order.guest_phone)}</strong> on WhatsApp, and we
           will call this number if the rider needs directions.
         </p>
@@ -133,7 +128,7 @@ export default function OrderSuccessPage() {
           <div>
             <small>Arriving by</small>
             <strong className="success__eta">
-              <Diya size={16} /> {etaText}
+              <ClockIcon size={16} /> {etaText}
             </strong>
           </div>
           <div>
@@ -149,7 +144,7 @@ export default function OrderSuccessPage() {
           <button type="button" className="btn btn-ghost" onClick={reorder}>
             Order this again
           </button>
-          <Link to="/" className="btn btn-ghost">
+          <Link to="/menu" className="btn btn-ghost">
             Back to menu
           </Link>
         </div>
@@ -210,7 +205,9 @@ export default function OrderSuccessPage() {
 
           <div className="summary-card__total">
             <span>
-              {order.status === "pending_payment" ? "Awaiting payment" : "Total"}
+              {order.status === "pending_payment"
+                ? "Awaiting payment"
+                : "Total"}
             </span>
             <strong className="rupee">{rupees(order.total_paise)}</strong>
           </div>
@@ -222,16 +219,13 @@ export default function OrderSuccessPage() {
               <br />
               Room {order.room_number}
             </p>
-            {order.note && (
-              <p className="summary-card__note">“{order.note}”</p>
-            )}
+            {order.note && <p className="summary-card__note">“{order.note}”</p>}
           </div>
-
         </section>
       </div>
 
       <section className="signup-invite card">
-        <MorPankh size={30} />
+        <Cloche size={30} />
         <div>
           <h2>Want your receipts in one place?</h2>
           <p>

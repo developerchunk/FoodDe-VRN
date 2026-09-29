@@ -1,84 +1,48 @@
 import { Link } from "react-router-dom";
-import { MorPankh, Bansuri, TulsiLeaf } from "./Motifs";
 import { maskPhone } from "../utils/format";
 import { SELLER, sellerHours } from "../utils/seller";
+import { useProperty } from "../utils/property";
+import Logo from "./Logo";
 
+/**
+ * With a room link the footer names the guest house and gives its address
+ * from address_map; without one it shows In Room Dining's own.
+ */
 export default function Footer() {
+  const house = useProperty();
+  const stay = Boolean(house.addressId);
+
   return (
-    <footer className="site-footer" id="kitchen">
-      <div className="wrap">
-        <div className="site-footer__flute">
-          <Bansuri width={180} />
+    <footer className="site-footer">
+      <div className="wrap site-footer__inner">
+        <div className="site-footer__brand">
+          <Logo className="logo--footer" name={stay ? house.property : null} />
+          <p>{stay ? house.address : SELLER.address}</p>
         </div>
 
-        <div className="site-footer__grid">
-          <div>
-            <div className="brand brand--footer">
-              <span className="brand__mark">
-                <MorPankh size={20} />
-              </span>
-              <span className="brand__text">
-                <strong>{SELLER.name}</strong>
-              </span>
-            </div>
-            <p className="site-footer__note">
-              Pure vegetarian food, cooked fresh in desi ghee and brought
-              straight to your room — with a no onion, no garlic option right
-              through the menu.
-            </p>
-            <p className="site-footer__greet deva">राधे राधे 🙏</p>
-          </div>
+        <ul className="site-footer__links">
+          <li>
+            <Link to="/menu">Menu</Link>
+          </li>
+          <li>
+            <Link to="/cart">Cart</Link>
+          </li>
+          <li>
+            <Link to="/orders">Orders</Link>
+          </li>
+        </ul>
 
-          <div>
-            <h4 className="site-footer__head">How it&apos;s cooked</h4>
-            <ul className="site-footer__list">
-              <li>
-                <TulsiLeaf size={13} /> Pure vegetarian, always. No egg, ever.
-              </li>
-              <li>
-                <TulsiLeaf size={13} /> Cooked in desi ghee &amp; cold-pressed
-                oils
-              </li>
-              <li>
-                <TulsiLeaf size={13} /> Sealed clay &amp; paper packaging
-              </li>
-            </ul>
-          </div>
+        <ul className="site-footer__contact">
+          <li>{sellerHours()}</li>
+          <li>WhatsApp {maskPhone(SELLER.phone)}</li>
+        </ul>
+      </div>
 
-          <div>
-            <h4 className="site-footer__head">Ordering</h4>
-            <ul className="site-footer__list site-footer__list--plain">
-              <li>
-                <Link to="/">Full menu</Link>
-              </li>
-              <li>
-                <Link to="/cart">Your cart</Link>
-              </li>
-              <li>
-                <Link to="/orders">Past orders &amp; receipts</Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="site-footer__head">Reach us</h4>
-            <ul className="site-footer__list site-footer__list--plain">
-              <li>{SELLER.address}</li>
-              <li>WhatsApp: {maskPhone(SELLER.phone)}</li>
-              <li>{sellerHours()}</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="site-footer__base">
-          <p>
-            © {new Date().getFullYear()} {SELLER.name} · seller of record
-          </p>
-          <p className="site-footer__legal">
-            Prices inclusive of applicable taxes where shown. Online payment is
-            still being set up — orders placed here are not yet being fulfilled.
-          </p>
-        </div>
+      <div className="wrap site-footer__base">
+        <p>
+          © {new Date().getFullYear()} {SELLER.name} · Pure vegetarian
+        </p>
+        <p>Online payment is being set up — orders are not yet fulfilled.</p>
       </div>
     </footer>
   );

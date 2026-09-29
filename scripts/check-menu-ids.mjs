@@ -16,7 +16,7 @@
  * charged and the sheet is what a human reads.
  */
 import { createClient } from "@supabase/supabase-js";
-import { read, yes, toTime, toPaise, slugOf, menuId } from "./lib/sheets.mjs";
+import { read, yes, toTime, toPaise, slugOf, menuId, mealSlot } from "./lib/sheets.mjs";
 import { SELLER } from "../src/utils/seller.js";
 import "dotenv/config";
 
@@ -124,6 +124,7 @@ const FIELDS = [
   ["cooking times agree", (d) => Number(d.cooking_time_mins), (m) => Number(m.cooking_time_mins)],
   ["the spicy flag agrees", (d) => d.is_spicy, (m) => yes(m.is_spicy)],
   ["the loved flag agrees", (d) => d.is_loved, (m) => yes(m.is_loved)],
+  ["meal times agree", (d) => d.meal_time, (m) => mealSlot(m.meal_time)],
 ];
 for (const [label, fromDb, fromSheet] of FIELDS) {
   const diffs = [];
@@ -137,6 +138,36 @@ for (const [label, fromDb, fromSheet] of FIELDS) {
   check(diffs.length === 0, label, diffs.join("\n          "), {
     identity: label.startsWith("each id"),
   });
+}
+
+/* A dish may carry its own window instead of inheriting the slot's. Where the
+   sheet names one, get_menu must be measuring the dish against exactly that —
+   an override that silently failed to import would leave the dish on the slot's
+   hours, which is a wrong answer that looks like a right one. Dishes that
+   inherit are not compared here: the slot defaults live in a table the
+   publishable key cannot read. */
+{
+  const hm = (t) => (t ? String(t).slice(0, 5) : null);
+  const diffs = [];
+  let overrides = 0;
+  for (const m of menu) {
+    const d = liveById.get(menuId(m));
+    if (!d) continue;
+    const a = hm(toTime(m.meal_start));
+    const b = hm(toTime(m.meal_end));
+    if (!a || !b) continue;
+    overrides++;
+    if (hm(d.meal_starts_at) !== a || hm(d.meal_ends_at) !== b)
+      diffs.push(
+        `${d.id} ${d.name}: sheet ${a}-${b}, database ` +
+          `${hm(d.meal_starts_at)}-${hm(d.meal_ends_at)}`,
+      );
+  }
+  check(
+    diffs.length === 0,
+    `per-dish meal windows agree (${overrides} dish(es) set their own)`,
+    diffs.join("\n          "),
+  );
 }
 
 /* ------------------------------------------ kitchens, only with the secret key */

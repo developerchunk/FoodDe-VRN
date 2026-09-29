@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import { rupees } from "../utils/format";
+import { isMenuPath } from "../utils/routes";
+import { ArrowIcon } from "./Icons";
 
 export default function MobileCartBar() {
   const { bill } = useCart();
@@ -17,7 +19,7 @@ export default function MobileCartBar() {
   /* on the menu page it stacks above the search dock */
   return (
     <div
-      className={`mobile-bar ${pathname === "/" ? "mobile-bar--docked" : ""}`}
+      className={`mobile-bar ${isMenuPath(pathname) ? "mobile-bar--docked" : ""}`}
     >
       <div className="mobile-bar__info">
         <strong>
@@ -27,21 +29,7 @@ export default function MobileCartBar() {
       </div>
       <Link to="/cart" className="btn btn-gold mobile-bar__cta">
         View cart
-        <svg
-          viewBox="0 0 20 20"
-          width="15"
-          height="15"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          aria-hidden="true"
-        >
-          <path
-            d="M4 10h11M11 5l5 5-5 5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <ArrowIcon size={16} />
       </Link>
     </div>
   );

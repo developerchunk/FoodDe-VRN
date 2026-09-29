@@ -17,8 +17,10 @@ to whoever has to act on it.
 ## The guest journey
 
 1. A QR code sits in each room of a rest house. The code carries an opaque id.
-2. Scanning it opens the site, which resolves that id to a **property** (name,
-   address) and a **room**. Both are shown to the guest.
+2. Scanning it opens `/menu?id=<code>`, which resolves that id to a
+   **property** (name, address from `address_map`) and a **room**. Both are
+   shown to the guest — the name and room in the header, the name and full
+   address in the footer.
 3. The guest browses **one menu**. They are never shown that the dishes come
    from different kitchens — as far as they are concerned it is one menu.
 4. They pay, and **only then** is the order placed. Every order is pre-paid;
@@ -51,9 +53,13 @@ the order fan-out possible, so it is not optional metadata.
 - **Vegetarian only.** Vrindavan is a pilgrimage city and its sacred zones
   prohibit meat. There is no non-veg on this menu, so Ember carries actions
   only — it is never a diet marker.
-- **No IRD branding in the interface.** The rest house's own name is the title,
-  with the room number small beneath it. A visitor who arrives without a QR
-  code sees "In Room Dining".
+- **Brand is "In Room Dining", never "IRD".** The header carries the gold
+  cloche mark and the name, then the rest house's name with the room number
+  beneath it. On a phone, once a room is known, the lockup shrinks to the
+  cloche so the rest house name has room.
+- **Pages:** `/` is a short home page; the menu lives at `/menu` (and at
+  `/menu?id=<code>` for room links; the older `/r/<code>` stickers redirect there). Copy is kept minimal and English only — no
+  Hindi text.
 - **Seller of record is In Room Dining.** GST and FSSAI registration are in
   progress; until the real numbers exist, **display no licence numbers at all**.
   Never put placeholder or example numbers in the interface.

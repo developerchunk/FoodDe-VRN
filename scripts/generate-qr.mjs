@@ -46,7 +46,7 @@ mkdirSync("qr", { recursive: true });
 
 const cards = [];
 for (const a of addresses) {
-  const target = `${base}/r/${a.id}`;
+  const target = `${base}/menu?id=${a.id}`;
   /* 'M' tolerates ~15% damage — these live on walls and get scuffed */
   const svg = await QRCode.toString(target, {
     type: "svg",

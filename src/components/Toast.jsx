@@ -1,5 +1,5 @@
 import { useCart } from "../context/cart-context";
-import { TulsiLeaf } from "./Motifs";
+import { TulsiLeaf } from "./Icons";
 
 export default function Toast() {
   const { toast } = useCart();

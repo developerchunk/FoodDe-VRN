@@ -1,8 +1,5 @@
 /* ==========================================================================
    In Room Dining — design tokens
-   Palette drawn from Braj / Pichwai visual culture:
-   peacock teal & indigo (mor pankh), marigold & haldi (temple garlands),
-   kumkum rose, tulsi green, and the cream of Vrindavan sandstone.
    ========================================================================== */
 :root {
   /* ==================================================================
@@ -16,10 +13,11 @@
   --teal-800: #075b55;
   --teal-700: #0a6e67;
   --teal-600: #128c82;
+  --teal-500: #2f9a90;
   --teal-400: #4fa9a0;
   --teal-100: #dceeeb;
 
-  /* 2. Ember — appetite and action. Add to cart, offers, non-veg. */
+  /* 2. Ember — appetite and action. Add to cart and order actions only. */
   --ird-ember: #d95f3f;
   --ember: #d95f3f;
   --ember-deep: #b8472a;
@@ -35,18 +33,17 @@
   /* Neutrals — the 60%. They are not brand colours; they give the three
      signatures room to breathe. */
   --paper: #ffffff;
-  --cream: #faf6ef;
-  --sand: #f3ece1;
-  --sand-deep: #e7dfd3;
+  --cream: #fbf7f0;
+  --sand: #f4eee4;
+  --sand-deep: #e9e1d4;
 
   --ink: #17302e;
   --ink-soft: #55645f;
   --ink-faint: #8c9894;
 
-  /* Diet marks: green stays green, non-veg takes Ember. */
+  /* The one diet mark: everything on the menu is vegetarian. */
   --veg: #3f8a3f;
   --veg-soft: #e4f1e2;
-  --nonveg: var(--ember);
 
   /* --------------------------------------------------------------
      Transitional aliases. The stylesheets still speak the old Braj
@@ -68,8 +65,7 @@
   --radius-lg: 24px;
   --radius-arch: 999px 999px 18px 18px;
 
-  --shadow-sm:
-    0 1px 2px rgba(7, 91, 85, 0.06), 0 2px 8px rgba(7, 91, 85, 0.05);
+  --shadow-sm: 0 1px 2px rgba(7, 91, 85, 0.06), 0 2px 8px rgba(7, 91, 85, 0.05);
   --shadow:
     0 2px 6px rgba(7, 91, 85, 0.07), 0 12px 28px -14px rgba(7, 91, 85, 0.26);
   --shadow-lg:
@@ -77,12 +73,10 @@
 
   --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-body: "Jost", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-deva: "Tiro Devanagari Hindi", "Noto Sans Devanagari", serif;
 
-  --wrap: 1280px;
-  --header-h: 72px;
+  --wrap: 1440px;
+  --header-h: 64px;
 }
-
 
 * {
   box-sizing: border-box;
@@ -99,15 +93,6 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background-color: var(--cream);
-  /* soft jaali (lattice) wash, the way sunlight falls through temple screens */
-  background-image:
-    radial-gradient(
-      circle at 12% -8%,
-      rgba(227, 154, 42, 0.13),
-      transparent 42%
-    ),
-    radial-gradient(circle at 92% 4%, rgba(31, 122, 115, 0.12), transparent 40%);
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -178,8 +163,13 @@ ul {
   padding-inline: 20px;
 }
 
-.deva {
-  font-family: var(--font-deva);
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .eyebrow {
@@ -187,7 +177,7 @@ ul {
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--marigold-deep);
+  color: var(--teal-600);
 }
 
 .section-title {
@@ -249,6 +239,17 @@ ul {
 }
 .btn-gold:hover:not(:disabled) {
   box-shadow: 0 12px 26px -10px rgba(184, 71, 42, 0.8);
+}
+
+/* the primary action on a teal surface */
+.btn-light {
+  background: var(--paper);
+  color: var(--teal-900);
+  font-weight: 600;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.45);
+}
+.btn-light:hover {
+  background: var(--gold-soft);
 }
 
 .btn-ghost {

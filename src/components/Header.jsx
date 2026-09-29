@@ -1,116 +1,77 @@
-import { Fragment } from "react";
+import { useEffect } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import { useProperty } from "../utils/property";
-import { Lotus } from "./Motifs";
-
-function CartIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="21"
-      height="21"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      aria-hidden="true"
-    >
-      <path
-        d="M4 5h2.2l2 11.2a1.6 1.6 0 0 0 1.6 1.3h7.7a1.6 1.6 0 0 0 1.6-1.2L21 8.5H7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="10.5" cy="20" r="1.3" fill="currentColor" stroke="none" />
-      <circle cx="17.5" cy="20" r="1.3" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-const TICKER_NOTES = [
-  "100% pure vegetarian — no onion & garlic kitchen available on every dish",
-  "Free delivery across Vrindavan on orders above ₹299",
-  "Order status on WhatsApp — no app, no sign-up needed",
-];
-
-/**
- * One pass of the announcements. Two identical passes sit side by side in the
- * track, so sliding the track by half its width loops seamlessly on a phone,
- * where the three notes are far wider than the screen.
- */
-function TickerRun({ duplicate = false }) {
-  return (
-    <div className="ticker__run" aria-hidden={duplicate || undefined}>
-      {TICKER_NOTES.map((note, i) => (
-        <Fragment key={note}>
-          <span className="ticker__item">
-            {i === 0 && <Lotus size={15} />}
-            {note}
-          </span>
-          <span className="ticker__dot" aria-hidden="true">
-            •
-          </span>
-        </Fragment>
-      ))}
-    </div>
-  );
-}
+import { isMenuPath } from "../utils/routes";
+import { isOpenNow, sellerHoursShort } from "../utils/seller";
+import { BuildingIcon, CartIcon, ClockIcon } from "./Icons";
+import Logo from "./Logo";
 
 export default function Header() {
   const { bill } = useCart();
   const { pathname } = useLocation();
   const house = useProperty();
+  const open = isOpenNow();
+
+  /* the browser tab names the guest house too, once it is known */
+  useEffect(() => {
+    document.title = house.room
+      ? `${house.property} · In Room Dining`
+      : "In Room Dining";
+  }, [house.room, house.property]);
 
   return (
-    <>
-      <div className="ticker">
-        <div className="ticker__viewport">
-          <div className="ticker__track">
-            <TickerRun />
-            <TickerRun duplicate />
-          </div>
-        </div>
-      </div>
+    <header className="site-header">
+      <div className="wrap site-header__inner">
+        <Logo />
 
-      <header className="site-header">
-        <div className="wrap site-header__inner">
-          {/* No IRD branding: the rest house's own name is the title, with
-              the room it was scanned from underneath. */}
-          <Link to="/" className="house">
-            <span className="house__name">{house.property}</span>
-            {house.room && (
-              <span className="house__room">
+        {/* the rest house the guest scanned from, and their room */}
+        {house.room && (
+          <div className="stay">
+            <span className="stay__icon">
+              <BuildingIcon size={22} />
+            </span>
+            <span className="stay__text">
+              <strong>{house.property}</strong>
+              <small>
                 Room {house.room}
-                {house.address && (
-                  <span className="house__address"> · {house.address}</span>
+                {house.area && (
+                  <span className="stay__area"> · {house.area}</span>
                 )}
-              </span>
-            )}
-          </Link>
+              </small>
+            </span>
+          </div>
+        )}
 
-          <nav className="site-nav" aria-label="Primary">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `site-nav__link ${isActive ? "is-active" : ""}`
-              }
-              end
-            >
-              Menu
-            </NavLink>
-          </nav>
-
-          <Link
-            to="/cart"
-            className={`cart-button ${bill.itemCount ? "has-items" : ""} ${pathname === "/cart" ? "is-active" : ""}`}
-          >
-            <CartIcon />
-            <span className="cart-button__label">Cart</span>
-            {bill.itemCount > 0 && (
-              <span className="cart-button__count">{bill.itemCount}</span>
-            )}
-          </Link>
+        <div className="hours">
+          <ClockIcon size={22} />
+          <span>
+            <strong>{open ? "Open" : "Closed"}</strong>
+            <small>{sellerHoursShort()}</small>
+          </span>
         </div>
-      </header>
-    </>
+
+        <nav className="site-nav" aria-label="Primary">
+          <NavLink
+            to="/menu"
+            className={`site-nav__link ${isMenuPath(pathname) ? "is-active" : ""}`}
+          >
+            Menu
+          </NavLink>
+        </nav>
+
+        <Link
+          to="/cart"
+          className={`cart-button ${pathname === "/cart" ? "is-active" : ""}`}
+          aria-label={`Cart, ${bill.itemCount} ${bill.itemCount === 1 ? "item" : "items"}`}
+        >
+          <CartIcon size={21} />
+          <span className="cart-button__label">Cart</span>
+          {bill.itemCount > 0 && (
+            <span className="cart-button__count">{bill.itemCount}</span>
+          )}
+        </Link>
+      </div>
+    </header>
   );
 }

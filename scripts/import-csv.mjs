@@ -15,7 +15,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { makePublicCode } from "./lib/code.mjs";
-import { read, yes, orNull, toTime, toPaise, slugOf, menuId } from "./lib/sheets.mjs";
+import {
+  read, yes, orNull, toTime, toPaise, slugOf, menuId, mealSlot, MEAL_SLOTS,
+} from "./lib/sheets.mjs";
 import "dotenv/config";
 
 const dryRun = process.argv.includes("--dry-run");
@@ -43,6 +45,35 @@ const kitchenRows = kitchens.map((k) => ({
   gst_number: orNull(k.gst_number),
   is_active: true,
 }));
+
+/* Two constraints in the database would catch these, but an aborted import
+   halfway through is a worse way to learn about a typo than a message naming
+   the dish. */
+const badWindows = menu.flatMap((m) => {
+  const a = toTime(m.meal_start);
+  const b = toTime(m.meal_end);
+  if (!a && !b) return [];
+  if (!a || !b)
+    return [`${m.dish}: needs both meal_start and meal_end, or neither`];
+  if (mealSlot(m.meal_time) === "all_day")
+    return [`${m.dish}: an all_day dish cannot also have ${a}-${b}`];
+  return [];
+});
+if (badWindows.length) {
+  console.error(`\nBad meal window in csv/menu_map.csv:\n  ${badWindows.join("\n  ")}\n`);
+  process.exit(1);
+}
+
+const badMeals = menu
+  .filter((m) => mealSlot(m.meal_time) === null)
+  .map((m) => `${m.dish} -> "${m.meal_time}"`);
+if (badMeals.length) {
+  console.error(
+    `\nUnknown meal_time in csv/menu_map.csv:\n  ${badMeals.join("\n  ")}\n` +
+      `Use one of: ${MEAL_SLOTS.join(", ")}\n`,
+  );
+  process.exit(1);
+}
 
 const categoryNames = [...new Set(menu.map((m) => m.category).filter(Boolean))];
 /* No id yet: a category that already exists must keep the id menu_items.
@@ -72,6 +103,10 @@ const menuRows = menu.map((m, i) => {
     is_sattvic: yes(m.is_satvik),
     is_spicy: yes(m.is_spicy),
     is_loved: yes(m.is_loved),
+    meal_time: mealSlot(m.meal_time),
+    /* Blank means "inherit the slot's window", which is null in the database. */
+    meal_starts_at: toTime(m.meal_start),
+    meal_ends_at: toTime(m.meal_end),
     is_available: true,
     sort_order: i,
   };
@@ -119,7 +154,8 @@ if (dryRun) {
   for (const m of menuRows)
     console.log(
       `  ${m.id}  ${m.name}  Rs ${(m.price_paise / 100).toFixed(2)}` +
-        `  kitchen:${m.kitchen_id}  ${m.is_sattvic ? "sattvic" : "has onion/garlic"}`,
+        `  kitchen:${m.kitchen_id}  ${m.is_sattvic ? "sattvic" : "has onion/garlic"}` +
+          `  ${m.meal_time}${m.meal_starts_at ? ` ${m.meal_starts_at}-${m.meal_ends_at}` : ""}`,
     );
   console.log(`\nAddresses (${addressRows.length}) — existing codes preserved`);
   for (const a of addressRows) console.log(`  ${a.place_name} room ${a.room_number}`);
