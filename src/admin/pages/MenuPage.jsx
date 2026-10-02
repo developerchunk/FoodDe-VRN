@@ -58,12 +58,17 @@ const loadAll = async () => {
 
 const span = (a, b) => `${timeIn(a)} – ${timeIn(b)}`;
 
-/** "All day", "Breakfast", or "Breakfast · 07:30 – 10:00" when the dish has its own hours. */
+/** "All day", "Breakfast", or "Custom · 13:00 – 15:00" when the dish has its own hours. */
 function mealLabel(d, windows) {
+  if (d.meal_starts_at && d.meal_ends_at) return `Custom · ${span(d.meal_starts_at, d.meal_ends_at)}`;
   const w = windows.find((x) => x.slot === d.meal_time);
-  const label = w?.label ?? (d.meal_time === "all_day" ? "All day" : d.meal_time);
-  return d.meal_starts_at && d.meal_ends_at ? `${label} · ${span(d.meal_starts_at, d.meal_ends_at)}` : label;
+  return w?.label ?? (d.meal_time === "all_day" ? "All day" : d.meal_time);
 }
+
+/* A dish either follows a slot's standard hours or has Custom timing of its
+   own. One that still carries the older "slot plus its own hours" opens as
+   Custom, which is what it effectively was. */
+const formSlot = (d) => (d.meal_starts_at && d.meal_ends_at ? "custom" : (d.meal_time ?? "all_day"));
 
 /* Rupees as typed: "149", "149.5", "₹1,249.50". More than two decimals would
    be a fraction of a paisa, so it is refused rather than rounded quietly. */
@@ -83,14 +88,17 @@ function validate(f) {
     e.cooking_time_mins = "Whole minutes, e.g. 20";
   if (String(f.sort_order).trim() && !WHOLE.test(String(f.sort_order).trim()))
     e.sort_order = "A whole number, e.g. 10";
-  if (f.meal_time !== "all_day" && Boolean(f.meal_starts_at) !== Boolean(f.meal_ends_at))
-    e.meal_ends_at = "Give both start and end, or neither.";
+  if (f.meal_time === "custom") {
+    if (!f.meal_starts_at) e.meal_starts_at = "When it starts being served.";
+    if (!f.meal_ends_at) e.meal_ends_at = "When it stops being served.";
+    else if (f.meal_starts_at === f.meal_ends_at) e.meal_ends_at = "Start and end cannot be the same time.";
+  }
   return e;
 }
 
 /** The fields of a dish as the database wants them, from the form. */
 function toRow(f) {
-  const own = f.meal_time !== "all_day" && f.meal_starts_at && f.meal_ends_at;
+  const own = f.meal_time === "custom";
   return {
     name: f.name.trim(),
     kitchen_id: f.kitchen_id,
@@ -103,7 +111,8 @@ function toRow(f) {
     is_spicy: f.is_spicy,
     is_loved: f.is_loved,
     meal_time: f.meal_time,
-    /* The database refuses a window on an all-day dish, and half a window. */
+    /* Only Custom timing carries hours of its own; every slot uses its standard
+       window, and the database refuses a custom dish without both. */
     meal_starts_at: own ? timeOut(f.meal_starts_at) : null,
     meal_ends_at: own ? timeOut(f.meal_ends_at) : null,
     sort_order: String(f.sort_order).trim() ? Number(f.sort_order) : 0,
@@ -184,7 +193,7 @@ function DishForm({ initial, kitchens, categories, windows, onSaved, onDeleted, 
           is_sattvic: initial.is_sattvic,
           is_spicy: initial.is_spicy,
           is_loved: initial.is_loved,
-          meal_time: initial.meal_time ?? "all_day",
+          meal_time: formSlot(initial),
           meal_starts_at: timeIn(initial.meal_starts_at),
           meal_ends_at: timeIn(initial.meal_ends_at),
           sort_order: String(initial.sort_order ?? 0),
@@ -225,8 +234,7 @@ function DishForm({ initial, kitchens, categories, windows, onSaved, onDeleted, 
     }
   };
 
-  const slot = windows.find((w) => w.slot === f.meal_time);
-  const allDay = f.meal_time === "all_day";
+  const custom = f.meal_time === "custom";
   const dishName = f.name.trim() || initial?.name || "Dish";
 
   const submit = async (e) => {
@@ -382,14 +390,15 @@ function DishForm({ initial, kitchens, categories, windows, onSaved, onDeleted, 
         />
 
         <h3 className="adm-section-title">When it is served</h3>
-        <Field label="Meal time" wide>
+        <Field label="Meal time" wide hint={custom ? null : "Served during the standard hours shown"}>
           <select
             className="input"
             value={f.meal_time}
             onChange={(e) => {
               const v = e.target.value;
-              /* An all-day dish cannot keep hours of its own. */
-              setF((s) => ({ ...s, meal_time: v, ...(v === "all_day" ? { meal_starts_at: "", meal_ends_at: "" } : {}) }));
+              /* Hours belong to Custom timing only; a slot uses its own. */
+              setF((s) => ({ ...s, meal_time: v, ...(v === "custom" ? {} : { meal_starts_at: "", meal_ends_at: "" }) }));
+              setErrors((p) => ({ ...p, meal_starts_at: null, meal_ends_at: null }));
             }}
           >
             {windows.map((w) => (
@@ -400,27 +409,16 @@ function DishForm({ initial, kitchens, categories, windows, onSaved, onDeleted, 
             ))}
           </select>
         </Field>
-        <Field
-          label="Own start"
-          hint={
-            allDay
-              ? "All-day dishes follow the kitchen's hours"
-              : slot?.starts_at
-                ? `Empty uses ${slot.label}: ${span(slot.starts_at, slot.ends_at)}`
-                : "Empty uses the kitchen's hours"
-          }
-        >
-          <input
-            className="input"
-            type="time"
-            value={f.meal_starts_at}
-            onChange={set("meal_starts_at")}
-            disabled={allDay}
-          />
-        </Field>
-        <Field label="Own end" error={errors.meal_ends_at} hint="May be after midnight">
-          <input className="input" type="time" value={f.meal_ends_at} onChange={set("meal_ends_at")} disabled={allDay} />
-        </Field>
+        {custom && (
+          <>
+            <Field label="Starts" required error={errors.meal_starts_at} hint="When guests can start ordering it">
+              <input className="input" type="time" value={f.meal_starts_at} onChange={set("meal_starts_at")} />
+            </Field>
+            <Field label="Ends" required error={errors.meal_ends_at} hint="May be after midnight, e.g. 01:00">
+              <input className="input" type="time" value={f.meal_ends_at} onChange={set("meal_ends_at")} />
+            </Field>
+          </>
+        )}
 
         <h3 className="adm-section-title">On the menu</h3>
         <Field label="Sort order" error={errors.sort_order} hint="Lower comes first within its category">

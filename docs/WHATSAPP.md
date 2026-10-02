@@ -117,7 +117,7 @@ field (it carries both status updates and button taps).
   admin is alerted that there is nobody to ask.
 - Every place's WhatsApp number (admin → Places & rooms) is the rest house's
   WhatsApp number.
-- The alerts number is right (admin → Settings).
+- The alerts number is right (super admin → Settings).
 
 ## Watching it
 

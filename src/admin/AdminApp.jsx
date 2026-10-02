@@ -32,11 +32,11 @@ const ADMIN_NAV = [
   { to: "categories", label: "Categories" },
   { to: "places", label: "Places & rooms" },
   { to: "delivery", label: "Delivery partners" },
-  { to: "settings", label: "Settings" },
 ];
 const SUPER_NAV = [
   { to: "analytics", label: "Analytics" },
   { to: "coupons", label: "Coupons" },
+  { to: "settings", label: "Settings" },
 ];
 
 function useAdminSession() {
@@ -254,13 +254,13 @@ export default function AdminApp() {
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="places" element={<PlacesPage />} />
               <Route path="delivery" element={<DeliveryPage />} />
-              <Route path="settings" element={<SettingsPage />} />
             </>
           )}
           {isSuper && (
             <>
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="coupons" element={<CouponsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </>
           )}
           <Route path="*" element={<Navigate to={home} replace />} />

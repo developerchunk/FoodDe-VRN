@@ -149,6 +149,79 @@ async function downloadSvg(room) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/* The same sticker as the printed sheet, as one print-ready PNG: 1200 x 1600
+   px, about 10 x 13.5 cm at 300 dpi. The whole card rather than the bare QR,
+   because the house name and room on it are what stop a sticker going on the
+   wrong door. */
+const PNG_W = 1200;
+const PNG_H = 1600;
+
+/* Fits a line to the card, shrinking the type rather than cutting the name. */
+function fitText(ctx, text, maxWidth, size, weight) {
+  let px = size;
+  do {
+    ctx.font = `${weight} ${px}px Jost, ui-sans-serif, system-ui, sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) break;
+    px -= 2;
+  } while (px > 28);
+  return px;
+}
+
+async function downloadPng(place, room) {
+  const QRCode = (await import("qrcode")).default;
+  const qr = await QRCode.toCanvas(roomUrl(room.id), {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 920,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+  /* Jost is the site's font; wait for it so the PNG does not fall back. */
+  await document.fonts?.ready;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = PNG_W;
+  canvas.height = PNG_H;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, PNG_W, PNG_H);
+
+  /* square modules, not blurred ones: a soft QR is a slower scan */
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(qr, (PNG_W - 920) / 2, 110, 920, 920);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  const cx = PNG_W / 2;
+  const maxW = PNG_W - 160;
+
+  ctx.fillStyle = "#075b55";
+  fitText(ctx, place.name, maxW, 64, 600);
+  ctx.fillText(place.name, cx, 1150);
+
+  fitText(ctx, `Room ${room.room_number}`, maxW, 112, 700);
+  ctx.fillText(`Room ${room.room_number}`, cx, 1290);
+
+  ctx.fillStyle = "#666666";
+  ctx.font = "400 44px Jost, ui-sans-serif, system-ui, sans-serif";
+  ctx.fillText("Scan to order to your room", cx, 1380);
+
+  ctx.fillStyle = "#aaaaaa";
+  ctx.font = "400 32px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(room.id.split("").join(" "), cx, 1480);
+
+  const blob = await new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("This browser could not make the image."))), "image/png"),
+  );
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${room.id}-room-${room.room_number.replace(/\W+/g, "")}.png`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* Not in api.js: one update for every room of a house that is still off. */
 async function switchAllRoomsOn(placeId) {
   const { data, error } = await supabase
@@ -370,7 +443,7 @@ function AddRooms({ place, rooms, onAdded, onBusy }) {
   );
 }
 
-function RoomRow({ room, rooms, placeOn, selected, onSelect, onSaved }) {
+function RoomRow({ place, room, rooms, placeOn, selected, onSelect, onSaved }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(room.room_number);
   const [error, setError] = useState("");
@@ -482,6 +555,17 @@ function RoomRow({ room, rooms, placeOn, selected, onSelect, onSaved }) {
           onClick={() => downloadSvg(room).catch((e) => notify(`Could not make the QR code: ${e.message}`, "error"))}
         >
           SVG
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost adm-btn-sm"
+          disabled={!room.is_active}
+          title={room.is_active ? "Download this room's sticker as a print-quality PNG" : "Switch the room on first"}
+          onClick={() =>
+            downloadPng(place, room).catch((e) => notify(`Could not make the sticker: ${e.message}`, "error"))
+          }
+        >
+          PNG
         </button>
       </div>
     </li>
@@ -619,6 +703,7 @@ function RoomsDrawer({ place, onRooms, onClose }) {
               {rooms.map((r) => (
                 <RoomRow
                   key={r.id}
+                  place={place}
                   room={r}
                   rooms={rooms}
                   placeOn={place.is_active}

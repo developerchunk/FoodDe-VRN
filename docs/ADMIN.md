@@ -6,8 +6,8 @@ download it. Who gets in is decided by the database (`admin_users`, migration
 
 | Role | Sees |
 |---|---|
-| `admin` | Orders · Menu · Kitchens · Categories · Places & rooms · Delivery partners · Settings |
-| `super_admin` | Analytics (today / daily / weekly / monthly) · Coupons — read-only everywhere else |
+| `admin` | Orders · Menu · Kitchens · Categories · Places & rooms · Delivery partners |
+| `super_admin` | Analytics (today / daily / weekly / monthly) · Coupons · Settings (alerts number) — read-only everywhere else |
 
 One person may hold both roles (one row each).
 
@@ -38,7 +38,7 @@ One person may hold both roles (one row each).
    they are approved, kitchens and riders cannot receive Accept / Reject.
 6. **Run** `npm run verify:security` — it now also checks the new tables,
    functions and a signed-in guest session.
-7. **Settings** — check the alerts number (default 9510471455), add delivery
+7. **Settings** (super admin) — check the alerts number (default 9510471455), add delivery
    partners, and check every place's WhatsApp number.
 
 ## Notes
@@ -48,7 +48,8 @@ One person may hold both roles (one row each).
 - **Switching a dish off** saves at once and removes it from every open guest
   menu within a second or two (Realtime broadcast on the `menu` topic). A cart
   holding it is blocked at checkout, and payment is refused for it too.
-- **QR stickers** are printed from Places & rooms and always point at
+- **QR stickers** are printed from Places & rooms (or downloaded one room at
+  a time as SVG, or as a print-quality 1200×1600 PNG of the whole sticker) and always point at
   `VITE_SITE_URL` (default `https://www.inroomdining.in`), whichever address the
   admin is using.
 - **`npm run import`** still loads kitchens and dishes from `csv/`, but only

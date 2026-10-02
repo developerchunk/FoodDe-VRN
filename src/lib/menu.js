@@ -85,7 +85,8 @@ const clock12 = (t) => {
 };
 const suffix = (t) => (Number(String(t).split(":")[0]) < 12 ? "am" : "pm");
 
-/** "Breakfast · 7 – 11 am", or null when the dish is served all day. */
+/** "Breakfast · 7 – 11 am", "1 – 3 pm" for custom timing, or null when the
+    dish is served all day. */
 const mealWindow = (row) => {
   if (!row.meal_time || row.meal_time === "all_day") return null;
   if (!row.meal_starts_at || !row.meal_ends_at) return row.meal_label || null;
@@ -93,7 +94,9 @@ const mealWindow = (row) => {
   const b = suffix(row.meal_ends_at);
   /* Both in the same half of the day: say "am" once. */
   const from = a === b ? clock12(row.meal_starts_at) : `${clock12(row.meal_starts_at)} ${a}`;
-  return `${row.meal_label} · ${from} – ${clock12(row.meal_ends_at)} ${b}`;
+  const hours = `${from} – ${clock12(row.meal_ends_at)} ${b}`;
+  /* "Custom timing" is the admin's word for it; a guest only needs the hours. */
+  return row.meal_time === "custom" ? hours : `${row.meal_label} · ${hours}`;
 };
 
 /** One row of `get_menu()`, in the shape the components expect. */
