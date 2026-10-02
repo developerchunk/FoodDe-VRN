@@ -55,7 +55,21 @@ await check("kitchens — WhatsApp numbers stay private", blocked, () =>
   db.from("kitchens").select("id, place_name, whatsapp_number"),
 );
 await check("addresses — rooms cannot be enumerated", blocked, () =>
-  db.from("addresses").select("id, place_name, phone_number"),
+  db.from("addresses").select("id, place_id, room_number"),
+);
+await check("places — rest houses cannot be listed", blocked, () =>
+  db.from("places").select("id, name, whatsapp_number"),
+);
+await check("admin_users — who the admins are stays private", blocked, () =>
+  db.from("admin_users").select("email, role"),
+);
+await check("settings — private", blocked, () => db.from("settings").select("key, value"));
+await check("coupons — table closed (get_coupons is the way)", blocked, () =>
+  db.from("coupons").select("code, value"),
+);
+await check("delivery_offers — private", blocked, () => db.from("delivery_offers").select("id"));
+await check("order_status_history — private", blocked, () =>
+  db.from("order_status_history").select("id"),
 );
 await check("delivery_partners — private", blocked, () =>
   db.from("delivery_partners").select("id, whatsapp_number"),
@@ -119,6 +133,24 @@ const RPCS = {
     exposed: true,
   },
   new_code: { args: {}, exposed: false },
+  /* The WhatsApp flow: only the edge functions, holding the secret key, may
+     record a kitchen's or rider's answer. A browser that could would accept
+     orders on a kitchen's behalf. */
+  whatsapp_button_reply: { args: { p_payload: "k:x:a", p_from: "1", p_inbound_id: "x" }, exposed: false },
+  kitchen_decide: {
+    args: { p_ticket_id: "00000000-0000-0000-0000-000000000000", p_accept: true, p_actor: "kitchen" },
+    exposed: false,
+  },
+  rider_decide: { args: { p_offer_id: "00000000-0000-0000-0000-000000000000", p_accept: true }, exposed: false },
+  escalate_overdue: { args: { p_minutes: 10 }, exposed: false },
+  unavailable_in_order: { args: { p_order_id: "00000000-0000-0000-0000-000000000000" }, exposed: false },
+  /* Admin actions need a signed-in admin; the publishable key alone gets none. */
+  admin_whoami: { args: {}, exposed: false },
+  admin_analytics: { args: { p_period: "today" }, exposed: false },
+  admin_set_order_status: {
+    args: { p_order_id: "00000000-0000-0000-0000-000000000000", p_status: "cancelled" },
+    exposed: false,
+  },
 };
 
 console.log("\nWhich functions the browser may call\n");
@@ -131,6 +163,45 @@ for (const [fn, { args, exposed }] of Object.entries(RPCS)) {
     `${ok ? "  ok  " : "  FAIL"}  ${fn.padEnd(20)} ${callable ? "callable" : "denied  "}` +
       `  ${exposed ? "(intended)" : "(must not be callable)"}`,
   );
+}
+
+/* The admin site's grants go to `authenticated`, and every guest who orders
+   is authenticated (anonymously). So the same questions again, as a guest:
+   being signed in must not be mistaken for being an admin. */
+console.log("\nAs a signed-in (anonymous) guest\n");
+const { error: anonErr } = await db.auth.signInAnonymously();
+if (anonErr) {
+  failures++;
+  console.log(`  FAIL  could not start a guest session: ${anonErr.message}`);
+} else {
+  await check("kitchens — still private", blocked, () => db.from("kitchens").select("id"));
+  await check("places — still private", blocked, () => db.from("places").select("id"));
+  await check("addresses — still private", blocked, () => db.from("addresses").select("id"));
+  await check("menu_items — kitchen_id still hidden", blocked, () =>
+    db.from("menu_items").select("id, kitchen_id"),
+  );
+  await check("settings — still private", blocked, () => db.from("settings").select("key"));
+  await check("coupons — still private", blocked, () => db.from("coupons").select("code"));
+  await check("message_log — still private", blocked, () => db.from("message_log").select("id"));
+  await check("menu_items — still cannot be repriced", blocked, () =>
+    db.from("menu_items").update({ price_paise: 1 }).neq("id", "").select("id"),
+  );
+  await check("kitchens — cannot be added", refused, () =>
+    db.from("kitchens").insert({ place_name: "x", whatsapp_number: "9999999999" }),
+  );
+  await check("admin_whoami — a guest has no roles", (data, error) =>
+    !error && Array.isArray(data?.roles) && data.roles.length === 0, () => db.rpc("admin_whoami"),
+  );
+  await check("admin_analytics — refused to a guest", refused, () =>
+    db.rpc("admin_analytics", { p_period: "today" }),
+  );
+  await check("admin_set_order_status — refused to a guest", refused, () =>
+    db.rpc("admin_set_order_status", {
+      p_order_id: "00000000-0000-0000-0000-000000000000",
+      p_status: "cancelled",
+    }),
+  );
+  await db.auth.signOut();
 }
 
 console.log(

@@ -14,9 +14,14 @@
  * Signed with the WEBHOOK secret over the raw body -- a different secret and a
  * different message to the checkout return. Set it in the Razorpay dashboard
  * when creating the webhook, and store it here as RAZORPAY_WEBHOOK_SECRET.
+ *
+ * This is also what guarantees the WhatsApp fan-out: a guest who closes the tab
+ * after paying never reaches payment-verify, but their order is still marked
+ * paid here, which queues its messages, which are sent from here.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { webhookSignatureIsValid } from "../_shared/razorpay.ts";
+import { dispatchInBackground } from "../_shared/fanout.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -64,6 +69,7 @@ Deno.serve(async (req) => {
        is paid but not marked paid is one nobody cooks for. */
     if (error) throw new Error(error.message);
     console.log(`razorpay ${event.event}: ${JSON.stringify(data)}`);
+    if (data?.order_id) dispatchInBackground(db, data.order_id);
     return new Response("ok", { status: 200 });
   } catch (err) {
     console.error("razorpay webhook failed:", err instanceof Error ? err.message : err);

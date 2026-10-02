@@ -27,11 +27,19 @@ if (!url || !secret) {
 
 const db = createClient(url, secret, { auth: { persistSession: false } });
 
-const { data: addresses, error } = await db
+/* The admin site prints the same stickers per place (Places & rooms). This is
+   the whole set at once, for a first print run. */
+const { data: rooms, error } = await db
   .from("addresses")
-  .select("id, place_name, room_number, address")
+  .select("id, room_number, place:places(name, address)")
   .eq("is_active", true)
   .order("id");
+const addresses = (rooms ?? []).map((r) => ({
+  id: r.id,
+  room_number: r.room_number,
+  place_name: r.place?.name ?? "",
+  address: r.place?.address ?? "",
+}));
 
 if (error) {
   console.error("Could not read addresses:", error.message);

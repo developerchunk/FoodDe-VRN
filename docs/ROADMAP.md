@@ -110,10 +110,12 @@ count the function intended, because the second proves nothing.
 
 Test orders are named "ZZ Verification Run" so they can be deleted afterwards.
 
-## Phase 5 — The WhatsApp fan-out
+## Phase 5 — The WhatsApp fan-out — *built; live once the templates in docs/WHATSAPP.md are approved*
 
 For each order: a message per kitchen, one to the delivery partner, one to the
-rest house.
+rest house. Kitchens and riders now answer with Accept / Reject buttons; the
+first rider to accept gets the pickup, and silence or a rejection reaches the
+admin's WhatsApp (migration 0019, docs/WHATSAPP.md).
 
 Treat delivery as unreliable. **If a message silently fails, nobody cooks the
 food.** So: log every send, retry failures, alert on repeated failure, and give
@@ -135,7 +137,7 @@ IRD is the seller of record, so it collects and then settles to kitchens.
 Google OAuth, anonymous auth for guests, `linkIdentity` so a guest's history
 survives signing up. Account page with order history and receipt downloads.
 
-## Phase 8 — Operations
+## Phase 8 — Operations — *admin site built (docs/ADMIN.md)*
 
 The dashboards that make this runnable day to day: kitchen order view, rest
 house view, and an admin for menu, kitchens and properties. Order status back

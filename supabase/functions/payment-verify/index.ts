@@ -9,11 +9,17 @@
  * tab the moment their bank returns -- and a guest who has paid must get fed
  * whether or not their browser ever came back.
  *
- * Secrets: RAZORPAY_KEY_SECRET.
+ * Marking the order paid also queues its WhatsApp fan-out (in the same
+ * transaction), and the messages go out from here once the guest has their
+ * answer. Whichever of this and the webhook arrives second finds nothing left
+ * to send.
+ *
+ * Secrets: RAZORPAY_KEY_SECRET, plus the WhatsApp ones in _shared/whatsapp.ts.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { cors, json } from "../_shared/cors.ts";
 import { checkoutSignatureIsValid } from "../_shared/razorpay.ts";
+import { dispatchInBackground } from "../_shared/fanout.ts";
 
 const KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -57,5 +63,6 @@ Deno.serve(async (req) => {
     console.error("mark_order_paid failed", error.message);
     return json({ error: "could not record that payment" }, 500);
   }
-  return json({ paid: true, ...data });
+  if (data?.order_id) dispatchInBackground(db, data.order_id);
+  return json({ paid: true, order_no: data?.order_no, status: data?.status });
 });

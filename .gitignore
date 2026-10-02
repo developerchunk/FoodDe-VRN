@@ -40,3 +40,5 @@ address_codes.csv
 
 
 whatsapp-api-schema.txt
+# Supabase CLI link state (project ref, versions) — per machine
+supabase/.temp/

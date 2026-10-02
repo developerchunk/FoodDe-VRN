@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
   const { data: order, error: readErr } = await db
     .from("orders")
-    .select("order_no, total_paise, status, razorpay_order_id, guest_name, guest_phone, guest_email")
+    .select("id, order_no, total_paise, status, razorpay_order_id, guest_name, guest_phone, guest_email")
     .eq("receipt_token", token)
     .maybeSingle();
   if (readErr) return json({ error: "could not read that order" }, 500);
@@ -49,6 +49,16 @@ Deno.serve(async (req) => {
        failure so the page can simply show the receipt. */
     return json({ error: "that order is already paid", order_no: order.order_no }, 409);
   }
+  /* A dish switched off after the order was placed is not paid for. Checked
+     before Razorpay is asked for anything, and again when its order is
+     attached. 410 so the page can tell the guest which dish and send them back
+     to the cart, rather than showing a generic failure. */
+  const { data: gone, error: goneErr } = await db.rpc("unavailable_in_order", {
+    p_order_id: order.id,
+  });
+  if (goneErr) return json({ error: "could not read that order" }, 500);
+  if (gone) return json({ error: "no longer available", unavailable: gone }, 410);
+
   /* Razorpay's own floor, and a total below it means something is wrong here. */
   if (!Number.isInteger(order.total_paise) || order.total_paise < 100) {
     return json({ error: "that order's total is not payable" }, 422);
@@ -95,6 +105,9 @@ Deno.serve(async (req) => {
     p_rzp_id: created.id,
   });
   if (attachErr) {
+    /* Switched off in the moment between the check above and this. */
+    const m = attachErr.message.match(/no longer available: (.*)$/);
+    if (m) return json({ error: "no longer available", unavailable: m[1] }, 410);
     console.error("could not attach the razorpay order", attachErr.message);
     return json({ error: "could not start the payment" }, 500);
   }

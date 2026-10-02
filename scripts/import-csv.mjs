@@ -1,5 +1,9 @@
 /**
- * csv/ -> Supabase. Kitchens, then the menu, then addresses.
+ * csv/ -> Supabase. Kitchens, then the menu, then places and their rooms.
+ *
+ * Kitchens and dishes are upserted from the sheets. Places and rooms are only
+ * added, never overwritten: once the admin site exists it is where they are
+ * edited (see the note above the places step).
  *
  *   node scripts/import-csv.mjs --dry-run    shows the plan, writes nothing
  *   node scripts/import-csv.mjs              needs SUPABASE_SECRET_KEY
@@ -219,22 +223,53 @@ await step(`${menuRows.length} menu item(s)`, () =>
   ),
 );
 
-/* Addresses: match on place + room so a re-run never mints a second code for a
-   room whose sticker is already on the wall. */
-const { data: existingAddrs } = await db
-  .from("addresses")
-  .select("id, place_name, room_number");
-const keyOf = (r) => `${r.place_name}|${r.room_number}`;
-const addrIdByKey = new Map((existingAddrs || []).map((r) => [keyOf(r), r.id]));
+/* Places and rooms. Since the admin site, the database is the source of truth
+   for both, so this only ADDS: a guest house not yet known (matched on name and
+   address) becomes a place, and a room not yet in that place gets a fresh
+   code. Nothing that exists is ever overwritten, so a re-run cannot undo an
+   admin's edit or re-mint a code whose sticker is on a wall. */
+const { data: existingPlaces, error: placesErr } = await db.from("places").select("id, name, address");
+if (placesErr) {
+  console.error(`  could not read places: ${placesErr.message}`);
+  process.exit(1);
+}
+const placeKey = (name, address) => `${name.trim().toLowerCase()}|${String(address ?? "").trim().toLowerCase()}`;
+const placeIdByKey = new Map(existingPlaces.map((p) => [placeKey(p.name, p.address), p.id]));
 
-await step(`${addressRows.length} address(es)`, () =>
-  db.from("addresses").upsert(
-    addressRows.map(({ sheet_id: _sheet_id, ...a }) => {
-      const held = addrIdByKey.get(keyOf(a));
-      return held ? { id: held, ...a } : a;
-    }),
-    { onConflict: "id" },
-  ),
+const newPlaces = [];
+for (const a of addressRows) {
+  const k = placeKey(a.place_name, a.address);
+  if (placeIdByKey.has(k) || newPlaces.some((p) => placeKey(p.name, p.address) === k)) continue;
+  newPlaces.push({
+    name: a.place_name,
+    address: a.address,
+    area: a.area,
+    pin_code: a.pin_code,
+    city: a.city,
+    latitude: a.latitude,
+    longitude: a.longitude,
+    whatsapp_number: a.phone_number,
+  });
+}
+if (newPlaces.length) {
+  const { data: made, error } = await db.from("places").insert(newPlaces).select("id, name, address");
+  if (error) {
+    console.error(`  could not add places: ${error.message}`);
+    process.exit(1);
+  }
+  for (const p of made) placeIdByKey.set(placeKey(p.name, p.address), p.id);
+}
+console.log(`  ok  ${newPlaces.length} new place(s)`);
+
+const { data: existingRooms } = await db.from("addresses").select("place_id, room_number");
+const roomKey = (placeId, room) => `${placeId}|${String(room).trim().toLowerCase()}`;
+const haveRoom = new Set((existingRooms || []).map((r) => roomKey(r.place_id, r.room_number)));
+const newRooms = addressRows
+  .map((a) => ({ place_id: placeIdByKey.get(placeKey(a.place_name, a.address)), room_number: a.room_number }))
+  .filter((r) => !haveRoom.has(roomKey(r.place_id, r.room_number)));
+
+await step(`${newRooms.length} new room(s)`, () =>
+  newRooms.length ? db.from("addresses").insert(newRooms) : Promise.resolve({ error: null }),
 );
 
 if (mintedMenuIds.length) {

@@ -12,14 +12,24 @@
  *   WHATSAPP_VERIFY_TOKEN   the string also pasted into Meta's "Verify token"
  *   WHATSAPP_APP_SECRET     Meta > App settings > Basic > App secret
  *
- * What it is for: IRD only ever sends business-initiated messages, so nothing
- * here replies to guests. It exists for the status callbacks. A WhatsApp send
- * that returns 200 has been accepted, not delivered — "failed" arrives later,
- * on this endpoint. Phase 5's rule is that a silently failed message means
- * nobody cooks the food, and this is the only place that failure shows up.
+ * What it is for:
+ *
+ *  1. Status callbacks. A WhatsApp send that returns 200 has been accepted, not
+ *     delivered — "failed" arrives later, on this endpoint. Phase 5's rule is
+ *     that a silently failed message means nobody cooks the food, and this is
+ *     the only place that failure shows up.
+ *
+ *  2. Button taps. Kitchens and riders answer an order with Accept / Reject.
+ *     Each tap arrives here carrying the payload we put on the button
+ *     (k:<ticket>:a, d:<offer>:r …). The database decides what it means —
+ *     whatsapp_button_reply checks the tap came from that kitchen's or rider's
+ *     own number, records it, and queues whatever follows (the riders, the
+ *     admin, the guest). The messages go out after the response, so Meta is
+ *     answered at once and does not retry a slow request.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handshake, signatureIsValid } from "./verify.ts";
+import { dispatchInBackground } from "../_shared/fanout.ts";
 
 const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN");
 const APP_SECRET = Deno.env.get("WHATSAPP_APP_SECRET");
@@ -87,9 +97,32 @@ Deno.serve(async (req) => {
       if (error) throw new Error(`message_log update failed: ${error.message}`);
     }
 
-    /* Guests are not expected to message us. Record it and move on rather than
-       dropping it silently, so an unexpected inbound is at least visible. */
-    if (inbound.length) console.log(`inbound whatsapp message(s) ignored: ${inbound.length}`);
+    for (const m of inbound) {
+      /* A template's quick reply arrives as "button"; the interactive buttons
+         used before templates are approved arrive as "interactive". */
+      const payload = m?.type === "button"
+        ? m.button?.payload
+        : m?.type === "interactive" && m.interactive?.type === "button_reply"
+        ? m.interactive.button_reply?.id
+        : null;
+      if (!payload) {
+        /* Free text from a kitchen or rider is not acted on. Record it rather
+           than dropping it silently, so it is at least visible in the logs. */
+        console.log(`inbound whatsapp ${m?.type ?? "message"} from ${m?.from} not acted on`);
+        continue;
+      }
+
+      const { data, error } = await db.rpc("whatsapp_button_reply", {
+        p_payload: payload,
+        p_from: m.from,
+        p_inbound_id: m.id,
+      });
+      /* Throw so Meta retries: a lost "Accept" is an order nobody cooks.
+         Retrying is safe — the same message id is recorded once. */
+      if (error) throw new Error(`whatsapp_button_reply failed: ${error.message}`);
+      console.log(`button ${payload} from ${m.from}: ${JSON.stringify(data)}`);
+      if (data?.order_id) dispatchInBackground(db, data.order_id);
+    }
 
     return new Response("ok", { status: 200 });
   } catch (err) {
