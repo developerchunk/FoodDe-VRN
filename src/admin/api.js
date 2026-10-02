@@ -76,8 +76,10 @@ export async function signInWithGoogle() {
   if (error) throw new Error("Could not reach Google. Please try again.");
 }
 
+/* This browser only. The default also ends the account's sessions on every
+   other device, which a 30-minute timeout on one laptop should not do. */
 export async function signOut() {
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
 }
 
 // ------------------------------------------------------------------ kitchens

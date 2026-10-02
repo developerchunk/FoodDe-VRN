@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { Cloche, GoogleMark } from "../components/Icons";
 import { isConfigured } from "../lib/supabase";
@@ -39,24 +39,44 @@ const SUPER_NAV = [
   { to: "settings", label: "Settings" },
 ];
 
+/**
+ * Who is signed in, and for how long.
+ *
+ * Admin access lasts 30 minutes from signing in (migration 0023). The database
+ * is what enforces it -- after 30 minutes it refuses every admin read and
+ * write -- so this only keeps the page honest: it shows the time left, and
+ * when it runs out it signs this browser out and asks for Google again, rather
+ * than leaving a page whose every save would fail.
+ */
 function useAdminSession() {
   const [state, setState] = useState(() =>
     isConfigured
       ? { status: "loading", email: null, roles: [] }
       : { status: "error", roles: [], error: "Supabase is not configured for this site." },
   );
+  /* Set just before signing out at the 30-minute mark, so the sign-out that
+     follows shows "session ended" rather than a bare sign-in page. */
+  const ending = useRef(false);
 
   const resolve = useCallback(async (session) => {
     if (!session || session.user?.is_anonymous) {
-      setState({ status: "signed-out", email: null, roles: [] });
+      setState({ status: ending.current ? "expired" : "signed-out", email: null, roles: [] });
+      ending.current = false;
       return;
     }
     try {
       const me = await whoami();
+      if (me.expired) {
+        /* Held a role, but signed in over 30 minutes ago. */
+        ending.current = true;
+        await signOut();
+        return;
+      }
       setState({
         status: me.roles?.length ? "ok" : "no-access",
         email: me.email ?? session.user.email,
         roles: me.roles ?? [],
+        expiresAt: me.expires_at ? new Date(me.expires_at).getTime() : null,
       });
     } catch (e) {
       setState({ status: "error", email: session.user.email, roles: [], error: e.message });
@@ -69,7 +89,41 @@ function useAdminSession() {
     return onAuthChange((session) => resolve(session));
   }, [resolve]);
 
+  /* Checked every few seconds rather than one long timer: a phone that slept
+     through the deadline notices as soon as it wakes. */
+  useEffect(() => {
+    if (state.status !== "ok" || !state.expiresAt) return undefined;
+    const check = () => {
+      if (Date.now() >= state.expiresAt) {
+        ending.current = true;
+        signOut();
+      }
+    };
+    const t = setInterval(check, 5000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [state.status, state.expiresAt]);
+
   return state;
+}
+
+/** "28 min left", ticking once a minute. */
+function TimeLeft({ expiresAt }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
+  if (!expiresAt) return null;
+  const mins = Math.max(0, Math.ceil((expiresAt - now) / 60000));
+  return (
+    <small className={`adm-nav__left ${mins <= 5 ? "is-low" : ""}`}>
+      Session ends in {mins} min
+    </small>
+  );
 }
 
 function Gate({ children, title }) {
@@ -85,12 +139,16 @@ function Gate({ children, title }) {
   );
 }
 
-function SignIn() {
+function SignIn({ expired }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   return (
-    <Gate title="Admin sign in">
-      <p className="muted">Sign in with the Google account your access was set up for.</p>
+    <Gate title={expired ? "Your admin session has ended" : "Admin sign in"}>
+      <p className="muted">
+        {expired
+          ? "Admin access lasts 30 minutes. Sign in again to carry on."
+          : "Sign in with the Google account your access was set up for."}
+      </p>
       <button
         type="button"
         className="btn btn-primary btn-block"
@@ -117,7 +175,7 @@ function SignIn() {
   );
 }
 
-function Shell({ email, roles, children }) {
+function Shell({ email, roles, expiresAt, children }) {
   const [navOpen, setNavOpen] = useState(false);
   /* On a phone the nav covers the page; choosing a page closes it. */
   const close = () => setNavOpen(false);
@@ -177,6 +235,7 @@ function Shell({ email, roles, children }) {
         )}
         <div className="adm-nav__me">
           <small title={email}>{email}</small>
+          <TimeLeft expiresAt={expiresAt} />
           <button type="button" className="btn btn-ghost adm-btn-sm" onClick={signOut}>
             Sign out
           </button>
@@ -215,6 +274,7 @@ export default function AdminApp() {
       </Gate>
     );
   if (me.status === "signed-out") return <SignIn />;
+  if (me.status === "expired") return <SignIn expired />;
   if (me.status === "error")
     return (
       <Gate title="Something went wrong">
@@ -243,7 +303,7 @@ export default function AdminApp() {
 
   return (
     <NoticeProvider>
-      <Shell email={me.email} roles={me.roles}>
+      <Shell email={me.email} roles={me.roles} expiresAt={me.expiresAt}>
         <Routes>
           <Route index element={<Navigate to={home} replace />} />
           {isAdmin && (

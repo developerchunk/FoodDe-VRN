@@ -84,6 +84,14 @@
   white-space: nowrap;
   color: var(--teal-100);
 }
+.adm-nav__left {
+  color: var(--teal-100);
+  opacity: 0.8;
+}
+.adm-nav__left.is-low {
+  color: var(--gold);
+  opacity: 1;
+}
 .adm-nav__me .btn {
   color: var(--cream);
   border-color: rgba(255, 255, 255, 0.25);

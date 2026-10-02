@@ -11,6 +11,12 @@ download it. Who gets in is decided by the database (`admin_users`, migration
 
 One person may hold both roles (one row each).
 
+**Admin access lasts 30 minutes from signing in** (migration 0023). The
+database checks the time of the Google sign-in carried in the session token, so
+after 30 minutes every admin read, write and action is refused, whatever the
+page does; the page shows the time left and, at the end, signs that browser out
+and asks for Google again. Guests' sessions are not affected.
+
 ## Going live — in this order
 
 1. **Apply the migrations** `0016` → `0020` in order (SQL editor or
