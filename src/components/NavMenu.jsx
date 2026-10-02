@@ -1,14 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { MenuIcon } from "./Icons";
-import SignInButton from "./SignInButton";
 import { useCart } from "../context/cart-context";
+import AccountButton from "./AccountButton";
 
 /**
  * The header nav, for screens too narrow to show it inline.
  *
- * Below 620px the row of links is hidden, which left Menu, Orders and signing
- * in with no way in at all on a phone — the device almost every guest is
+ * Below 620px the row of links and the Sign up / Profile button are hidden,
+ * which left Menu, Orders and signing up with no way in at all on a phone — the device almost every guest is
  * holding. This is the same set behind one button.
  */
 export default function NavMenu({ hasOrders }) {
@@ -72,7 +72,7 @@ export default function NavMenu({ hasOrders }) {
             </Link>
           )}
           <span className="nav-menu__item nav-menu__item--auth" role="menuitem">
-            <SignInButton />
+            <AccountButton className="nav-menu__account" />
           </span>
         </div>
       )}

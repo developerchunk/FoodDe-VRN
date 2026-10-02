@@ -95,6 +95,13 @@ export const BuildingIcon = (p) => (
   </Svg>
 );
 
+export const UserIcon = (p) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8.5" r="3.8" />
+    <path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
+  </Svg>
+);
+
 export const SearchIcon = (p) => (
   <Svg {...p}>
     <circle cx="11" cy="11" r="6.5" />

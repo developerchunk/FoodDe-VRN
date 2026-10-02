@@ -1610,3 +1610,30 @@ select.input {
   flex-wrap: wrap;
   justify-content: center;
 }
+
+/* ===== profile ================================================ */
+.profile-card {
+  display: grid;
+  gap: 18px;
+  padding: 22px 20px;
+}
+.profile-card__ok {
+  color: var(--veg);
+  font-size: 14.5px;
+}
+.profile-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.checkout-from-profile {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: -4px 0 4px;
+}
+.checkout-from-profile a {
+  color: var(--teal-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

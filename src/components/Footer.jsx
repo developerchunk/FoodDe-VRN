@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { maskPhone } from "../utils/format";
-import { SELLER, sellerHours } from "../utils/seller";
+import { SELLER } from "../utils/seller";
 import { useProperty } from "../utils/property";
 import Logo from "./Logo";
 
@@ -30,10 +30,12 @@ export default function Footer() {
           <li>
             <Link to="/orders">Orders</Link>
           </li>
+          <li>
+            <Link to="/admin">Admin</Link>
+          </li>
         </ul>
 
         <ul className="site-footer__contact">
-          <li>{sellerHours()}</li>
           <li>WhatsApp {maskPhone(SELLER.phone)}</li>
         </ul>
       </div>
@@ -42,7 +44,6 @@ export default function Footer() {
         <p>
           © {new Date().getFullYear()} {SELLER.name} · Pure vegetarian
         </p>
-        <p>Online payment is being set up — orders are not yet fulfilled.</p>
       </div>
     </footer>
   );

@@ -8,8 +8,11 @@ import { CartIcon, ClockIcon, StarIcon, TulsiLeaf } from "./Icons";
  * Picture on top, then name, a line of description, and price with the Add
  * button along the foot. Every dish is vegetarian, so the green mark is the
  * only diet sign there is.
+ *
+ * `showAdd={false}` is the home page's showcase: the dish and its price, with
+ * ordering left to the menu.
  */
-export default function MenuItemCard({ item }) {
+export default function MenuItemCard({ item, showAdd = true }) {
   const { add, decrement, qtyOf } = useCart();
   const qty = qtyOf(item.id);
 
@@ -71,7 +74,7 @@ export default function MenuItemCard({ item }) {
             {rupees(item.pricePaise)}
           </strong>
 
-          {!item.availableNow ? (
+          {!showAdd ? null : !item.availableNow ? (
             <span className="dish__closed">Unavailable</span>
           ) : qty > 0 ? (
             <QtyStepper

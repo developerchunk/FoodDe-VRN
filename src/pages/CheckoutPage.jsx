@@ -14,6 +14,7 @@ import { BuildingIcon, QrIcon, TulsiLeaf } from "../components/Icons";
 import { SELLER } from "../utils/seller";
 import { useCartAvailability } from "../hooks/useCartAvailability";
 import { useAuth } from "../hooks/useAuth";
+import { hasSavedProfile, profileOf } from "../lib/profile";
 import { signInWithGoogle } from "../lib/auth";
 import QrScanner from "../components/QrScanner";
 import { canScanQr } from "../utils/qr";
@@ -98,7 +99,23 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
 
   /* A real account, not the anonymous session every guest already has. */
-  const { signedIn } = useAuth();
+  const { signedIn, user } = useAuth();
+
+  /* A signed-up guest's saved name and number fill the form once, when their
+     account is known. They can still change either for this order; that never
+     touches the profile, which only changes on the profile page. Done during
+     render rather than in an effect, so the form never flashes empty first. */
+  const [prefilledFor, setPrefilledFor] = useState(null);
+  const fromProfile = signedIn && user && prefilledFor === user.id;
+  if (signedIn && user && prefilledFor !== user.id) {
+    const p = profileOf(user);
+    setPrefilledFor(user.id);
+    setForm((f) => ({
+      ...f,
+      name: hasSavedProfile(user) ? p.name || f.name : f.name || p.name,
+      phone: p.phone || f.phone,
+    }));
+  }
 
   /* Offered once per browsing session — declining must not mean being asked
      again on the way back from the cart. */
@@ -264,6 +281,13 @@ export default function CheckoutPage() {
                 </p>
               </div>
             </div>
+
+            {fromProfile && hasSavedProfile(user) && (
+              <p className="checkout-from-profile">
+                Filled in from your <Link to="/profile">profile</Link>. Changes
+                here are for this order only.
+              </p>
+            )}
 
             <label className="field" htmlFor="name">
               <span className="field-label">

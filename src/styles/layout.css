@@ -92,36 +92,23 @@
   display: none;
 }
 
-.hours {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-  color: rgba(251, 247, 240, 0.85);
-}
-.hours span {
-  display: grid;
-  line-height: 1.25;
-}
-.hours strong {
-  font-size: 14.5px;
-  font-weight: 500;
-  color: var(--cream);
-}
-.hours small {
-  font-size: 12px;
-  color: rgba(251, 247, 240, 0.7);
-  white-space: nowrap;
-}
-
 .site-nav {
   display: none;
   margin-left: auto;
 }
-.hours + .site-nav {
-  margin-left: 0;
-  padding-left: 22px;
-  border-left: 1px solid rgba(251, 247, 240, 0.2);
+.site-nav__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding-inline: 5px;
+  border-radius: 999px;
+  background: var(--ember);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: 1px;
 }
 .site-nav__link {
   position: relative;
@@ -151,7 +138,7 @@
   right: 0;
 }
 
-.cart-button {
+.account-button {
   margin-left: auto;
   position: relative;
   display: inline-flex;
@@ -168,15 +155,15 @@
     background-color 0.18s ease,
     border-color 0.18s ease;
 }
-.cart-button:hover,
-.cart-button.is-active {
+.account-button:hover,
+.account-button.is-active {
   background: rgba(251, 247, 240, 0.1);
   border-color: var(--cream);
 }
-.cart-button__label {
+.account-button__label {
   display: none;
 }
-.cart-button__count {
+.account-button__count {
   position: absolute;
   top: -7px;
   right: -6px;
@@ -553,7 +540,7 @@
     align-items: center;
     gap: 22px;
   }
-  .site-nav + .cart-button {
+  .site-nav + .account-button {
     margin-left: 10px;
   }
 }
@@ -580,10 +567,10 @@
   .stay__text strong {
     font-size: 18px;
   }
-  .cart-button {
+  .account-button {
     padding: 10px 20px;
   }
-  .cart-button__label {
+  .account-button__label {
     display: inline;
   }
   .home-hero {
@@ -617,9 +604,6 @@
 }
 
 @media (min-width: 1000px) {
-  .hours {
-    display: flex;
-  }
   .site-footer {
     padding-bottom: 24px;
   }
@@ -702,6 +686,27 @@
   text-align: left;
 }
 
+.nav-menu__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  color: var(--ink);
+  font-size: 15px;
+  text-align: left;
+  border-radius: 10px;
+}
+.nav-menu__account:hover,
+.nav-menu__account.is-active {
+  background: color-mix(in srgb, var(--teal) 7%, transparent);
+}
+/* The header pill hides its words on narrow screens; this row always shows
+   them. */
+.nav-menu__account .account-button__label {
+  display: inline;
+}
+
 /* Only where the inline nav is hidden. */
 @media (max-width: 619px) {
   .nav-menu {
@@ -726,10 +731,10 @@
   text-align: center;
 }
 
-/* The bottom bar carries the cart on a phone; two of them in one screen is
-   one too many. */
+/* On a phone the menu button carries Sign up / Profile, and the header has no
+   room for both. */
 @media (max-width: 619px) {
-  .cart-button {
+  .account-button {
     display: none;
   }
 }
@@ -754,7 +759,7 @@
 }
 
 @media (max-width: 619px) {
-  /* The cart button carried margin-left:auto and is hidden at this width, so
+  /* The account button carries margin-left:auto and is hidden at this width, so
      nothing was pushing the menu button to the edge any more. */
   .nav-menu {
     margin-left: auto;

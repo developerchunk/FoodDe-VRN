@@ -12,38 +12,9 @@ export const SELLER = {
   phone: "8780002456",
   address:
     "60, Madhuvan Colony, Raman Reti, Vrindavan, Mathura, Uttar Pradesh, Pin: 281121",
-  /* The window the service is open across, as 24h strings. Kept as data rather
-     than prose so `npm run check:menu` can assert it against the kitchens' real
-     hours — the footer previously claimed 7:00 am to 10:30 pm, which matched
-     nothing, and nothing caught it. */
+  /* The window the service is open across, as 24h strings. Not shown on the
+     site any more -- each dish says when it is served -- but kept as data so
+     `npm run check:menu` can still assert it against the kitchens' real hours. */
   opensAt: "08:00",
   closesAt: "23:00",
 };
-
-const clock = (hhmm) => {
-  const [h, m] = hhmm.split(":").map(Number);
-  const suffix = h < 12 ? "am" : "pm";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return m === 0
-    ? `${hour}:00 ${suffix}`
-    : `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
-};
-
-export const sellerHours = () =>
-  `Daily, ${clock(SELLER.opensAt)} – ${clock(SELLER.closesAt)}`;
-
-/** "8:00 AM – 11:00 PM", for the header. */
-export const sellerHoursShort = () =>
-  `${clock(SELLER.opensAt)} – ${clock(SELLER.closesAt)}`.toUpperCase();
-
-const minutes = (hhmm) => {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-};
-
-/** Whether the service is open right now, on Vrindavan's clock (IST). */
-export function isOpenNow(now = new Date()) {
-  const ist = new Date(now.getTime() + (330 + now.getTimezoneOffset()) * 60000);
-  const m = ist.getHours() * 60 + ist.getMinutes();
-  return m >= minutes(SELLER.opensAt) && m < minutes(SELLER.closesAt);
-}

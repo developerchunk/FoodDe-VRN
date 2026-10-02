@@ -94,7 +94,7 @@ export default function HomePage() {
           </div>
           <div className="dish-grid">
             {loved.map((item) => (
-              <MenuItemCard key={item.id} item={item} />
+              <MenuItemCard key={item.id} item={item} showAdd={false} />
             ))}
           </div>
         </section>

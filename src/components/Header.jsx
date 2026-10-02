@@ -1,20 +1,18 @@
 import { useEffect, useMemo } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import { listReceipts } from "../lib/orders";
 import { useProperty } from "../utils/property";
 import { isMenuPath } from "../utils/routes";
-import { isOpenNow, sellerHoursShort } from "../utils/seller";
-import { BuildingIcon, CartIcon, ClockIcon } from "./Icons";
+import { BuildingIcon } from "./Icons";
 import Logo from "./Logo";
-import SignInButton from "./SignInButton";
+import AccountButton from "./AccountButton";
 import NavMenu from "./NavMenu";
 
 export default function Header() {
   const { bill } = useCart();
   const { pathname } = useLocation();
   const house = useProperty();
-  const open = isOpenNow();
 
   /* Orders are remembered on the device, so a guest who has never ordered from
      this browser has nothing behind that link. Recomputed on navigation, which
@@ -57,14 +55,6 @@ export default function Header() {
           </div>
         )}
 
-        <div className="hours">
-          <ClockIcon size={22} />
-          <span>
-            <strong>{open ? "Open" : "Closed"}</strong>
-            <small>{sellerHoursShort()}</small>
-          </span>
-        </div>
-
         <nav className="site-nav" aria-label="Primary">
           <NavLink
             to="/menu"
@@ -82,20 +72,21 @@ export default function Header() {
               Orders
             </NavLink>
           )}
-          <SignInButton />
+          {/* The header's pill is Sign up / Profile now. The floating cart
+              bar is hidden on wide screens and the side cart lives only on the
+              menu page, so the cart keeps a plain link here. */}
+          <NavLink
+            to="/cart"
+            className={({ isActive }) =>
+              `site-nav__link ${isActive ? "is-active" : ""}`
+            }
+            aria-label={`Cart, ${bill.itemCount} ${bill.itemCount === 1 ? "item" : "items"}`}
+          >
+            Cart{bill.itemCount > 0 && <span className="site-nav__count">{bill.itemCount}</span>}
+          </NavLink>
         </nav>
 
-        <Link
-          to="/cart"
-          className={`cart-button ${pathname === "/cart" ? "is-active" : ""}`}
-          aria-label={`Cart, ${bill.itemCount} ${bill.itemCount === 1 ? "item" : "items"}`}
-        >
-          <CartIcon size={21} />
-          <span className="cart-button__label">Cart</span>
-          {bill.itemCount > 0 && (
-            <span className="cart-button__count">{bill.itemCount}</span>
-          )}
-        </Link>
+        <AccountButton />
 
         {/* Same links as the nav, for the widths where the nav is hidden. */}
         <NavMenu hasOrders={hasOrders} />
