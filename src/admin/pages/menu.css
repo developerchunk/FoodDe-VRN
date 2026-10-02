@@ -1,0 +1,126 @@
+/* Menu and categories pages. Built on admin.css; only what those lack. */
+
+.adm-menu-count {
+  margin: -4px 0 12px;
+}
+
+/* A dish with no photo yet: a quiet tile, not a broken image. */
+.adm-menu-thumb-none {
+  display: inline-block;
+  border: 1px dashed var(--sand-deep);
+}
+
+.adm-menu-name {
+  min-width: 0;
+}
+.adm-menu-name strong,
+.adm-menu-name small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.adm-menu-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+@media (min-width: 720px) {
+  .adm-menu-cell {
+    justify-content: flex-start;
+  }
+}
+
+/* ---------------------------------------------------------------- the photo */
+.adm-menu-photo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+}
+.adm-menu-photo__img {
+  width: 140px;
+  height: 140px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--sand);
+  border: 1px solid var(--sand-deep);
+}
+.adm-menu-photo__none {
+  display: grid;
+  place-items: center;
+  color: var(--ink-faint);
+  font-size: 13.5px;
+  border-style: dashed;
+}
+.adm-menu-photo__side {
+  flex: 1 1 180px;
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.adm-menu-photo__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.adm-menu-photo__btns .btn {
+  min-height: 40px;
+}
+
+/* The real input stays in the page, for the keyboard and screen readers, but
+   out of sight: the label around it is the button. */
+.adm-menu-file {
+  position: relative;
+  cursor: pointer;
+}
+.adm-menu-file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+.adm-menu-file:focus-within {
+  outline: 2px solid var(--teal-600);
+  outline-offset: 2px;
+}
+/* Only a phone or tablet has a camera worth offering. */
+.adm-menu-file--camera {
+  display: none;
+}
+@media (pointer: coarse) {
+  .adm-menu-file--camera {
+    display: inline-flex;
+  }
+}
+
+.adm-menu-link {
+  color: var(--teal-700);
+  text-decoration: underline;
+  font: inherit;
+  padding: 0;
+  min-height: 0;
+}
+
+/* --------------------------------------------------------------- the drawer */
+.adm-menu-foot-start {
+  margin-right: auto;
+  display: inline-flex;
+}
+.adm-menu-delete {
+  color: var(--ember-deep);
+}
+@media (max-width: 639px) {
+  .adm-menu-foot-start {
+    flex-basis: 100%;
+  }
+}
+
+/* Small buttons still need to be easy to hit with a thumb. */
+.adm-menu-tap {
+  min-height: 40px;
+}

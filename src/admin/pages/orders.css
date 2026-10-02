@@ -1,0 +1,310 @@
+/* The orders board. Teal for structure, ember for what changes an order and
+   for what is waiting on the admin. Every control is at least 40px tall: this
+   is used on a phone, often one-handed. */
+
+/* ----------------------------------------------------------- head controls */
+.adm-orders-seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--sand);
+  border: 1px solid var(--sand-deep);
+}
+.adm-orders-seg button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--teal-800);
+}
+.adm-orders-seg button[aria-pressed="true"] {
+  background: var(--teal-800);
+  color: var(--cream);
+}
+.adm-orders-refresh {
+  min-height: 40px;
+}
+
+/* ------------------------------------------------------------------ blocks */
+.adm-orders-block {
+  margin-bottom: 24px;
+}
+.adm-orders-block__title {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--teal-600);
+  margin-bottom: 10px;
+}
+.adm-orders-block__title--attn {
+  color: var(--ember-deep);
+}
+
+.adm-orders-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .adm-orders-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* adm-card spaces stacked cards; in a grid the gap does that. */
+.adm-orders-grid > .adm-card + .adm-card {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------ filter chips */
+.adm-orders-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.adm-orders-chips button {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--sand-deep);
+  background: var(--paper);
+  color: var(--teal-800);
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.adm-orders-chips button[aria-pressed="true"] {
+  background: var(--teal-800);
+  border-color: var(--teal-800);
+  color: var(--cream);
+}
+.adm-orders-chip-n {
+  font-feature-settings: "tnum";
+  font-size: 12.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--sand);
+  color: var(--ink-soft);
+}
+.adm-orders-chips button[aria-pressed="true"] .adm-orders-chip-n {
+  background: var(--teal-700);
+  color: var(--cream);
+}
+
+/* -------------------------------------------------------------------- card */
+.adm-orders-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 16px;
+}
+@media (min-width: 640px) {
+  .adm-orders-card {
+    padding: 18px 20px;
+  }
+}
+.adm-orders-card[aria-busy="true"] {
+  opacity: 0.75;
+}
+.adm-orders-card.is-flagged {
+  border-left: 4px solid var(--ember);
+}
+.adm-orders-card .btn {
+  min-height: 40px;
+}
+
+.adm-orders-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.adm-orders-no {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teal-900);
+}
+.adm-orders-total {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--teal-800);
+  font-feature-settings: "tnum";
+}
+.adm-orders-where {
+  font-weight: 500;
+  color: var(--teal-900);
+}
+.adm-orders-guest {
+  font-size: 14.5px;
+}
+.adm-orders-tel {
+  color: var(--teal-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  display: inline-block;
+  padding: 4px 0;
+}
+.adm-orders-note {
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.adm-orders-flag {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--ember-soft);
+  color: var(--ember-deep);
+  font-weight: 500;
+  font-size: 14.5px;
+}
+
+/* ---------------------------------------------------------------- sections */
+.adm-orders-sec {
+  border-top: 1px solid var(--sand);
+  padding-top: 10px;
+  margin-top: 6px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.adm-orders-sec h3 {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+.adm-orders-lines {
+  display: grid;
+  gap: 10px;
+  font-size: 14.5px;
+}
+.adm-orders-ticket {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.adm-orders-ticket__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.adm-orders-ticket__head strong {
+  font-weight: 500;
+  color: var(--teal-900);
+}
+.adm-orders-dishes {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.adm-orders-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.adm-orders-reject {
+  color: var(--ember-deep);
+  border-color: rgba(184, 71, 42, 0.35);
+}
+.adm-orders-reject:hover:not(:disabled) {
+  border-color: var(--ember-deep);
+}
+
+.adm-orders-delivery {
+  display: grid;
+  gap: 8px;
+  font-size: 14.5px;
+}
+.adm-orders-assign {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.adm-orders-assign select {
+  flex: 1 1 180px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 14.5px;
+}
+.adm-orders-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- messages */
+.adm-orders-messages,
+.adm-orders-more {
+  border-top: 1px solid var(--sand);
+  margin-top: 6px;
+}
+.adm-orders-messages summary,
+.adm-orders-more summary {
+  cursor: pointer;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--teal-700);
+}
+.adm-orders-failed {
+  color: var(--ember-deep);
+  font-weight: 600;
+}
+.adm-orders-messages ul {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0 6px;
+}
+.adm-orders-messages li {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  min-width: 0;
+}
+.adm-orders-msg__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+.adm-orders-msg__fail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.adm-orders-error {
+  color: var(--ember-deep);
+  font-size: 13.5px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------- needs attention */
+.adm-orders-attn {
+  border-color: var(--ember);
+  background: linear-gradient(var(--ember-soft), var(--paper) 72px);
+}
+.adm-orders-attn__note {
+  color: var(--ember-deep);
+  font-weight: 600;
+  font-size: 16px;
+}

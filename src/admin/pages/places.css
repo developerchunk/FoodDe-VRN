@@ -1,0 +1,151 @@
+/* Places & rooms: the room list inside the drawer, and the bulk-add form. */
+
+.adm-places-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.adm-places-warn {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--ember-soft);
+  color: var(--ember-deep);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.adm-places-rooms {
+  display: grid;
+  gap: 14px;
+}
+
+/* Tap targets of at least 40px on a phone, the drawer's buttons included. */
+.adm-places-rooms .adm-btn-sm,
+.adm-places-actions .adm-btn-sm {
+  min-height: 40px;
+}
+
+.adm-places-open-add {
+  justify-self: start;
+}
+
+.adm-places-add {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.adm-places-add .btn {
+  justify-self: start;
+}
+.adm-places-add__box {
+  min-height: 64px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+}
+.adm-places-plan {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.adm-places-plan strong {
+  color: var(--teal-800);
+  font-weight: 500;
+}
+
+.adm-places-rooms__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding-top: 4px;
+  border-top: 1px solid var(--sand-deep);
+}
+
+.adm-places-list {
+  display: grid;
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.adm-places-room {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--sand);
+}
+.adm-places-room:first-child {
+  border-top: 0;
+}
+.adm-places-room.is-off strong {
+  color: var(--ink-faint);
+}
+
+.adm-places-room__pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  min-width: 0;
+  flex: 1 1 160px;
+  cursor: pointer;
+}
+.adm-places-room__pick input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: var(--teal-700);
+}
+.adm-places-room__pick span {
+  display: grid;
+  min-width: 0;
+}
+.adm-places-room__pick strong {
+  color: var(--teal-900);
+  font-weight: 500;
+}
+.adm-places-room__pick small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.adm-places-room__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.adm-places-rename {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 12px;
+  width: 100%;
+  padding: 6px 0;
+}
+.adm-places-rename .field {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.adm-places-rename__actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 26px;
+}
+@media (max-width: 479px) {
+  .adm-places-rename__actions {
+    padding-top: 0;
+  }
+}

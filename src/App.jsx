@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -20,6 +20,10 @@ import ReceiptPage from "./pages/ReceiptPage";
 import OrdersPage from "./pages/OrdersPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
+/* Its own chunk: a guest who scans a room's QR code never downloads any of the
+   admin site. */
+const AdminApp = lazy(() => import("./admin/AdminApp"));
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -35,6 +39,22 @@ function LegacyRoomLink() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+
+  /* The admin site has its own layout and none of the guest chrome: no cart,
+     no room header, no footer. */
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/admin/*" element={<AdminApp />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <>
       <a className="skip-link" href="#main">

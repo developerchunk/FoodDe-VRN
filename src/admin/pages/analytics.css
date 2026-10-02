@@ -1,0 +1,176 @@
+/* Analytics — single-series columns in brand teal; everything else stays ink. */
+
+.adm-an.is-stale {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.adm-an-periods {
+  display: inline-flex;
+  background: var(--sand);
+  border-radius: 999px;
+  padding: 3px;
+}
+.adm-an-periods button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  min-height: 36px;
+}
+.adm-an-periods button.is-on {
+  background: var(--paper);
+  color: var(--teal-900);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+}
+
+.adm-an-tiles {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+}
+@media (max-width: 479px) {
+  .adm-an-tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.adm-an-tile {
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.adm-an-tile__label {
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.adm-an-tile__value {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 600;
+  color: var(--teal-900);
+  font-feature-settings: "tnum";
+  overflow-wrap: anywhere;
+}
+.adm-an-tile__foot {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.adm-an-delta {
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+.adm-an-delta.is-good {
+  color: var(--veg);
+}
+.adm-an-delta.is-bad {
+  color: var(--ember-deep);
+}
+
+.adm-an-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin: 16px 0 6px;
+  font-size: 14px;
+}
+
+.adm-an-charts {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (min-width: 1100px) {
+  .adm-an-charts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.adm-an-chart {
+  margin: 0;
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  padding: 14px 16px 8px;
+  min-width: 0;
+}
+.adm-an-chart figcaption {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--teal-900);
+  margin-bottom: 6px;
+}
+.adm-an-chart__plot {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.adm-an-chart svg {
+  display: block;
+  max-width: none;
+}
+.adm-an-grid {
+  stroke: var(--sand-deep);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.adm-an-axis {
+  font-size: 11px;
+  fill: var(--ink-faint);
+  font-feature-settings: "tnum";
+}
+.adm-an-peak {
+  font-size: 11.5px;
+  font-weight: 500;
+  fill: var(--ink-soft);
+}
+.adm-an-bar {
+  fill: var(--teal-600);
+}
+.adm-an-bar.is-hover {
+  fill: var(--teal-800);
+}
+.adm-an-chart rect:focus {
+  outline: none;
+}
+.adm-an-tip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: var(--teal-900);
+  color: var(--cream);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  display: grid;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+.adm-an-tip strong {
+  font-size: 14px;
+  font-feature-settings: "tnum";
+}
+
+.adm-an-section {
+  margin-top: 28px;
+}
+.adm-an-section h2 {
+  font-size: 21px;
+  margin-bottom: 2px;
+}
+.adm-an-section > .adm-muted {
+  margin-bottom: 10px;
+}
+.adm-an-section .adm-cell-main small {
+  display: block;
+}
+.adm-an-more {
+  margin-top: 10px;
+}

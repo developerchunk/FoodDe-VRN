@@ -7,22 +7,27 @@ import { rupees, maskPhone, formatDateTime } from "../utils/format";
 import { Cloche, ClockIcon } from "../components/Icons";
 
 const STAGES = [
-  { id: "confirmed", title: "Order received", body: "We have your order." },
-  { id: "cooking", title: "On the chulha", body: "Cooking fresh." },
-  { id: "packed", title: "Packed & sealed", body: "Sealed in paper and clay." },
+  { id: "confirmed", title: "Order received", body: "Waiting for the kitchen to accept it." },
+  { id: "cooking", title: "Accepted", body: "Being prepared fresh." },
   { id: "out", title: "Out for delivery", body: "On its way. Keep your phone close." },
+  { id: "delivered", title: "Delivered", body: "Enjoy your meal." },
 ];
 
 /* The stage comes from the order's real status, never from a timer. A tracker
    that advances on its own tells a guest their food is on the way when nobody
-   has cooked it. */
+   has cooked it. The kitchen's Accept on WhatsApp is what moves it to
+   "preparing"; the rest is moved on by the people doing it. */
 const STAGE_FOR = {
   paid: 0,
   sent_to_kitchen: 0,
   preparing: 1,
-  out_for_delivery: 3,
+  out_for_delivery: 2,
   delivered: 3,
 };
+
+/* While the order is still moving, ask again every so often. */
+const OPEN = new Set(["paid", "sent_to_kitchen", "preparing", "out_for_delivery"]);
+const POLL_MS = 15_000;
 
 /* Where the order has got to, read from its status. */
 
@@ -91,8 +96,22 @@ export default function OrderSuccessPage() {
     return () => clearTimeout(t);
   }, [unpaid, secondsLeft, backToCheckout]);
 
+  /* Follow the order while it moves, only while the guest is looking. */
+  const moving = OPEN.has(order?.status);
+  useEffect(() => {
+    if (!moving) return undefined;
+    const tick = () => document.visibilityState === "visible" && refresh();
+    const t = setInterval(tick, POLL_MS);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [moving, refresh]);
+
   /* Derived, not animated. */
   const stage = STAGE_FOR[order?.status] ?? 0;
+  const cancelled = order?.status === "cancelled";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -278,8 +297,14 @@ export default function OrderSuccessPage() {
             )}
           </section>
         )}
-        <section className="card track" aria-label="Order progress">
+        <section className="card track" aria-label="Order progress" aria-live="polite">
           <h2 className="track__title">Following your order</h2>
+          {cancelled ? (
+            <p className="track__cancelled">
+              This order was cancelled. What you paid will be refunded to your
+              original payment method.
+            </p>
+          ) : (
           <ol className="track__list">
             {STAGES.map((s, i) => (
               <li
@@ -309,7 +334,7 @@ export default function OrderSuccessPage() {
               </li>
             ))}
           </ol>
-
+          )}
         </section>
 
         <section className="card summary-card" aria-label="Order summary">
@@ -321,7 +346,7 @@ export default function OrderSuccessPage() {
                 <span className="mini-lines__name">
                   {l.name} <em>× {l.qty}</em>
                 </span>
-                <span className="rupee">{rupees(l.pricePaise * l.qty)}</span>
+                <span className="rupee">{rupees(l.line_total_paise)}</span>
               </li>
             ))}
           </ul>

@@ -510,6 +510,12 @@ select.input {
   font-size: 18px;
   margin-bottom: 20px;
 }
+.track__cancelled {
+  color: var(--ember-deep);
+  background: var(--ember-soft);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
 .track__list {
   display: grid;
   gap: 4px;

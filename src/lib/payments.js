@@ -70,6 +70,18 @@ export async function payForOrder({ token, onStatus }) {
        failure the guest should see as one. */
     const status = createErr.context?.status;
     if (status === 409) return { paid: true, alreadyPaid: true };
+    /* A dish was switched off after the order was placed. Nothing was charged;
+       the guest goes back to the cart, which marks the dish. */
+    if (status === 410) {
+      const body = await createErr.context.json?.().catch(() => null);
+      return {
+        paid: false,
+        reason: "unavailable",
+        message: body?.unavailable
+          ? `Sorry, ${body.unavailable} is no longer available. Remove it from your order to continue.`
+          : "Something in your order is no longer available. Please check your order.",
+      };
+    }
     throw new Error(
       status === 401
         ? "Payments are misconfigured on our side. Please tell the front desk."

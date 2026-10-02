@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchMenu } from "../lib/menu";
+import { debounced, onMenuChange } from "../lib/menuLive";
 
 /**
  * Cross-checks what is in the cart against what the menu will serve right now.
@@ -16,6 +17,9 @@ import { fetchMenu } from "../lib/menu";
  * read — must never block ordering: the database is the authority and will
  * refuse if it has to, and a failed fetch is a bad reason to refuse a guest's
  * money. Only a menu we actually read is allowed to stop anyone.
+ *
+ * It listens for menu changes too: a dish an admin switches off while the
+ * guest is filling in checkout is flagged there and then, not at payment.
  */
 export function useCartAvailability(lines) {
   const [state, setState] = useState({ status: "loading", unavailable: [] });
@@ -32,7 +36,7 @@ export function useCartAvailability(lines) {
     let cancelled = false;
     /* fetchMenu resolves with { items, categories, error } and never rejects —
        a failure arrives as a populated `error`, not as a thrown exception. */
-    fetchMenu()
+    const check = () => fetchMenu()
       .then(({ items, error }) => {
         if (cancelled) return;
         if (error) {
@@ -56,8 +60,13 @@ export function useCartAvailability(lines) {
         console.error("cart availability check failed", err);
         if (!cancelled) setState({ status: "unknown", unavailable: [] });
       });
+    check();
+    const soon = debounced(check);
+    const stopLive = onMenuChange(soon);
     return () => {
       cancelled = true;
+      stopLive();
+      soon.cancel();
     };
   }, [snapshot, empty]);
 
