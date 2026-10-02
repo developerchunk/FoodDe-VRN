@@ -6,7 +6,9 @@
  * three-colour palette.
  */
 
-const V = "0 0 200 150";
+/* Square, like every dish photo: the 200x150 drawing centred on a 200x200
+   canvas, so nothing is cropped and the extra height is plain background. */
+const V = "0 -25 200 200";
 
 function Steam({ x = 100, tint }) {
   return (
@@ -708,7 +710,7 @@ export default function DishArt({ item, className = "", decorative = true }) {
           <stop offset="100%" stopColor="#f3e6cd" />
         </radialGradient>
       </defs>
-      <rect width="200" height="150" fill={`url(#${gid})`} />
+      <rect y="-25" width="200" height="200" fill={`url(#${gid})`} />
       {render(palette)}
     </svg>
   );

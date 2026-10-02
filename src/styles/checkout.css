@@ -20,7 +20,7 @@
 }
 .order-line__art svg {
   width: 82px;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   border-radius: 10px;
   border: 1px solid var(--sand-deep);
 }
@@ -80,7 +80,7 @@
 }
 .addon__art svg {
   width: 54px;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   border-radius: 8px;
 }
 .addon__body {
