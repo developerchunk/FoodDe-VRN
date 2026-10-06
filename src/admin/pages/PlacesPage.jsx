@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { addRooms, isMobile, listPlaces, savePlace, saveRoom, tenDigits } from "../api";
 import { Drawer, Field, LoadState, PageHead, Switch } from "../ui";
 import { blankToNull, useLoad, useNotice } from "../helpers";
+import { STICKER_FONTS_LINK, STICKER_H, STICKER_SHEET_CSS, STICKER_W, stickerFontCss, stickerSvg } from "../../utils/sticker";
 import "./places.css";
 
 /**
@@ -99,127 +100,76 @@ const escapeHtml = (s) =>
 const roomUrl = (id) => `${SITE}/menu?id=${encodeURIComponent(id)}`;
 
 /* Same settings as scripts/generate-qr.mjs: 'M' survives a scuffed sticker. */
-async function qrSvg(id) {
+async function roomSticker(place, room, opts = {}) {
   const QRCode = (await import("qrcode")).default;
-  return QRCode.toString(roomUrl(id), { type: "svg", errorCorrectionLevel: "M", margin: 1, width: 320 });
+  const modules = QRCode.create(roomUrl(room.id), { errorCorrectionLevel: "M" }).modules;
+  return stickerSvg({ house: place.name, room: room.room_number, code: room.id, modules, ...opts });
 }
 
-/* The sheet scripts/generate-qr.mjs writes, so stickers look the same either way. */
-const SHEET_CSS = `
-  @page { size: A4; margin: 12mm; }
-  body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0;
-         display: grid; grid-template-columns: repeat(2, 1fr); gap: 10mm; }
-  .card { border: 1px dashed #bbb; border-radius: 6mm; padding: 8mm 6mm;
-          text-align: center; break-inside: avoid; }
-  .qr svg { width: 46mm; height: 46mm; }
-  h2 { font-size: 13pt; margin: 4mm 0 1mm; color: #075b55; }
-  .room { font-size: 18pt; font-weight: 700; margin: 0 0 2mm; color: #075b55; }
-  .hint { font-size: 9pt; color: #666; margin: 0 0 3mm; }
-  .code { font-size: 7pt; color: #aaa; letter-spacing: .12em; margin: 0; }
-`;
-
+/* Four stickers to an A4 page, each 88 x 132 mm. The same sheet
+   scripts/generate-qr.mjs writes, so stickers look the same either way. */
 async function stickerSheet(place, rooms) {
   const cards = [];
-  for (const r of rooms) {
-    cards.push(`
-    <article class="card">
-      <div class="qr">${await qrSvg(r.id)}</div>
-      <h2>${escapeHtml(place.name)}</h2>
-      <p class="room">Room ${escapeHtml(r.room_number)}</p>
-      <p class="hint">Scan to order to your room</p>
-      <p class="code">${escapeHtml(r.id)}</p>
-    </article>`);
-  }
+  for (const r of rooms) cards.push(`<div class="card">${await roomSticker(place, r, { width: "100%", height: "100%" })}</div>`);
   return `<!doctype html><html><head><meta charset="utf-8"><title>QR stickers — ${escapeHtml(place.name)}</title>
-<style>${SHEET_CSS}</style></head><body>
+<link rel="stylesheet" href="${STICKER_FONTS_LINK}">
+<style>${STICKER_SHEET_CSS}</style></head><body>
 ${cards.join("\n")}
-<script>window.addEventListener("load", function () { window.focus(); window.print(); });</script>
+<script>window.addEventListener("load", function () {
+  document.fonts.ready.then(function () { window.focus(); window.print(); });
+});</script>
 </body></html>`;
 }
 
-async function downloadSvg(room) {
-  const blob = new Blob([await qrSvg(room.id)], { type: "image/svg+xml" });
+function saveBlob(blob, name) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${room.id}-room-${room.room_number.replace(/\W+/g, "")}.svg`;
+  a.download = name;
   document.body.append(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* The same sticker as the printed sheet, as one print-ready PNG: 1200 x 1600
-   px, about 10 x 13.5 cm at 300 dpi. The whole card rather than the bare QR,
-   because the house name and room on it are what stop a sticker going on the
-   wrong door. */
-const PNG_W = 1200;
-const PNG_H = 1600;
+const fileName = (room, ext) => `${room.id}-room-${room.room_number.replace(/\W+/g, "")}.${ext}`;
 
-/* Fits a line to the card, shrinking the type rather than cutting the name. */
-function fitText(ctx, text, maxWidth, size, weight) {
-  let px = size;
-  do {
-    ctx.font = `${weight} ${px}px Jost, ui-sans-serif, system-ui, sans-serif`;
-    if (ctx.measureText(text).width <= maxWidth) break;
-    px -= 2;
-  } while (px > 28);
-  return px;
+/* The sticker with its fonts inside it, so it prints the same from any
+   machine or print shop. */
+async function stickerWithFonts(place, room) {
+  const fontCss = await stickerFontCss(place.name + room.room_number + room.id);
+  return roomSticker(place, room, { fontCss });
 }
+
+async function downloadSvg(place, room) {
+  const svg = await stickerWithFonts(place, room);
+  saveBlob(new Blob([svg], { type: "image/svg+xml" }), fileName(room, "svg"));
+}
+
+/* The same sticker as one print-ready PNG: 1600 x 2400 px, about
+   13.5 x 20 cm at 300 dpi. The whole card rather than the bare QR, because the
+   house name and room on it are what stop a sticker going on the wrong door. */
+const PNG_W = 1600;
+const PNG_H = (PNG_W * STICKER_H) / STICKER_W;
 
 async function downloadPng(place, room) {
-  const QRCode = (await import("qrcode")).default;
-  const qr = await QRCode.toCanvas(roomUrl(room.id), {
-    errorCorrectionLevel: "M",
-    margin: 1,
-    width: 920,
-    color: { dark: "#000000", light: "#ffffff" },
-  });
-  /* Jost is the site's font; wait for it so the PNG does not fall back. */
-  await document.fonts?.ready;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = PNG_W;
-  canvas.height = PNG_H;
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, PNG_W, PNG_H);
-
-  /* square modules, not blurred ones: a soft QR is a slower scan */
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(qr, (PNG_W - 920) / 2, 110, 920, 920);
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  const cx = PNG_W / 2;
-  const maxW = PNG_W - 160;
-
-  ctx.fillStyle = "#075b55";
-  fitText(ctx, place.name, maxW, 64, 600);
-  ctx.fillText(place.name, cx, 1150);
-
-  fitText(ctx, `Room ${room.room_number}`, maxW, 112, 700);
-  ctx.fillText(`Room ${room.room_number}`, cx, 1290);
-
-  ctx.fillStyle = "#666666";
-  ctx.font = "400 44px Jost, ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("Scan to order to your room", cx, 1380);
-
-  ctx.fillStyle = "#aaaaaa";
-  ctx.font = "400 32px ui-monospace, SFMono-Regular, Menlo, monospace";
-  ctx.fillText(room.id.split("").join(" "), cx, 1480);
-
-  const blob = await new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("This browser could not make the image."))), "image/png"),
-  );
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${room.id}-room-${room.room_number.replace(/\W+/g, "")}.png`;
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const svg = await stickerWithFonts(place, room);
+  const src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  try {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = PNG_W;
+    canvas.height = PNG_H;
+    canvas.getContext("2d").drawImage(img, 0, 0, PNG_W, PNG_H);
+    const blob = await new Promise((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("This browser could not make the image."))), "image/png"),
+    );
+    saveBlob(blob, fileName(room, "png"));
+  } finally {
+    URL.revokeObjectURL(src);
+  }
 }
 
 /* Not in api.js: one update for every room of a house that is still off. */
@@ -551,8 +501,8 @@ function RoomRow({ place, room, rooms, placeOn, selected, onSelect, onSaved }) {
           type="button"
           className="btn btn-ghost adm-btn-sm"
           disabled={!room.is_active}
-          title={room.is_active ? "Download this room's QR code" : "Switch the room on first"}
-          onClick={() => downloadSvg(room).catch((e) => notify(`Could not make the QR code: ${e.message}`, "error"))}
+          title={room.is_active ? "Download this room's sticker as a print-ready SVG" : "Switch the room on first"}
+          onClick={() => downloadSvg(place, room).catch((e) => notify(`Could not make the sticker: ${e.message}`, "error"))}
         >
           SVG
         </button>

@@ -3,8 +3,9 @@
  *
  *   node scripts/generate-qr.mjs
  *
- * Writes qr/<address_id>-<room>.svg plus qr/sheet.html — open that in a
- * browser and print it. Each label carries the rest house name and room number
+ * Writes qr/<address_id>-<room>.svg (the full sticker, fonts inside, ready
+ * for a print shop) plus qr/sheet.html — open that in a browser and print it,
+ * four stickers to an A4 page. Each label carries the rest house name and room number
  * so whoever is sticking them up can tell which goes where; getting that wrong
  * means a guest's food goes to someone else's room.
  *
@@ -15,6 +16,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import QRCode from "qrcode";
 import { createClient } from "@supabase/supabase-js";
 import "dotenv/config";
+import { STICKER_FONTS_LINK, STICKER_SHEET_CSS, stickerFontCss, stickerSvg } from "../src/utils/sticker.js";
 
 const url = process.env.VITE_SUPABASE_URL;
 const secret = process.env.SUPABASE_SECRET_KEY;
@@ -56,48 +58,23 @@ const cards = [];
 for (const a of addresses) {
   const target = `${base}/menu?id=${a.id}`;
   /* 'M' tolerates ~15% damage — these live on walls and get scuffed */
-  const svg = await QRCode.toString(target, {
-    type: "svg",
-    errorCorrectionLevel: "M",
-    margin: 1,
-    width: 320,
-  });
+  const { modules } = QRCode.create(target, { errorCorrectionLevel: "M" });
+  const sticker = { house: a.place_name, room: String(a.room_number), code: a.id, modules };
 
   const slug = `${a.id}-room-${String(a.room_number).replace(/\W+/g, "")}`;
-  writeFileSync(`qr/${slug}.svg`, svg);
+  const fontCss = await stickerFontCss(sticker.house + sticker.room + sticker.code);
+  writeFileSync(`qr/${slug}.svg`, stickerSvg({ ...sticker, fontCss }));
 
-  cards.push(`
-    <article class="card">
-      <div class="qr">${svg}</div>
-      <h2>${escapeHtml(a.place_name)}</h2>
-      <p class="room">Room ${escapeHtml(String(a.room_number))}</p>
-      <p class="hint">Scan to order to your room</p>
-      <p class="code">${a.id}</p>
-    </article>`);
+  cards.push(`<div class="card">${stickerSvg({ ...sticker, width: "100%", height: "100%" })}</div>`);
   console.log(`  ${String(a.id).padStart(3)}  ${a.place_name} — room ${a.room_number}  ->  ${target}`);
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
-  );
-}
-
+/* Same sheet as the admin site's "Print QR stickers". */
 writeFileSync(
   "qr/sheet.html",
-  `<!doctype html><meta charset="utf-8"><title>IRD QR codes</title>
-<style>
-  @page { size: A4; margin: 12mm; }
-  body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0;
-         display: grid; grid-template-columns: repeat(2, 1fr); gap: 10mm; }
-  .card { border: 1px dashed #bbb; border-radius: 6mm; padding: 8mm 6mm;
-          text-align: center; break-inside: avoid; }
-  .qr svg { width: 46mm; height: 46mm; }
-  h2 { font-size: 13pt; margin: 4mm 0 1mm; color: #075b55; }
-  .room { font-size: 18pt; font-weight: 700; margin: 0 0 2mm; color: #075b55; }
-  .hint { font-size: 9pt; color: #666; margin: 0 0 3mm; }
-  .code { font-size: 7pt; color: #aaa; letter-spacing: .12em; margin: 0; }
-</style>
+  `<!doctype html><meta charset="utf-8"><title>QR stickers</title>
+<link rel="stylesheet" href="${STICKER_FONTS_LINK}">
+<style>${STICKER_SHEET_CSS}</style>
 ${cards.join("\n")}`,
 );
 
