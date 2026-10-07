@@ -25,19 +25,27 @@ so a failure is always visible there and on the admin Orders page.
      The order is flagged on the admin Orders page; the admin handles it.
 3. **Every kitchen has answered.**
    - At least one accepted → **every active delivery partner** gets
-     `ird_delivery_offer` with **Accept / Reject**. Only the kitchens that
+     `ird_delivery_offer` with **Accept / Reject**, showing each kitchen's and
+     the guest house's full address with a map link. Only the kitchens that
      accepted are on the pickup list.
    - None rejected → the order becomes `preparing` and the guest gets
      `ird_guest_order_accepted` (their order page updates too).
 4. **First rider to tap Accept gets it** (the order row is locked, so two taps
    in the same second cannot both win). They get the full pickup details
-   (`ird_delivery_pickup`, with map links); every rider still deciding gets
+   (`ird_delivery_pickup_v2`: full addresses, map links, the dishes per
+   kitchen, the guest's name and number); every rider still deciding gets
    `ird_delivery_taken`; a rider who accepts a moment later is told it is gone.
-5. **Silence.** `whatsapp-dispatch`, run every minute by cron, escalates to the
+5. **Picked up and Delivered.** The pickup details carry two buttons. Only the
+   rider the order is assigned to can use them (checked by number). Picked up
+   makes the order `out_for_delivery` and sends the guest
+   `ird_guest_out_for_delivery`; Delivered makes it `delivered` and sends
+   `ird_guest_delivered`. An admin moving the order on from the Orders page
+   sends the guest the same messages. Each goes once.
+6. **Silence.** `whatsapp-dispatch`, run every minute by cron, escalates to the
    admin: a kitchen that has not answered **10 minutes** after payment, or an
    order no rider has accepted 10 minutes after riders were asked (or that
    every rider declined).
-6. From there the admin moves the order on from the Orders page (out for
+7. From there the admin can also move the order on from the Orders page (out for
    delivery, delivered, or cancelled — cancelling does not refund; that is done
    in Razorpay), and can record a kitchen's answer given by phone, assign or
    change the rider, and retry any failed message.
@@ -64,7 +72,10 @@ bodies, and the quick-reply buttons where a template has them. All are
 | `ird_delivery_taken` | riders who did not get it | — | **new — submit** |
 | `ird_guest_order_accepted` | the guest | — | **new — submit** |
 | `ird_admin_order_alert` | the admin number | — | **new — submit** |
-| `ird_delivery_pickup` | the rider who got it | — | submitted 2 Oct 2026 |
+| `ird_delivery_pickup_v2` | the rider who got it | Picked up, Delivered | **new — submit** |
+| `ird_guest_out_for_delivery` | the guest | — | **new — submit** |
+| `ird_guest_delivered` | the guest | — | **new — submit** |
+| `ird_delivery_pickup` | the rider who got it | — | approved; sent instead of `_v2` until `_v2` is approved |
 | `ird_property_order` | the rest house | — | submitted 2 Oct 2026 |
 | `ird_guest_confirmation` | the guest | — | submitted 2 Oct 2026 |
 

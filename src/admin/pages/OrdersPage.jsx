@@ -89,6 +89,8 @@ const MESSAGE_KIND = {
   property_order: "Order to rest house",
   guest_confirmation: "Order placed, to guest",
   guest_accepted: "Order accepted, to guest",
+  guest_out_for_delivery: "On its way, to guest",
+  guest_delivered: "Delivered, to guest",
   delivery_offer: "Delivery offer to rider",
   delivery_details: "Pickup details to rider",
   delivery_taken: "Taken, to rider",

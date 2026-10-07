@@ -41,6 +41,7 @@ export type Message = {
   text: string;
   buttons?: { title: string; payload: string }[];
   freeText?: boolean;
+  fallback?: { name: string; body: string };
 };
 
 /**

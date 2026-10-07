@@ -24,6 +24,23 @@ const SAMPLES: Record<string, string[]> = {
     "Rishi Bhawan Guest House, Room 101, Ramnagar Colony",
   ],
   ird_delivery_taken: ["IRD-1001"],
+  ird_delivery_pickup_v2: [
+    "IRD-1001",
+    "Vrinda Thali, Anand Vatika Cut, Chaitanya Vihar, Vrindavan 281121 (2 × Thali) — Map: https://maps.google.com/?q=27.567314,77.678539",
+    "Rishi Bhawan Guest House",
+    "101",
+    "Parikrama Marg, Ramnagar Colony, Vrindavan 281121 — Map: https://maps.google.com/?q=27.563452,77.696353",
+    "Asha",
+    "+919876543210",
+  ],
+  ird_guest_out_for_delivery: [
+    "Asha",
+    "IRD-1001",
+    "Rishi Bhawan Guest House",
+    "101",
+    "https://inroomdining.in/order/2f6c1d0e",
+  ],
+  ird_guest_delivered: ["Asha", "IRD-1001", "101", "https://inroomdining.in/receipt/2f6c1d0e"],
   ird_guest_order_accepted: ["Asha", "IRD-1001", "https://inroomdining.in/order/2f6c1d0e"],
   ird_admin_order_alert: [
     "IRD-1001",

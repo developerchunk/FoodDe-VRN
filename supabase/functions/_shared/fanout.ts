@@ -18,7 +18,15 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fill, type Message, sendWhatsApp, toWaNumber } from "./whatsapp.ts";
 
-type Template = { name: string; body: string; buttons?: readonly string[] };
+/* `fallback` is an approved template to send instead while this one is still
+   in Meta's review -- same parameters, no buttons -- so a new version never
+   leaves riders without their pickup details. */
+type Template = {
+  name: string;
+  body: string;
+  buttons?: readonly string[];
+  fallback?: { name: string; body: string };
+};
 
 export const TEMPLATES = {
   kitchen_order: {
@@ -40,13 +48,24 @@ export const TEMPLATES = {
     buttons: ["Accept", "Reject"],
   },
   delivery_details: {
-    name: "ird_delivery_pickup",
+    name: "ird_delivery_pickup_v2",
     body:
       "Pickup for In Room Dining order {{1}}.\n\n" +
       "Collect from: {{2}}\n\n" +
       "Deliver to: {{3}}, Room {{4}}, {{5}}\n\n" +
       "Guest: {{6}}, {{7}}\n\n" +
-      "Please call the guest only if you cannot find the room.",
+      "Please call the guest only if you cannot find the room. " +
+      "Tap Picked up when you have collected the food, and Delivered once the guest has it.",
+    buttons: ["Picked up", "Delivered"],
+    fallback: {
+      name: "ird_delivery_pickup",
+      body:
+        "Pickup for In Room Dining order {{1}}.\n\n" +
+        "Collect from: {{2}}\n\n" +
+        "Deliver to: {{3}}, Room {{4}}, {{5}}\n\n" +
+        "Guest: {{6}}, {{7}}\n\n" +
+        "Please call the guest only if you cannot find the room.",
+    },
   },
   delivery_taken: {
     name: "ird_delivery_taken",
@@ -75,6 +94,22 @@ export const TEMPLATES = {
       "Hi {{1}}, your In Room Dining order {{2}} has been accepted and is being prepared.\n\n" +
       "Follow it here: {{3}}\n\n" +
       "We will bring it to your room as soon as it is ready.",
+  },
+  guest_out_for_delivery: {
+    name: "ird_guest_out_for_delivery",
+    body:
+      "Hi {{1}}, your In Room Dining order {{2}} has been picked up and is on its way " +
+      "to {{3}}, Room {{4}}.\n\n" +
+      "Follow it here: {{5}}\n\n" +
+      "Please keep your phone close in case the delivery partner needs directions.",
+  },
+  guest_delivered: {
+    name: "ird_guest_delivered",
+    body:
+      "Hi {{1}}, your In Room Dining order {{2}} has been delivered to Room {{3}}. " +
+      "We hope you enjoy your meal.\n\n" +
+      "Your receipt: {{4}}\n\n" +
+      "Thank you for ordering with us.",
   },
   admin_alert: {
     name: "ird_admin_order_alert",
@@ -105,11 +140,20 @@ const REPLIES = {
       `Order ${n} has already been taken by another delivery partner. Thank you.`,
     already_yours: (n: string) => `Order ${n} is already yours. The pickup details are above.`,
     already_declined: (n: string) => `You have already passed on order ${n}.`,
+    picked_up: (n: string) =>
+      `Marked order ${n} as picked up. Tap Delivered once the guest has it.`,
+    already_picked: (n: string) => `Order ${n} is already marked as picked up.`,
+    delivered: (n: string) => `Marked order ${n} as delivered. Thank you.`,
+    already_delivered: (n: string) => `Order ${n} is already marked as delivered.`,
+    not_yours: (n: string) => `Order ${n} is assigned to another delivery partner.`,
     closed: (n: string) => `Order ${n} is no longer active. No action is needed.`,
   },
 } as const;
 
 type Kind = keyof typeof TEMPLATES | keyof typeof REPLIES;
+
+/* Meta's "no such approved template / template paused or disabled" codes. */
+const TEMPLATE_UNUSABLE = /^(132001|132015|132016)\b/;
 
 /** Attempts per message before it is left as failed for a person to see. */
 const MAX_ATTEMPTS = 5;
@@ -142,9 +186,41 @@ const istTime = (iso: string) =>
 const siteUrl = () =>
   (Deno.env.get("IRD_SITE_URL") || "https://inroomdining.in").replace(/\/$/, "");
 
-/* A riders' map pin, when the coordinates are on file. */
-const mapLink = (lat: unknown, lng: unknown) =>
-  lat != null && lng != null ? `maps.google.com/?q=${lat},${lng}` : null;
+/* A full postal address: the street line, then area, city and PIN only where
+   the street line does not already say them. */
+function fullAddress(x: Row) {
+  const parts = [x?.address];
+  for (const extra of [x?.area, x?.city, x?.pin_code]) {
+    if (extra && !String(x?.address ?? "").toLowerCase().includes(String(extra).toLowerCase())) {
+      parts.push(extra);
+    }
+  }
+  return parts.filter(Boolean).join(", ");
+}
+
+/* A map link a rider can tap: the saved pin when there is one, otherwise a
+   Google Maps search for the name, area and city -- short on purpose, because
+   a template parameter is cut at 500 characters and a cut link is no link. */
+function mapLink(x: Row, name?: string) {
+  if (x?.latitude != null && x?.longitude != null) {
+    return `https://maps.google.com/?q=${x.latitude},${x.longitude}`;
+  }
+  const q = [name, x?.area, x?.city].filter(Boolean).join(", ");
+  return q ? `https://maps.google.com/?q=${encodeURIComponent(q).replace(/%20/g, "+")}` : null;
+}
+
+/* Meta refuses a template message longer than 1024 characters. Several
+   kitchens' full addresses could pass that, so then each stop shrinks to its
+   name, area and map link. */
+const MAX_TEXT = 1000;
+const shortLine = (name: string | undefined, x: Row) =>
+  [[name, x?.area].filter(Boolean).join(", "), mapLink(x, name)].filter(Boolean).join(" — Map: ");
+
+/* "Name, full address — Map: <link>" */
+const placeLine = (name: string | undefined, x: Row) =>
+  [[name, fullAddress(x)].filter(Boolean).join(", "), mapLink(x, name)]
+    .filter(Boolean)
+    .join(" — Map: ");
 
 const STATUS_WORD: Record<string, string> = {
   pending: "not sent yet",
@@ -163,7 +239,7 @@ async function loadOrder(db: SupabaseClient, orderId: string) {
     .select(
       "id, order_no, guest_name, guest_phone, note, total_paise, receipt_token, " +
         "created_at, paid_at, " +
-        "address:addresses(room_number, place:places(name, address, area, latitude, longitude))",
+        "address:addresses(room_number, place:places(name, address, area, city, pin_code, latitude, longitude))",
     )
     .eq("id", orderId)
     .single();
@@ -178,7 +254,10 @@ async function loadOrder(db: SupabaseClient, orderId: string) {
 
   const { data: tickets, error: ticketsErr } = await db
     .from("order_tickets")
-    .select("id, kitchen_id, status, kitchen:kitchens(place_name, address, area, latitude, longitude)")
+    .select(
+      "id, kitchen_id, status, " +
+        "kitchen:kitchens(place_name, address, area, city, pin_code, latitude, longitude)",
+    )
     .eq("order_id", orderId);
   if (ticketsErr) throw new Error(`order ${orderId} tickets: ${ticketsErr.message}`);
 
@@ -223,12 +302,16 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
       break;
     }
     case "delivery_offer":
+      /* Full addresses and a map link for every stop, so a rider can judge the
+         trip before accepting it. */
       params = [
         o.order_no,
-        accepted.map((t) => [t.kitchen?.place_name, t.kitchen?.area].filter(Boolean).join(", "))
-          .join("; "),
-        [place.name, room && `Room ${room}`, place.area].filter(Boolean).join(", "),
+        accepted.map((t) => placeLine(t.kitchen?.place_name, t.kitchen)).join("; "),
+        placeLine(room ? `${place.name}, Room ${room}` : place.name, place),
       ];
+      if (fill(TEMPLATES.delivery_offer.body, params).length > MAX_TEXT) {
+        params[1] = accepted.map((t) => shortLine(t.kitchen?.place_name, t.kitchen)).join("; ");
+      }
       buttons = [
         { title: "Accept", payload: `d:${ctx.offer_id}:a` },
         { title: "Reject", payload: `d:${ctx.offer_id}:r` },
@@ -239,8 +322,10 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
         .map((t) => {
           const k = t.kitchen ?? {};
           const what = list(items.filter((i) => i.kitchen_id === t.kitchen_id));
-          const where = [k.place_name, k.address || k.area].filter(Boolean).join(", ");
-          return [`${where} (${what})`, mapLink(k.latitude, k.longitude)].filter(Boolean).join(", ");
+          return [
+            `${[k.place_name, fullAddress(k)].filter(Boolean).join(", ")} (${what})`,
+            mapLink(k, k.place_name),
+          ].filter(Boolean).join(" — Map: ");
         })
         .join("; ");
       params = [
@@ -248,11 +333,22 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
         pickups,
         place.name,
         room,
-        [place.address || place.area, mapLink(place.latitude, place.longitude)]
-          .filter(Boolean)
-          .join(", "),
+        [fullAddress(place), mapLink(place, place.name)].filter(Boolean).join(" — Map: "),
         o.guest_name,
         `+${toWaNumber(o.guest_phone) ?? o.guest_phone}`,
+      ];
+      if (fill(TEMPLATES.delivery_details.body, params).length > MAX_TEXT) {
+        params[1] = accepted
+          .map((t) => {
+            const what = list(items.filter((i) => i.kitchen_id === t.kitchen_id));
+            return `${shortLine(t.kitchen?.place_name, t.kitchen)} (${what})`;
+          })
+          .join("; ");
+      }
+      /* Only the rider assigned to the order can use these (rider_progress). */
+      buttons = [
+        { title: "Picked up", payload: `o:${o.id}:p` },
+        { title: "Delivered", payload: `o:${o.id}:d` },
       ];
       break;
     }
@@ -269,6 +365,23 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
         place.name,
         room,
         rupees(o.total_paise),
+        `${siteUrl()}/receipt/${o.receipt_token}`,
+      ];
+      break;
+    case "guest_out_for_delivery":
+      params = [
+        String(o.guest_name || "").split(" ")[0] || "there",
+        o.order_no,
+        place.name,
+        room,
+        `${siteUrl()}/order/${o.receipt_token}`,
+      ];
+      break;
+    case "guest_delivered":
+      params = [
+        String(o.guest_name || "").split(" ")[0] || "there",
+        o.order_no,
+        room,
         `${siteUrl()}/receipt/${o.receipt_token}`,
       ];
       break;
@@ -306,7 +419,7 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
   }
 
   const t: Template = TEMPLATES[kind];
-  return { template: t.name, params, text: fill(t.body, params), buttons };
+  return { template: t.name, params, text: fill(t.body, params), buttons, fallback: t.fallback };
 }
 
 /**
@@ -337,6 +450,17 @@ export async function dispatch(db: SupabaseClient, orderId: string | null) {
         outcome = to
           ? await sendWhatsApp(to, message)
           : { ok: false as const, error: `not a usable number: ${row.recipient_number}`, retry: false };
+        /* A new template still in review (or paused) is refused outright; the
+           approved one it replaces says the same without the buttons. */
+        if (to && !outcome.ok && message.fallback && TEMPLATE_UNUSABLE.test(outcome.error)) {
+          const { fallback } = message;
+          message = {
+            template: fallback.name,
+            params: message.params,
+            text: fill(fallback.body, message.params),
+          };
+          outcome = await sendWhatsApp(to, message);
+        }
       } catch (err) {
         /* reading the order failed; that may pass */
         outcome = { ok: false as const, error: err instanceof Error ? err.message : String(err), retry: true };
