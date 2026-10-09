@@ -6,7 +6,7 @@ download it. Who gets in is decided by the database (`admin_users`, migration
 
 | Role | Sees |
 |---|---|
-| `admin` | Orders · Menu · Kitchens · Categories · Places & rooms · Delivery partners |
+| `admin` | Orders · Menu · Kitchens · Categories · Accommodation Partners · Delivery partners |
 | `super_admin` | Analytics (today / daily / weekly / monthly) · Coupons · Settings (alerts number) — read-only everywhere else |
 
 One person may hold both roles (one row each).
@@ -54,7 +54,7 @@ and asks for Google again. Guests' sessions are not affected.
 - **Switching a dish off** saves at once and removes it from every open guest
   menu within a second or two (Realtime broadcast on the `menu` topic). A cart
   holding it is blocked at checkout, and payment is refused for it too.
-- **QR stickers** are printed from Places & rooms (or downloaded one room at
+- **QR stickers** are printed from Accommodation Partners (or downloaded one room at
   a time as SVG, or as a print-quality 1200×1600 PNG of the whole sticker) and always point at
   `VITE_SITE_URL` (default `https://www.inroomdining.in`), whichever address the
   admin is using.

@@ -86,7 +86,7 @@ const TICKET_LABEL = { pending: "Not sent yet", sent: "Waiting", accepted: "Acce
 const MESSAGE_KIND = {
   kitchen_order: "Order to kitchen",
   kitchen_ack: "Reply to kitchen",
-  property_order: "Order to rest house",
+  property_order: "Order to accommodation partner",
   guest_confirmation: "Order placed, to guest",
   guest_accepted: "Order accepted, to guest",
   guest_out_for_delivery: "On its way, to guest",
@@ -97,7 +97,7 @@ const MESSAGE_KIND = {
   delivery_ack: "Reply to rider",
   admin_alert: "Alert to admin",
 };
-const RECIPIENT = { kitchen: "Kitchen", delivery: "Rider", property: "Rest house", guest: "Guest", admin: "Admin" };
+const RECIPIENT = { kitchen: "Kitchen", delivery: "Rider", property: "Accommodation partner", guest: "Guest", admin: "Admin" };
 const MESSAGE_STATUS = {
   queued: "Queued",
   sending: "Sending",

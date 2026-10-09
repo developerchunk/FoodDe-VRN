@@ -395,13 +395,13 @@ export default function AnalyticsPage() {
           />
 
           <Table
-            title="Places"
-            sub="Orders and revenue by guest house, and how many of its rooms ordered."
-            empty="No places yet."
+            title="Accommodation Partners"
+            sub="Orders and revenue by accommodation partner, and how many of its rooms ordered."
+            empty="No accommodation partners yet."
             rows={a.places ?? []}
             columns={[
               {
-                label: "Place",
+                label: "Accommodation Partner",
                 cell: (p) => (
                   <>
                     <strong>{p.name}</strong>

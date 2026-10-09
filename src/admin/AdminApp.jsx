@@ -30,7 +30,7 @@ const ADMIN_NAV = [
   { to: "menu", label: "Menu" },
   { to: "kitchens", label: "Kitchens" },
   { to: "categories", label: "Categories" },
-  { to: "places", label: "Places & rooms" },
+  { to: "places", label: "Accommodation Partners" },
   { to: "delivery", label: "Delivery partners" },
 ];
 const SUPER_NAV = [

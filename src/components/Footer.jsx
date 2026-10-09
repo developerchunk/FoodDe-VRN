@@ -31,6 +31,9 @@ export default function Footer() {
             <Link to="/orders">Orders</Link>
           </li>
           <li>
+            <Link to="/about">About us</Link>
+          </li>
+          <li>
             <Link to="/admin">Admin</Link>
           </li>
         </ul>

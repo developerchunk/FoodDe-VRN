@@ -237,7 +237,7 @@ function PlaceForm({ initial, onSaved, onClose }) {
         whatsapp_number: f.whatsapp_number.trim() ? tenDigits(f.whatsapp_number) : null,
         is_active: f.is_active,
       });
-      notify(initial?.id ? "Place saved" : "Place added — now add its rooms");
+      notify(initial?.id ? "Accommodation partner saved" : "Accommodation partner added — now add its rooms");
       onSaved(row, initial?.id && initial.is_active !== f.is_active);
     } catch (err) {
       notify(err.message, "error");
@@ -249,7 +249,7 @@ function PlaceForm({ initial, onSaved, onClose }) {
   return (
     <Drawer
       open
-      title={initial?.id ? `Edit ${initial.name}` : "Add a place"}
+      title={initial?.id ? `Edit ${initial.name}` : "Add an accommodation partner"}
       onClose={onClose}
       busy={busy}
       footer={
@@ -258,13 +258,13 @@ function PlaceForm({ initial, onSaved, onClose }) {
             Cancel
           </button>
           <button type="submit" form="place-form" className="btn btn-primary" disabled={busy}>
-            {busy ? "Saving…" : "Save place"}
+            {busy ? "Saving…" : "Save accommodation partner"}
           </button>
         </>
       }
     >
       <form id="place-form" className="adm-form" onSubmit={submit} noValidate>
-        <Field label="Rest house name" required error={errors.name} wide hint="Guests see this at the top of the menu">
+        <Field label="Accommodation Partner name" required error={errors.name} wide hint="Guests see this at the top of the menu">
           <input className="input" value={f.name} onChange={set("name")} />
         </Field>
         <Field label="Address" required error={errors.address} wide hint="Shown to guests and sent to riders">
@@ -282,7 +282,7 @@ function PlaceForm({ initial, onSaved, onClose }) {
         <Field
           label="WhatsApp number"
           error={errors.whatsapp_number}
-          hint="The rest house is told here about every order from one of its rooms"
+          hint="The accommodation partner is told here about every order from one of its rooms"
         >
           <input className="input" inputMode="tel" value={f.whatsapp_number} onChange={set("whatsapp_number")} />
         </Field>
@@ -606,12 +606,12 @@ function RoomsDrawer({ place, onRooms, onClose }) {
       <div className="adm-places-rooms">
         <p className="adm-muted">
           Each room has its own code, printed in its QR sticker. The code never changes, so stickers already on walls
-          keep working when you rename a room or edit the house.
+          keep working when you rename a room or edit the accommodation partner.
         </p>
 
         {!place.is_active && (
           <p className="adm-places-warn">
-            This place is off, so none of its QR codes work. Switch it on from the list first.
+            This accommodation partner is off, so none of its QR codes work. Switch it on from the list first.
           </p>
         )}
 
@@ -705,8 +705,8 @@ export default function PlacesPage() {
   return (
     <>
       <PageHead
-        title="Places & rooms"
-        sub="Rest houses that carry our QR codes, their rooms, and the stickers for each room."
+        title="Accommodation Partners"
+        sub="Accommodation partners that carry our QR codes, their rooms, and the stickers for each room."
       >
         <button type="button" className="btn adm-btn-action" onClick={() => setEditing({})}>
           Add place
@@ -718,7 +718,7 @@ export default function PlacesPage() {
         error={error}
         onRetry={reload}
         empty={data && !places.length}
-        emptyText="No places yet. Add the first rest house."
+        emptyText="No accommodation partners yet. Add the first one."
       />
 
       {places.length > 0 && (
@@ -726,7 +726,7 @@ export default function PlacesPage() {
           <table className="adm-table">
             <thead>
               <tr>
-                <th>Place</th>
+                <th>Accommodation Partner</th>
                 <th>WhatsApp</th>
                 <th>Rooms</th>
                 <th>Active</th>

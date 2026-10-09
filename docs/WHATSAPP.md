@@ -126,7 +126,7 @@ field (it carries both status updates and button taps).
 
 - Add delivery partners (admin → Delivery partners). With none active, the
   admin is alerted that there is nobody to ask.
-- Every place's WhatsApp number (admin → Places & rooms) is the rest house's
+- Every place's WhatsApp number (admin → Accommodation Partners) is the rest house's
   WhatsApp number.
 - The alerts number is right (super admin → Settings).
 

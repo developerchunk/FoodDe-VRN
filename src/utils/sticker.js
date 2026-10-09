@@ -15,6 +15,7 @@ const C = {
   teal: "#075b55",
   tealDeep: "#04322f",
   gold: "#d99a2b",
+  ember: "#d95f3f",
   goldDeep: "#b37c17",
   faint: "#8c9894",
 };
@@ -82,29 +83,29 @@ export function stickerSvg({ house, room, code, modules, fontCss = "", width = S
 
   /* the house name: shrinks to fit, then squeezes as a last resort */
   const nameMax = 820;
-  let nameSize = 54;
+  let nameSize = 58;
   if (estWidth(house, nameSize) > nameMax) nameSize = Math.max(32, Math.floor(nameMax / (house.length * 0.5)));
   const nameSqueeze = estWidth(house, nameSize) > nameMax ? ` textLength="${nameMax}" lengthAdjust="spacingAndGlyphs"` : "";
 
   const roomText = `Room ${room}`;
   const roomMax = 640;
-  let roomSize = 80;
+  let roomSize = 56;
   if (estWidth(roomText, roomSize, 0.52) > roomMax) roomSize = Math.max(40, Math.floor(roomMax / (roomText.length * 0.52)));
   const roomW = Math.min(roomMax, estWidth(roomText, roomSize, 0.52));
   const roomSqueeze =
     estWidth(roomText, roomSize, 0.52) > roomMax ? ` textLength="${roomMax}" lengthAdjust="spacingAndGlyphs"` : "";
   /* the gold rules either side of the room, as long as there is space for them */
   const ruleIn = cx - roomW / 2 - 42;
-  const ruleOut = Math.max(150, ruleIn - 118);
+  const ruleOut = Math.max(150, ruleIn - 136);
   const roomRules =
     ruleIn - ruleOut >= 30
-      ? `<path d="M${ruleOut} 1168H${ruleIn}M${STICKER_W - ruleIn} 1168H${STICKER_W - ruleOut}" stroke="${C.gold}" stroke-width="2.5"/>`
+      ? `<path d="M${ruleOut} 1153H${ruleIn}M${STICKER_W - ruleIn} 1153H${STICKER_W - ruleOut}" stroke="${C.gold}" stroke-width="2.5"/>`
       : "";
 
   /* the QR, inside its gold frame, with the code under it */
-  const qrSize = 436;
+  const qrSize = 450;
   const qrX = cx - qrSize / 2;
-  const qrY = 502;
+  const qrY = 514;
   const scale = qrSize / modules.size;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${STICKER_W} ${STICKER_H}">
@@ -149,32 +150,33 @@ export function stickerSvg({ house, room, code, modules, fontCss = "", width = S
 <text class="d" x="456" y="264" font-size="190" font-weight="700" fill="${C.tealDeep}" letter-spacing="2">IRD</text>
 <text class="b" x="463" y="325" font-size="40" font-weight="500" fill="${C.tealDeep}" textLength="411" lengthAdjust="spacing">IN ROOM DINING</text>
 
-<path d="M153 408H216M808 408H871" stroke="${C.gold}" stroke-width="2.5"/>
-<g class="b" font-size="28" font-weight="600" fill="${C.tealDeep}">
-<text x="243" y="418" textLength="89" lengthAdjust="spacing">SCAN</text>
-<text x="392" y="418" textLength="221" lengthAdjust="spacing">ORDER FOOD</text>
-<text x="673" y="418" textLength="108" lengthAdjust="spacing">ENJOY</text>
+<path d="M48 408H130M908 408H976" stroke="${C.gold}" stroke-width="2.5"/>
+<g class="b" font-size="48" font-weight="600">
+<text x="153" y="427" fill="${C.tealDeep}" textLength="135" lengthAdjust="spacing">SCAN</text>
+<text x="355" y="427" fill="${C.ember}" textLength="315" lengthAdjust="spacing">ORDER FOOD</text>
+<text x="738" y="427" fill="${C.tealDeep}" textLength="152" lengthAdjust="spacing">ENJOY</text>
 </g>
-<circle cx="362" cy="408" r="5" fill="${C.gold}"/>
-<circle cx="643" cy="408" r="5" fill="${C.gold}"/>
+<circle cx="322" cy="409" r="6" fill="${C.gold}"/>
+<circle cx="705" cy="409" r="6" fill="${C.gold}"/>
 
-<rect x="244" y="473" width="536" height="536" rx="24" fill="#fff" stroke="${C.gold}" stroke-width="7"/>
+<rect x="242" y="469" width="540" height="540" rx="24" fill="#fff" stroke="${C.gold}" stroke-width="7"/>
 <path transform="translate(${qrX} ${qrY}) scale(${scale})" d="${qrPath(modules)}" fill="#000" shape-rendering="crispEdges"/>
-<text class="b" x="${cx}" y="980" font-size="20" font-weight="500" fill="${C.faint}" text-anchor="middle" letter-spacing="5">${esc(code)}</text>
+<text class="b" x="${cx}" y="988" font-size="20" font-weight="500" fill="${C.faint}" text-anchor="middle" letter-spacing="5">${esc(code)}</text>
 
 <text class="b" x="${cx}" y="1096" font-size="${nameSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${nameSqueeze}>${esc(house)}</text>
 ${roomRules}
-<text class="b" x="${cx}" y="1195" font-size="${roomSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${roomSqueeze}>${esc(roomText)}</text>
+<text class="b" x="${cx}" y="1172" font-size="${roomSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${roomSqueeze}>${esc(roomText)}</text>
 
 <g fill="none" stroke="${C.gold}" stroke-width="3.5">
-<circle cx="340" cy="1272" r="25"/>
-<ellipse cx="340" cy="1272" rx="11" ry="25"/>
-<path d="M315 1272H365M319 1259H361M319 1285H361"/>
+<circle cx="335" cy="1247" r="31"/>
+<ellipse cx="335" cy="1247" rx="14" ry="31"/>
+<path d="M304 1247H366M309 1231H361M309 1263H361"/>
 </g>
-<text class="b" x="397" y="1285" font-size="42" font-weight="400" fill="${C.tealDeep}" textLength="311" lengthAdjust="spacing">inroomdining.in</text>
+<path d="M397 1220V1276" stroke="${C.gold}" stroke-width="2.5"/>
+<text class="b" x="425" y="1260" font-size="40" font-weight="400" fill="${C.tealDeep}" textLength="300" lengthAdjust="spacing">inroomdining.in</text>
 
-<path d="M363 1360H472M552 1360H660" stroke="${C.gold}" stroke-width="2.5"/>
-<g fill="none" stroke="${C.gold}" stroke-width="3" stroke-linejoin="round">
+<path d="M340 1358H455M570 1358H685" stroke="${C.gold}" stroke-width="2.5"/>
+<g fill="none" stroke="${C.gold}" stroke-width="2.4" stroke-linejoin="round" transform="translate(512 1358) scale(1.3) translate(-512 -1350)">
 <path d="M512 1333C500 1343 500 1358 512 1368C524 1358 524 1343 512 1333Z"/>
 <path d="M508 1368C496 1366 487 1356 485 1345C498 1346 506 1354 508 1368Z"/>
 <path d="M516 1368C528 1366 537 1356 539 1345C526 1346 518 1354 516 1368Z"/>

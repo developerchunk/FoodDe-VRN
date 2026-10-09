@@ -19,6 +19,7 @@ import OrderSuccessPage from "./pages/OrderSuccessPage";
 import ReceiptPage from "./pages/ReceiptPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
+import AboutPage from "./pages/AboutPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 /* Its own chunk: a guest who scans a room's QR code never downloads any of the
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="/receipt/:id" element={<ReceiptPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>

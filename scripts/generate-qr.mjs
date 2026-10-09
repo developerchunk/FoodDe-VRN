@@ -29,7 +29,7 @@ if (!url || !secret) {
 
 const db = createClient(url, secret, { auth: { persistSession: false } });
 
-/* The admin site prints the same stickers per place (Places & rooms). This is
+/* The admin site prints the same stickers per place (Accommodation Partners). This is
    the whole set at once, for a first print run. */
 const { data: rooms, error } = await db
   .from("addresses")

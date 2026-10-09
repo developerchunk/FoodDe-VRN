@@ -2,10 +2,10 @@
 
 ## What this business actually is
 
-IRD is an **aggregator**, sold B2B to rest houses and guest houses in Vrindavan.
+IRD is an **aggregator**, sold B2B to accommodation partners in Vrindavan (rest houses, guest houses and the like).
 It owns neither end of the transaction:
 
-- **It does not own the rest houses.** They are customers. Their name and address
+- **It does not own the accommodation partners.** They are customers. Their name and address
   are what the guest sees.
 - **It does not own the kitchens.** They are partners. IRD curates the best
   dishes from several of them into one menu.
@@ -14,9 +14,15 @@ It owns neither end of the transaction:
 IRD is the layer in the middle: one interface, one menu, one order, fanned out
 to whoever has to act on it.
 
+> **Naming note.** This was previously called a "rest house" (and "guest house",
+> "place", "Places & rooms" in the admin). It is now an **Accommodation Partner**
+> in all wording — admin screens, docs and this file. Code identifiers, database
+> tables (`places`, `property`) and the `/admin/places` route keep the old names;
+> they are never shown to anyone, so do not rename them for this reason alone.
+
 ## The guest journey
 
-1. A QR code sits in each room of a rest house. The code carries an opaque id.
+1. A QR code sits in each room of an accommodation partner. The code carries an opaque id.
 2. Scanning it opens `/menu?id=<code>`, which resolves that id to a
    **property** (name, address from `address_map`) and a **room**. Both are
    shown to the guest — the name and room in the header, the name and full
@@ -37,7 +43,7 @@ split. On placement:
    - **To each kitchen** — the items it specifically must cook.
    - **To the delivery partner** — pick up from these kitchens, drop at this
      property, this room.
-   - **To the rest house** — an order was placed for room N at this time.
+   - **To the accommodation partner** — an order was placed for room N at this time.
 
 One order can therefore produce several kitchen messages, and the split is
 invisible to the guest.
@@ -54,10 +60,10 @@ the order fan-out possible, so it is not optional metadata.
   prohibit meat. There is no non-veg on this menu, so Ember carries actions
   only — it is never a diet marker.
 - **Brand is "In Room Dining", never "IRD".** The header carries the gold
-  cloche mark and the name, then the rest house's name with the room number
+  cloche mark and the name, then the accommodation partner's name with the room number
   beneath it. On a phone, once a room is known, the lockup shrinks to the
-  cloche so the rest house name has room.
-- **Pages:** `/` is a short home page; the menu lives at `/menu` (and at
+  cloche so the accommodation partner's name has room.
+- **Pages:** `/` is a short home page; `/about` is About us with the founder's note (linked from the footer); the menu lives at `/menu` (and at
   `/menu?id=<code>` for room links; the older `/r/<code>` stickers redirect there). Copy is kept minimal and English only — no
   Hindi text.
 - **Seller of record is In Room Dining.** GST and FSSAI registration are in
