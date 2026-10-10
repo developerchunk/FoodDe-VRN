@@ -77,8 +77,9 @@ const estWidth = (text, size, em = 0.5) => text.length * size * em;
  * @param {string} [o.fontCss] @font-face rules to embed (see stickerFontCss)
  * @param {string|number} [o.width]  SVG width attribute, default 1024
  * @param {string|number} [o.height] SVG height attribute, default 1536
+ * @param {boolean} [o.blank] leave the house name and room off and draw writing lines in their place, to fill in by hand
  */
-export function stickerSvg({ house, room, code, modules, fontCss = "", width = STICKER_W, height = STICKER_H }) {
+export function stickerSvg({ house, room, code, modules, fontCss = "", width = STICKER_W, height = STICKER_H, blank = false }) {
   const cx = STICKER_W / 2;
 
   /* the house name: shrinks to fit, then squeezes as a last resort */
@@ -108,8 +109,17 @@ export function stickerSvg({ house, room, code, modules, fontCss = "", width = S
   const qrY = 514;
   const scale = qrSize / modules.size;
 
+  /* the name and room, or two plain lines in their place for a marker */
+  const nameAndRoom = blank
+    ? `<path d="M142 1100H882" stroke="${C.tealDeep}" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M150 1153H358M666 1153H874" stroke="${C.gold}" stroke-width="2.5"/>
+<path d="M392 1172H632" stroke="${C.tealDeep}" stroke-width="2.5" stroke-linecap="round"/>`
+    : `<text class="b" x="${cx}" y="1096" font-size="${nameSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${nameSqueeze}>${esc(house)}</text>
+${roomRules}
+<text class="b" x="${cx}" y="1172" font-size="${roomSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${roomSqueeze}>${esc(roomText)}</text>`;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${STICKER_W} ${STICKER_H}">
-<title>${esc(house)}, Room ${esc(room)}</title>
+<title>${blank ? "In Room Dining QR sticker" : `${esc(house)}, Room ${esc(room)}`}</title>
 <defs>
 <style>${fontCss}
 .b{font-family:${FONT_BODY}}
@@ -163,9 +173,7 @@ export function stickerSvg({ house, room, code, modules, fontCss = "", width = S
 <path transform="translate(${qrX} ${qrY}) scale(${scale})" d="${qrPath(modules)}" fill="#000" shape-rendering="crispEdges"/>
 <text class="b" x="${cx}" y="988" font-size="20" font-weight="500" fill="${C.faint}" text-anchor="middle" letter-spacing="5">${esc(code)}</text>
 
-<text class="b" x="${cx}" y="1096" font-size="${nameSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${nameSqueeze}>${esc(house)}</text>
-${roomRules}
-<text class="b" x="${cx}" y="1172" font-size="${roomSize}" font-weight="600" fill="${C.tealDeep}" text-anchor="middle"${roomSqueeze}>${esc(roomText)}</text>
+${nameAndRoom}
 
 <g fill="none" stroke="${C.gold}" stroke-width="3.5">
 <circle cx="335" cy="1247" r="31"/>

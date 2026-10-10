@@ -108,9 +108,9 @@ async function roomSticker(place, room, opts = {}) {
 
 /* Four stickers to an A4 page, each 88 x 132 mm. The same sheet
    scripts/generate-qr.mjs writes, so stickers look the same either way. */
-async function stickerSheet(place, rooms) {
+async function stickerSheet(place, rooms, blank = false) {
   const cards = [];
-  for (const r of rooms) cards.push(`<div class="card">${await roomSticker(place, r, { width: "100%", height: "100%" })}</div>`);
+  for (const r of rooms) cards.push(`<div class="card">${await roomSticker(place, r, { width: "100%", height: "100%", blank })}</div>`);
   return `<!doctype html><html><head><meta charset="utf-8"><title>QR stickers — ${escapeHtml(place.name)}</title>
 <link rel="stylesheet" href="${STICKER_FONTS_LINK}">
 <style>${STICKER_SHEET_CSS}</style></head><body>
@@ -132,18 +132,19 @@ function saveBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const fileName = (room, ext) => `${room.id}-room-${room.room_number.replace(/\W+/g, "")}.${ext}`;
+const fileName = (room, ext, blank) =>
+  `${room.id}-${blank ? "blank" : `room-${room.room_number.replace(/\W+/g, "")}`}.${ext}`;
 
 /* The sticker with its fonts inside it, so it prints the same from any
    machine or print shop. */
-async function stickerWithFonts(place, room) {
-  const fontCss = await stickerFontCss(place.name + room.room_number + room.id);
-  return roomSticker(place, room, { fontCss });
+async function stickerWithFonts(place, room, blank) {
+  const fontCss = await stickerFontCss(blank ? room.id : place.name + room.room_number + room.id);
+  return roomSticker(place, room, { fontCss, blank });
 }
 
-async function downloadSvg(place, room) {
-  const svg = await stickerWithFonts(place, room);
-  saveBlob(new Blob([svg], { type: "image/svg+xml" }), fileName(room, "svg"));
+async function downloadSvg(place, room, blank) {
+  const svg = await stickerWithFonts(place, room, blank);
+  saveBlob(new Blob([svg], { type: "image/svg+xml" }), fileName(room, "svg", blank));
 }
 
 /* The same sticker as one print-ready PNG: 1600 x 2400 px, about
@@ -152,8 +153,8 @@ async function downloadSvg(place, room) {
 const PNG_W = 1600;
 const PNG_H = (PNG_W * STICKER_H) / STICKER_W;
 
-async function downloadPng(place, room) {
-  const svg = await stickerWithFonts(place, room);
+async function downloadPng(place, room, blank) {
+  const svg = await stickerWithFonts(place, room, blank);
   const src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
   try {
     const img = new Image();
@@ -166,7 +167,7 @@ async function downloadPng(place, room) {
     const blob = await new Promise((resolve, reject) =>
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("This browser could not make the image."))), "image/png"),
     );
-    saveBlob(blob, fileName(room, "png"));
+    saveBlob(blob, fileName(room, "png", blank));
   } finally {
     URL.revokeObjectURL(src);
   }
@@ -393,7 +394,7 @@ function AddRooms({ place, rooms, onAdded, onBusy }) {
   );
 }
 
-function RoomRow({ place, room, rooms, placeOn, selected, onSelect, onSaved }) {
+function RoomRow({ place, room, rooms, placeOn, blank, selected, onSelect, onSaved }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(room.room_number);
   const [error, setError] = useState("");
@@ -502,7 +503,7 @@ function RoomRow({ place, room, rooms, placeOn, selected, onSelect, onSaved }) {
           className="btn btn-ghost adm-btn-sm"
           disabled={!room.is_active}
           title={room.is_active ? "Download this room's sticker as a print-ready SVG" : "Switch the room on first"}
-          onClick={() => downloadSvg(place, room).catch((e) => notify(`Could not make the sticker: ${e.message}`, "error"))}
+          onClick={() => downloadSvg(place, room, blank).catch((e) => notify(`Could not make the sticker: ${e.message}`, "error"))}
         >
           SVG
         </button>
@@ -512,7 +513,7 @@ function RoomRow({ place, room, rooms, placeOn, selected, onSelect, onSaved }) {
           disabled={!room.is_active}
           title={room.is_active ? "Download this room's sticker as a print-quality PNG" : "Switch the room on first"}
           onClick={() =>
-            downloadPng(place, room).catch((e) => notify(`Could not make the sticker: ${e.message}`, "error"))
+            downloadPng(place, room, blank).catch((e) => notify(`Could not make the sticker: ${e.message}`, "error"))
           }
         >
           PNG
@@ -528,6 +529,7 @@ function RoomsDrawer({ place, onRooms, onClose }) {
   const [adding, setAdding] = useState(rooms.length === 0);
   const [busy, setBusy] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [blank, setBlank] = useState(false);
   const notify = useNotice();
 
   // Only rooms that are on can be printed: an off room's sticker leads nowhere.
@@ -556,7 +558,7 @@ function RoomsDrawer({ place, onRooms, onClose }) {
     w.document.write("<!doctype html><title>QR stickers</title><p style=\"font-family:sans-serif\">Preparing stickers…</p>");
     setPrinting(true);
     try {
-      const html = await stickerSheet(place, chosen);
+      const html = await stickerSheet(place, chosen, blank);
       w.document.open();
       w.document.write(html);
       w.document.close();
@@ -633,6 +635,10 @@ function RoomsDrawer({ place, onRooms, onClose }) {
 
         {rooms.length > 0 && (
           <>
+            <label className="adm-check adm-places-blank">
+              <input type="checkbox" checked={blank} onChange={(e) => setBlank(e.target.checked)} /> Leave the name and
+              room blank on stickers, with a line to write them in by hand
+            </label>
             <div className="adm-places-rooms__bar">
               <label className="adm-check">
                 <input
@@ -657,6 +663,7 @@ function RoomsDrawer({ place, onRooms, onClose }) {
                   room={r}
                   rooms={rooms}
                   placeOn={place.is_active}
+                  blank={blank}
                   selected={r.is_active && picked.has(r.id)}
                   onSelect={select}
                   onSaved={replace}

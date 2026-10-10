@@ -149,3 +149,8 @@
     padding-top: 0;
   }
 }
+
+/* "Leave the name and room blank" sits above the list, ahead of the select-all bar. */
+.adm-places-blank {
+  align-items: flex-start;
+}
