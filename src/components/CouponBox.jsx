@@ -9,6 +9,9 @@ import { rupees } from "../utils/format";
  * the best coupon the order qualifies for by itself. This renders that answer:
  * what is applied and whether it was automatic, a code it refused, and the
  * other offers a guest may switch to.
+ *
+ * One coupon per order, always: choosing another replaces the one applied,
+ * and Remove -- automatic or not -- leaves the order with none.
  */
 export default function CouponBox({
   coupon,
@@ -18,6 +21,7 @@ export default function CouponBox({
   rejected,
   onApply,
   onRemove,
+  onReset,
 }) {
   const [code, setCode] = useState("");
 
@@ -49,8 +53,7 @@ export default function CouponBox({
                 : `${bill.couponAuto ? "Applied automatically" : "Applied"} · you save ${rupees(bill.discount)}`}
             </p>
           </div>
-          {/* Removing an automatic offer would only put it straight back. */}
-          {coupon && !rejected && (
+          {!pending && (
             <button type="button" className="linkish linkish--danger" onClick={onRemove}>
               Remove
             </button>
@@ -62,7 +65,7 @@ export default function CouponBox({
         <p className="coupon__rejected" role="alert">
           <strong>{coupon}</strong> cannot be used on this order
           {applied ? ", so the best other offer is applied." : "."}
-          <button type="button" className="linkish" onClick={onRemove}>
+          <button type="button" className="linkish" onClick={onReset}>
             Clear
           </button>
         </p>
@@ -82,6 +85,13 @@ export default function CouponBox({
           Apply
         </button>
       </form>
+
+      {coupon === "" && others.length > 0 && (
+        <p className="coupon__note">No coupon on this order. Tap an offer to use one.</p>
+      )}
+      {showing && others.length > 0 && (
+        <p className="coupon__note">One coupon per order. Choosing another replaces {showing}.</p>
+      )}
 
       {/* Whatever is active in the database. No offers, nothing to show. */}
       {others.length > 0 && (

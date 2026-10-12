@@ -26,9 +26,10 @@ const loadInitial = () => {
             (l) => l && typeof l.id === "string" && Number.isInteger(l.pricePaise) && l.qty > 0,
           )
         : [],
-      /* A code the guest chose, or null to let the database pick the best
-         one. Only a string here; whether it is worth anything is the
-         database's answer, asked for fresh each time. */
+      /* A code the guest chose; null to let the database pick the best one;
+         "" when the guest removed the coupon and wants none. Only a string
+         here; whether it is worth anything is the database's answer, asked
+         for fresh each time. */
       coupon: typeof saved.coupon === "string" ? saved.coupon : null,
       instructions:
         typeof saved.instructions === "string" ? saved.instructions : "",
@@ -209,8 +210,11 @@ export function CartProvider({ children }) {
         if (!code) return;
         dispatch({ type: "coupon", code });
       },
-      /* Back to whichever coupon is best. */
-      removeCoupon: () => dispatch({ type: "coupon", code: null }),
+      /* No coupon at all, even one that would apply by itself. Applying any
+         code, or tapping an offer, brings one back. */
+      removeCoupon: () => dispatch({ type: "coupon", code: "" }),
+      /* Forget a refused code and let the best coupon apply again. */
+      resetCoupon: () => dispatch({ type: "coupon", code: null }),
       couponPending: Boolean(state.coupon) && !priced,
       couponRejected: Boolean(state.coupon) && Boolean(priced?.coupon_rejected),
       flash,

@@ -56,12 +56,16 @@ export default function Header() {
         )}
 
         <nav className="site-nav" aria-label="Primary">
-          <NavLink
-            to="/menu"
-            className={`site-nav__link ${isMenuPath(pathname) ? "is-active" : ""}`}
-          >
-            Menu
-          </NavLink>
+          {/* Guests reach the menu by scanning their room's QR. Until one has
+              been scanned there is no room to order to, so no link to it. */}
+          {house.addressId && (
+            <NavLink
+              to="/menu"
+              className={`site-nav__link ${isMenuPath(pathname) ? "is-active" : ""}`}
+            >
+              Menu
+            </NavLink>
+          )}
           {hasOrders && (
             <NavLink
               to="/orders"
@@ -89,7 +93,7 @@ export default function Header() {
         <AccountButton />
 
         {/* Same links as the nav, for the widths where the nav is hidden. */}
-        <NavMenu hasOrders={hasOrders} />
+        <NavMenu hasOrders={hasOrders} hasRoom={Boolean(house.addressId)} />
       </div>
     </header>
   );

@@ -1,11 +1,10 @@
-import { Link } from "react-router-dom";
 import { useMenu } from "../hooks/useMenu";
 import { useMinWidth } from "../utils/useMinWidth";
 import MenuItemCard from "../components/MenuItemCard";
 import {
-  ArrowIcon,
   ChefIcon,
   LeafIcon,
+  QrIcon,
   ScooterIcon,
   ShieldIcon,
 } from "../components/Icons";
@@ -51,9 +50,11 @@ export default function HomePage() {
           <p className="home-hero__sub">
             Pure vegetarian meals, delivered to your door.
           </p>
-          <Link to="/menu" className="btn btn-light">
-            View menu <ArrowIcon size={17} />
-          </Link>
+          {/* Ordering starts from the QR in the room, which knows the room;
+              the home page offers no way into the menu without one. */}
+          <p className="home-hero__scan">
+            <QrIcon size={20} /> Scan the QR code in your room to order
+          </p>
         </div>
 
         <div className="home-hero__media">
@@ -88,9 +89,6 @@ export default function HomePage() {
             <h2 id="loved-title" className="section-title">
               Most loved
             </h2>
-            <Link to="/menu" className="home-loved__all">
-              Full menu <ArrowIcon size={16} />
-            </Link>
           </div>
           <div className="dish-grid">
             {loved.map((item) => (

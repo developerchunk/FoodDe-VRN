@@ -11,7 +11,7 @@ import AccountButton from "./AccountButton";
  * which left Menu, Orders and signing up with no way in at all on a phone — the device almost every guest is
  * holding. This is the same set behind one button.
  */
-export default function NavMenu({ hasOrders }) {
+export default function NavMenu({ hasOrders, hasRoom }) {
   const { bill } = useCart();
   const { pathname } = useLocation();
   /* Which page the menu was opened on. Derived rather than cleared in an
@@ -54,9 +54,12 @@ export default function NavMenu({ hasOrders }) {
 
       {open && (
         <div className="nav-menu__panel" id={panelId} role="menu">
-          <Link to="/menu" role="menuitem" className="nav-menu__item">
-            Menu
-          </Link>
+          {/* only once a room's QR has been scanned, as in the header */}
+          {hasRoom && (
+            <Link to="/menu" role="menuitem" className="nav-menu__item">
+              Menu
+            </Link>
+          )}
           {/* The header cart is hidden at this width and the bottom bar only
               appears once something is in it, so without this an empty cart
               would be unreachable. */}

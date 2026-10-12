@@ -70,6 +70,10 @@ the order fan-out possible, so it is not optional metadata.
 - **Pages:** `/` is a short home page; `/about` is About us with the founder's note (linked from the footer); the menu lives at `/menu` (and at
   `/menu?id=<code>` for room links; the older `/r/<code>` stickers redirect there). Copy is kept minimal and English only — no
   Hindi text.
+- **Guests enter by scanning their room's QR, never from the home page.** The
+  home page has no menu button — it tells guests to scan the QR in their room.
+  Menu links in the header, the ☰ dropdown and the footer appear only once a
+  room has been scanned in that session.
 - **Seller of record is In Room Dining.** GST and FSSAI registration are in
   progress; until the real numbers exist, **display no licence numbers at all**.
   Never put placeholder or example numbers in the interface.

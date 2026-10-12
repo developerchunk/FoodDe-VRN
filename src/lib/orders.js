@@ -40,7 +40,8 @@ export async function placeOrder({ addressCode, lines, guest, coupon, note }) {
     p_address_code: addressCode,
     p_items: lines.map((l) => ({ id: l.id, qty: l.qty })),
     p_guest: guest,
-    p_coupon: coupon || null,
+    /* null lets the best coupon apply; "" is the guest having removed it */
+    p_coupon: coupon ?? null,
     p_note: note || null,
   });
 
@@ -90,7 +91,7 @@ export async function priceOrder(subtotalPaise, coupon) {
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("price_order", {
     p_subtotal_paise: subtotalPaise,
-    p_coupon: coupon || null,
+    p_coupon: coupon ?? null,
   });
   return error ? null : data;
 }

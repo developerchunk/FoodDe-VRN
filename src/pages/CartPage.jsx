@@ -21,6 +21,7 @@ export default function CartPage() {
     coupon,
     applyCoupon,
     removeCoupon,
+    resetCoupon,
     couponPending,
     couponRejected,
     instructions,
@@ -209,6 +210,7 @@ export default function CartPage() {
               bill={bill}
               onApply={applyCoupon}
               onRemove={removeCoupon}
+              onReset={resetCoupon}
             />
 
             <BillSummary bill={bill} />

@@ -21,9 +21,12 @@ export default function Footer() {
         </div>
 
         <ul className="site-footer__links">
-          <li>
-            <Link to="/menu">Menu</Link>
-          </li>
+          {/* the menu is reached from a room's QR, so only once there is one */}
+          {stay && (
+            <li>
+              <Link to="/menu">Menu</Link>
+            </li>
+          )}
           <li>
             <Link to="/cart">Cart</Link>
           </li>

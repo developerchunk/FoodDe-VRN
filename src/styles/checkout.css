@@ -1507,6 +1507,11 @@ select.input {
   font-size: 0.83rem;
   color: color-mix(in srgb, var(--ember) 85%, #000);
 }
+.coupon__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.72;
+}
 .coupon__hints {
   margin: 0.7rem 0 0;
   padding: 0;
