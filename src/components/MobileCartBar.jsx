@@ -8,7 +8,8 @@ export default function MobileCartBar() {
   const { bill } = useCart();
   const { pathname } = useLocation();
 
-  const hiddenOn = ["/cart", "/checkout"];
+  /* not on the home page either: it offers no way into ordering */
+  const hiddenOn = ["/", "/cart", "/checkout"];
   if (
     !bill.itemCount ||
     hiddenOn.includes(pathname) ||

@@ -62,13 +62,15 @@ export default function NavMenu({ hasOrders, hasRoom }) {
           )}
           {/* The header cart is hidden at this width and the bottom bar only
               appears once something is in it, so without this an empty cart
-              would be unreachable. */}
-          <Link to="/cart" role="menuitem" className="nav-menu__item">
-            Cart
-            {bill.itemCount > 0 && (
-              <span className="nav-menu__count">{bill.itemCount}</span>
-            )}
-          </Link>
+              would be unreachable. Only once a room has been scanned. */}
+          {hasRoom && (
+            <Link to="/cart" role="menuitem" className="nav-menu__item">
+              Cart
+              {bill.itemCount > 0 && (
+                <span className="nav-menu__count">{bill.itemCount}</span>
+              )}
+            </Link>
+          )}
           {hasOrders && (
             <Link to="/orders" role="menuitem" className="nav-menu__item">
               Orders

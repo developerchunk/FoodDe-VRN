@@ -71,9 +71,11 @@ the order fan-out possible, so it is not optional metadata.
   `/menu?id=<code>` for room links; the older `/r/<code>` stickers redirect there). Copy is kept minimal and English only — no
   Hindi text.
 - **Guests enter by scanning their room's QR, never from the home page.** The
-  home page has no menu button — it tells guests to scan the QR in their room.
-  Menu links in the header, the ☰ dropdown and the footer appear only once a
-  room has been scanned in that session.
+  home page has no menu or cart button — it tells guests to scan the QR in
+  their room, and the floating cart bar is hidden there. Menu and Cart links in
+  the header, the ☰ dropdown and the footer appear only once a room has been
+  scanned in that session. `/menu` opened without a room still shows the full
+  menu to browse; checkout is what asks for the room's QR.
 - **Seller of record is In Room Dining.** GST and FSSAI registration are in
   progress; until the real numbers exist, **display no licence numbers at all**.
   Never put placeholder or example numbers in the interface.

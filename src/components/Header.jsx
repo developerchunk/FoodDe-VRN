@@ -78,16 +78,19 @@ export default function Header() {
           )}
           {/* The header's pill is Sign up / Profile now. The floating cart
               bar is hidden on wide screens and the side cart lives only on the
-              menu page, so the cart keeps a plain link here. */}
-          <NavLink
-            to="/cart"
-            className={({ isActive }) =>
-              `site-nav__link ${isActive ? "is-active" : ""}`
-            }
-            aria-label={`Cart, ${bill.itemCount} ${bill.itemCount === 1 ? "item" : "items"}`}
-          >
-            Cart{bill.itemCount > 0 && <span className="site-nav__count">{bill.itemCount}</span>}
-          </NavLink>
+              menu page, so the cart keeps a plain link here -- once a room has
+              been scanned, like Menu: before that there is nothing to order. */}
+          {house.addressId && (
+            <NavLink
+              to="/cart"
+              className={({ isActive }) =>
+                `site-nav__link ${isActive ? "is-active" : ""}`
+              }
+              aria-label={`Cart, ${bill.itemCount} ${bill.itemCount === 1 ? "item" : "items"}`}
+            >
+              Cart{bill.itemCount > 0 && <span className="site-nav__count">{bill.itemCount}</span>}
+            </NavLink>
+          )}
         </nav>
 
         <AccountButton />
