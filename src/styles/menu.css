@@ -1333,3 +1333,97 @@
 .dish.is-unavailable .dish__meal {
   color: color-mix(in srgb, var(--teal) 55%, transparent);
 }
+
+/* ===== phone category strip ==================================
+   Round pictures of each category's food in one sideways row, at the top of
+   the filter bar. The bar steps aside while the reader scrolls down and slides
+   back as soon as they scroll up. Desktop has the category rail instead. */
+.cat-strip {
+  padding-top: 12px;
+}
+.cat-strip__list {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 2px 4px 0;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.cat-strip__list::-webkit-scrollbar {
+  display: none;
+}
+.cat-strip__item {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 68px;
+  padding: 3px 0 0;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+.cat-strip__pic {
+  display: block;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--sand);
+  transition: box-shadow 0.18s ease;
+}
+.cat-strip__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cat-strip__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+  /* always room for two lines: a name that wraps only in bold would otherwise
+     change the bar's height as the highlight moves, and the page would jump */
+  min-height: 2.5em;
+}
+.cat-strip__item.is-active .cat-strip__pic {
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 4px var(--teal-800);
+}
+.cat-strip__item.is-active .cat-strip__name {
+  color: var(--teal-800);
+  font-weight: 600;
+}
+
+@media (max-width: 999px) {
+  .filter-rail {
+    transition: transform 0.26s ease;
+  }
+  /* slides up behind the header, which sits above it */
+  .filter-rail--away {
+    transform: translateY(-100%);
+  }
+  /* never hide what the keyboard is on */
+  .filter-rail--away:focus-within {
+    transform: none;
+  }
+}
+@media (max-width: 999px) and (prefers-reduced-motion: reduce) {
+  .filter-rail {
+    transition: none;
+  }
+}
+@media (min-width: 1000px) {
+  .cat-strip {
+    display: none;
+  }
+}

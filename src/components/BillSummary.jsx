@@ -25,10 +25,12 @@ export default function BillSummary({ bill, title = "Bill details" }) {
             )}
           </dd>
         </div>
-        <div className="bill__row">
-          <dt>Packing</dt>
-          <dd className="rupee">{rupees(bill.packing)}</dd>
-        </div>
+        {bill.packing > 0 && (
+          <div className="bill__row">
+            <dt>Packing</dt>
+            <dd className="rupee">{rupees(bill.packing)}</dd>
+          </div>
+        )}
         <div className="bill__row">
           <dt>GST (5%)</dt>
           <dd className="rupee">{rupees(bill.gst)}</dd>

@@ -616,10 +616,19 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {bill.minOrderGap > 0 && (
+              <p className="side-card__ship" role="status">
+                The minimum order is{" "}
+                {rupees(bill.subtotal + bill.minOrderGap)}.{" "}
+                <Link to="/menu">Add {rupees(bill.minOrderGap)} more</Link> to
+                place it.
+              </p>
+            )}
+
             <button
               type="submit"
               className="btn btn-gold btn-block"
-              disabled={placing || blocked}
+              disabled={placing || blocked || bill.minOrderGap > 0}
             >
               {placing ? (
                 <>

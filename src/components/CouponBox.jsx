@@ -2,18 +2,20 @@ import { useState } from "react";
 import { rupees } from "../utils/format";
 
 /**
- * Applying a coupon.
+ * Offers on this order.
  *
- * The component never decides whether a code is good or what it saves. It hands
- * the code to the cart, the cart asks the database, and this renders whichever
- * of the three answers comes back: still asking, applied, or worth nothing here.
+ * The component never decides whether a code is good or what it saves. The
+ * database prices the order and, unless the guest has picked a code, applies
+ * the best coupon the order qualifies for by itself. This renders that answer:
+ * what is applied and whether it was automatic, a code it refused, and the
+ * other offers a guest may switch to.
  */
 export default function CouponBox({
   coupon,
+  bill,
   offers,
   pending,
   rejected,
-  subtotal,
   onApply,
   onRemove,
 }) {
@@ -26,36 +28,52 @@ export default function CouponBox({
     setCode("");
   };
 
-  if (coupon && !rejected) {
-    return (
-      <section className="coupon" aria-labelledby="coupon-title">
-        <h3 id="coupon-title" className="side-card__title">
-          Coupon
-        </h3>
-        <div className="coupon__applied">
-          <div>
-            <strong>{coupon}</strong>
-            <p>{pending ? "Checking…" : "Applied"}</p>
-          </div>
-          <button type="button" className="linkish linkish--danger" onClick={onRemove}>
-            Remove
-          </button>
-        </div>
-      </section>
-    );
-  }
+  const applied = bill.discount > 0 ? bill.couponCode : null;
+  /* A chosen code still being priced shows as that code, checking. */
+  const showing = pending ? coupon : applied;
+  const others = offers.filter((c) => c.code !== showing);
 
   return (
     <section className="coupon" aria-labelledby="coupon-title">
       <h3 id="coupon-title" className="side-card__title">
-        Have a code?
+        Offers
       </h3>
+
+      {showing && (
+        <div className="coupon__applied" aria-live="polite">
+          <div>
+            <strong>{showing}</strong>
+            <p>
+              {pending
+                ? "Checking…"
+                : `${bill.couponAuto ? "Applied automatically" : "Applied"} · you save ${rupees(bill.discount)}`}
+            </p>
+          </div>
+          {/* Removing an automatic offer would only put it straight back. */}
+          {coupon && !rejected && (
+            <button type="button" className="linkish linkish--danger" onClick={onRemove}>
+              Remove
+            </button>
+          )}
+        </div>
+      )}
+
+      {rejected && (
+        <p className="coupon__rejected" role="alert">
+          <strong>{coupon}</strong> cannot be used on this order
+          {applied ? ", so the best other offer is applied." : "."}
+          <button type="button" className="linkish" onClick={onRemove}>
+            Clear
+          </button>
+        </p>
+      )}
+
       <form className="coupon__form" onSubmit={submit}>
         <input
           className="input"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Enter code"
+          placeholder={showing ? "Have another code?" : "Enter code"}
           aria-label="Coupon code"
           autoCapitalize="characters"
           autoComplete="off"
@@ -65,25 +83,16 @@ export default function CouponBox({
         </button>
       </form>
 
-      {rejected && (
-        <p className="coupon__rejected" role="alert">
-          <strong>{coupon}</strong> cannot be used on this order.
-          <button type="button" className="linkish" onClick={onRemove}>
-            Clear
-          </button>
-        </p>
-      )}
-
       {/* Whatever is active in the database. No offers, nothing to show. */}
-      {offers.length > 0 && (
+      {others.length > 0 && (
         <ul className="coupon__hints">
-          {offers.map((c) => (
+          {others.map((c) => (
             <li key={c.code}>
               <button type="button" onClick={() => onApply(c.code)}>
                 <strong>{c.code}</strong>
                 <span>
                   {c.label}
-                  {subtotal < c.min_order_paise &&
+                  {bill.subtotal < c.min_order_paise &&
                     ` · needs ${rupees(c.min_order_paise)}`}
                 </span>
               </button>

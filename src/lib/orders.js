@@ -68,11 +68,23 @@ export async function fetchCoupons() {
 }
 
 /**
+ * Delivery, packing, the free-delivery threshold and the minimum order, as the
+ * super admin last set them. Null when they cannot be read; the cart then keeps its defaults
+ * until price_order answers with the real charges.
+ */
+export async function fetchPricing() {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("get_pricing");
+  return error ? null : data;
+}
+
+/**
  * The bill, priced by the database.
  *
  * The browser never works out a discount. It asks price_order, which reads the
  * coupon's real rule, and shows what comes back — so the cart cannot promise a
- * discount the order will not honour.
+ * discount the order will not honour. With no code, price_order applies the
+ * best coupon the order qualifies for by itself.
  */
 export async function priceOrder(subtotalPaise, coupon) {
   if (!supabase) return null;

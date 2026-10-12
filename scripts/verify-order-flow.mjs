@@ -97,13 +97,20 @@ if (kitchenOpen) {
 if (placed) {
   const bill = placed.bill;
   const subtotal = dish.price_paise * 2;
-  const delivery = subtotal >= 29900 ? 0 : 2900;
-  const gst = Math.round(subtotal * 0.05);
-  const expected = subtotal + delivery + 1500 + gst;
+  /* The charges are the super admin's settings (0025), and with no code the
+     best coupon applies itself, so both come from the database's own answer. */
+  const { data: charges } = await db.rpc("get_pricing");
+  const fee = charges?.delivery_paise ?? 2900;
+  const packing = charges?.packing_paise ?? 1500;
+  const freeAbove = charges?.free_delivery_above_paise ?? 19900;
+  const delivery = subtotal >= freeAbove ? 0 : fee;
+  const taxable = subtotal - (bill.discount_paise ?? 0);
+  const gst = Math.round(taxable * 0.05);
+  const expected = taxable + delivery + packing + gst;
 
   check("subtotal is the database price x qty", bill.subtotal_paise === subtotal, `${bill.subtotal_paise} = ${dish.price_paise} x 2`);
   check("total matches the rule exactly", bill.total_paise === expected, `${bill.total_paise} vs ${expected}`);
-  check("every amount is an integer paise", Object.values(bill).every((v) => v === null || typeof v === "string" || Number.isInteger(v)));
+  check("every amount is an integer paise", Object.values(bill).every((v) => v === null || typeof v === "string" || typeof v === "boolean" || Number.isInteger(v)));
   check("a receipt token came back", typeof placed.receipt_token === "string" && placed.receipt_token.length > 30);
   check("it starts unpaid", placed.status === "pending_payment", placed.status);
   check("one ticket per kitchen", placed.kitchens === 1, `${placed.kitchens} kitchen(s)`);

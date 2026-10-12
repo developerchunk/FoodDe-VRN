@@ -7,7 +7,8 @@ import { rupees } from "../../utils/format";
 /**
  * Coupon codes, for the super admin. Every active coupon is offered to guests
  * at checkout with its label, and the database alone decides what it is worth
- * (price_order), so what is saved here is exactly what a guest gets.
+ * (price_order), so what is saved here is exactly what a guest gets. A guest
+ * who picks no code gets the active coupon worth the most on their order.
  */
 
 const EMPTY = { code: "", label: "", kind: "flat", value: "", min_order: "", max_discount: "", is_active: true };
@@ -195,7 +196,7 @@ export default function CouponsPage() {
 
   return (
     <>
-      <PageHead title="Coupons" sub="Active coupons are offered to every guest at checkout. The discount is worked out on the server, so it is always exactly what is set here.">
+      <PageHead title="Coupons" sub="Active coupons are offered to every guest at checkout, and the one worth the most on an order is applied automatically. The discount is worked out on the server, so it is always exactly what is set here.">
         <button type="button" className="btn adm-btn-action" onClick={() => setEditing({})}>
           New coupon
         </button>

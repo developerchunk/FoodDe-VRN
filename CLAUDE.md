@@ -59,10 +59,14 @@ the order fan-out possible, so it is not optional metadata.
 - **Vegetarian only.** Vrindavan is a pilgrimage city and its sacred zones
   prohibit meat. There is no non-veg on this menu, so Ember carries actions
   only — it is never a diet marker.
-- **Brand is "In Room Dining", never "IRD".** The header carries the gold
-  cloche mark and the name, then the accommodation partner's name with the room number
-  beneath it. On a phone, once a room is known, the lockup shrinks to the
-  cloche so the accommodation partner's name has room.
+- **Brand is "In Room Dining", never "IRD" — with one exception.** The phone
+  header (under 620px) cannot fit the full name, so there, and only there, the
+  wordmark reads "IRD". Everywhere else — the desktop header, footer, page
+  titles, receipts, WhatsApp messages, copy — it is spelled out in full. Do not
+  take the phone header as licence to abbreviate anywhere else. The header
+  carries the gold cloche mark and the name, then the accommodation partner's
+  name with the room number beneath it. On a phone, once a room is known, the
+  lockup shrinks to the cloche so the accommodation partner's name has room.
 - **Pages:** `/` is a short home page; `/about` is About us with the founder's note (linked from the footer); the menu lives at `/menu` (and at
   `/menu?id=<code>` for room links; the older `/r/<code>` stickers redirect there). Copy is kept minimal and English only — no
   Hindi text.

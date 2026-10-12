@@ -3,12 +3,18 @@ import { useMenu } from "../hooks/useMenu";
 import { useCart } from "../context/cart-context";
 import FilterBar from "../components/FilterBar";
 import CategoryRail from "../components/CategoryRail";
+import CategoryStrip from "../components/CategoryStrip";
 import CategorySheet from "../components/CategorySheet";
 import MobileDock from "../components/MobileDock";
 import MenuItemCard from "../components/MenuItemCard";
 import CartPanel from "../components/CartPanel";
 import StayCard from "../components/StayCard";
 import { Cloche } from "../components/Icons";
+import { useHideOnScroll } from "../hooks/useHideOnScroll";
+
+/* Below this the category rail is gone and the filter bar hides on the way
+   down; must match the 1000px breakpoint in menu.css. */
+const PHONE = "(max-width: 999px)";
 
 export default function MenuPage() {
   const { items, categories, loading, error } = useMenu();
@@ -23,6 +29,7 @@ export default function MenuPage() {
   const railRef = useRef(null);
   const listTopRef = useRef(null);
   const firstPass = useRef(true);
+  const railAway = useHideOnScroll();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,6 +65,17 @@ export default function MenuPage() {
 
   const visibleCats = categories.filter((c) => (counts[c.id] || 0) > 0);
 
+  /* The dish that pictures each category in the phone strip: its first one
+     with a photograph, or simply its first. */
+  const cover = useMemo(() => {
+    const map = {};
+    for (const item of items) {
+      if (!map[item.cat] || (!map[item.cat].imageUrl && item.imageUrl))
+        map[item.cat] = item;
+    }
+    return map;
+  }, [items]);
+
   /* Until the reader scrolls or picks one, the highlighted category is simply
      the first that has dishes — derived, so the menu loading does not have to
      trigger an extra render just to choose it. */
@@ -88,8 +106,11 @@ export default function MenuPage() {
 
   const scrollTo = (el) => {
     if (!el) return;
-    const top =
-      el.getBoundingClientRect().top + window.scrollY - stickyOffset();
+    let top = el.getBoundingClientRect().top + window.scrollY - stickyOffset();
+    /* On a phone the filter bar hides while the page moves down, so a section
+       further down lands under the header alone, not under the bar too. */
+    if (top > window.scrollY && window.matchMedia(PHONE).matches)
+      top += railRef.current?.offsetHeight ?? 0;
     window.scrollTo({ top, behavior: "smooth" });
   };
 
@@ -115,9 +136,22 @@ export default function MenuPage() {
   return (
     <>
       {/* travels with the reader: search and filters stay reachable at any
-          scroll depth (on phones search lives in the bottom dock instead) */}
-      <div className="filter-rail" ref={railRef}>
+          scroll depth (on phones search lives in the bottom dock instead, and
+          the bar steps aside while scrolling down and returns on the way up) */}
+      <div
+        className={`filter-rail ${railAway ? "filter-rail--away" : ""}`}
+        ref={railRef}
+      >
         <div className="wrap">
+          <CategoryStrip
+            categories={visibleCats}
+            cover={cover}
+            active={currentCat}
+            onSelect={(id) => {
+              setActiveCat(id);
+              scrollTo(sectionRefs.current[id]);
+            }}
+          />
           <FilterBar
             query={query}
             onQuery={setQuery}

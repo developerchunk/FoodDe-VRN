@@ -7,8 +7,8 @@ import {
   useCallback,
 } from "react";
 import { CartContext } from "./cart-context";
-import { computeBill } from "../utils/pricing";
-import { priceOrder } from "../lib/orders";
+import { DEFAULT_CHARGES, computeBill, freeDeliveryGap } from "../utils/pricing";
+import { fetchPricing, priceOrder } from "../lib/orders";
 
 const CART_KEY = "brajrasoi.cart.v1";
 
@@ -26,7 +26,8 @@ const loadInitial = () => {
             (l) => l && typeof l.id === "string" && Number.isInteger(l.pricePaise) && l.qty > 0,
           )
         : [],
-      /* A code is only a string here; whether it is worth anything is the
+      /* A code the guest chose, or null to let the database pick the best
+         one. Only a string here; whether it is worth anything is the
          database's answer, asked for fresh each time. */
       coupon: typeof saved.coupon === "string" ? saved.coupon : null,
       instructions:
@@ -104,50 +105,81 @@ export function CartProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   }, []);
 
-  /* What the cart shows without asking anyone: correct whenever no coupon is
-     in play, and the thing a guest sees instantly while one is being priced. */
-  const localBill = useMemo(() => computeBill(state.lines), [state.lines]);
+  /* Delivery, packing and the free-delivery threshold, as the super admin set
+     them. The defaults stand in until the database answers. */
+  const [charges, setCharges] = useState(DEFAULT_CHARGES);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPricing().then((c) => {
+      if (!cancelled && c) setCharges(c);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /* What the cart shows without asking anyone, and the thing a guest sees
+     instantly while the database prices the order. */
+  const localBill = useMemo(
+    () => computeBill(state.lines, charges),
+    [state.lines, charges],
+  );
 
   /* The database's answer, which is the only one that knows what a coupon is
-     worth. Null until it arrives, or when there is no coupon to price. */
+     worth — including which coupon to apply when the guest has not chosen one.
+     Kept with the code it was asked about, so a stale answer is recognisable. */
   const [pricedBill, setPricedBill] = useState(null);
 
   useEffect(() => {
-    if (!state.coupon || localBill.subtotal === 0) return undefined;
+    if (localBill.subtotal === 0) return undefined;
     let cancelled = false;
-    priceOrder(localBill.subtotal, state.coupon).then((priced) => {
-      if (!cancelled) setPricedBill(priced);
+    const requested = state.coupon;
+    priceOrder(localBill.subtotal, requested).then((priced) => {
+      if (!cancelled) setPricedBill(priced && { ...priced, requested });
     });
     return () => {
       cancelled = true;
     };
   }, [state.coupon, localBill.subtotal]);
 
+  /* Every way the priced answer can be stale: a different code, or a cart that
+     has changed since we asked. */
+  const priced =
+    pricedBill &&
+    pricedBill.requested === state.coupon &&
+    pricedBill.subtotal_paise === localBill.subtotal
+      ? pricedBill
+      : null;
+
   const bill = useMemo(() => {
-    /* Every condition here is a way the priced answer can be stale: no coupon
-       any more, a different coupon, or a cart that has changed since we asked.
-       Falling back to the local bill is always safe — it is the bill with no
+    /* Falling back to the local bill is always safe — it is the bill with no
        discount, and the database prices the order again before taking money. */
-    if (
-      !state.coupon ||
-      !pricedBill ||
-      pricedBill.coupon_code !== state.coupon ||
-      pricedBill.subtotal_paise !== localBill.subtotal
-    )
-      return localBill;
+    if (!priced) return localBill;
     /* Take the database's numbers wholesale rather than patching the discount
        into ours: the discount changes the taxable amount, so the GST and total
        move with it. */
+    const threshold = priced.free_delivery_above_paise ?? localBill.freeDeliveryAbove;
     return {
       ...localBill,
-      discount: pricedBill.discount_paise,
-      couponCode: pricedBill.coupon_code,
-      gst: pricedBill.tax_paise,
-      delivery: pricedBill.delivery_paise,
-      packing: pricedBill.packing_paise,
-      total: pricedBill.total_paise,
+      discount: priced.discount_paise,
+      couponCode: priced.coupon_code,
+      couponAuto: Boolean(priced.coupon_code && priced.coupon_auto),
+      gst: priced.tax_paise,
+      delivery: priced.delivery_paise,
+      packing: priced.packing_paise,
+      total: priced.total_paise,
+      freeDeliveryAbove: threshold,
+      freeDeliveryGap: freeDeliveryGap(localBill.subtotal, {
+        ...charges,
+        free_delivery_above_paise: threshold,
+      }),
+      minOrderGap:
+        priced.min_order_paise == null
+          ? localBill.minOrderGap
+          : Math.max(priced.min_order_paise - localBill.subtotal, 0),
     };
-  }, [pricedBill, localBill, state.coupon]);
+  }, [priced, localBill, charges]);
 
   const qtyOf = useCallback(
     (id) => state.lines.find((l) => l.id === id)?.qty || 0,
@@ -169,26 +201,20 @@ export function CartProvider({ children }) {
       clear: () => dispatch({ type: "clear" }),
       setInstructions: (value) => dispatch({ type: "instructions", value }),
       /* Applying is just holding the code; the database decides its worth, and
-         the effect above reprices. A code that turns out to be worth nothing
-         comes back with a null coupon_code, which the cart shows as rejected. */
+         the effect above reprices. A code that does not apply comes back
+         flagged coupon_rejected, with the best other coupon applied instead. */
       applyCoupon: (rawCode) => {
         const code = String(rawCode || "").trim().toUpperCase();
         if (!code) return;
         dispatch({ type: "coupon", code });
       },
+      /* Back to whichever coupon is best. */
       removeCoupon: () => dispatch({ type: "coupon", code: null }),
-      /* null while we are still asking, false once the answer is "nothing". */
-      couponPending:
-        Boolean(state.coupon) &&
-        (pricedBill === null || pricedBill.subtotal_paise !== localBill.subtotal),
-      couponRejected:
-        Boolean(state.coupon) &&
-        pricedBill !== null &&
-        pricedBill.subtotal_paise === localBill.subtotal &&
-        !pricedBill.coupon_code,
+      couponPending: Boolean(state.coupon) && !priced,
+      couponRejected: Boolean(state.coupon) && Boolean(priced?.coupon_rejected),
       flash,
     }),
-    [state, bill, qtyOf, toast, flash, pricedBill, localBill],
+    [state, bill, qtyOf, toast, flash, priced],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

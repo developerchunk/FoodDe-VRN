@@ -7,7 +7,7 @@ download it. Who gets in is decided by the database (`admin_users`, migration
 | Role | Sees |
 |---|---|
 | `admin` | Orders · Menu · Kitchens · Categories · Accommodation Partners · Delivery partners |
-| `super_admin` | Analytics (today / daily / weekly / monthly) · Coupons · Settings (alerts number) — read-only everywhere else |
+| `super_admin` | Analytics (today / daily / weekly / monthly) · Coupons (the best eligible one applies itself) · Settings (delivery charge, packing charge, free-delivery threshold, minimum order, alerts number) — read-only everywhere else |
 
 One person may hold both roles (one row each).
 

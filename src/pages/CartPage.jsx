@@ -172,14 +172,20 @@ export default function CartPage() {
               offers={offers}
               pending={couponPending}
               rejected={couponRejected}
-              subtotal={bill.subtotal}
+              bill={bill}
               onApply={applyCoupon}
               onRemove={removeCoupon}
             />
 
             <BillSummary bill={bill} />
 
-            {bill.freeDeliveryGap > 0 && (
+            {bill.minOrderGap > 0 ? (
+              <p className="side-card__ship" role="status">
+                The minimum order is{" "}
+                {rupees(bill.subtotal + bill.minOrderGap)}. Add{" "}
+                <strong>{rupees(bill.minOrderGap)}</strong> more to continue.
+              </p>
+            ) : bill.freeDeliveryGap > 0 && (
               <p className="side-card__ship">
                 Add <strong>{rupees(bill.freeDeliveryGap)}</strong> more and
                 delivery is on us.
@@ -189,6 +195,7 @@ export default function CartPage() {
             <button
               type="button"
               className="btn btn-gold btn-block"
+              disabled={bill.minOrderGap > 0}
               onClick={() => navigate("/checkout")}
             >
               Continue to delivery details

@@ -234,10 +234,12 @@ export default function ReceiptPage() {
                 : rupeesExact(order.delivery_paise)}
             </dd>
           </div>
-          <div>
-            <dt>Packing</dt>
-            <dd className="rupee">{rupeesExact(order.packing_paise)}</dd>
-          </div>
+          {order.packing_paise > 0 && (
+            <div>
+              <dt>Packing</dt>
+              <dd className="rupee">{rupeesExact(order.packing_paise)}</dd>
+            </div>
+          )}
           <div>
             <dt>CGST 2.5% + SGST 2.5%</dt>
             <dd className="rupee">{rupeesExact(order.tax_paise)}</dd>

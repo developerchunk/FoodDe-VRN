@@ -63,12 +63,17 @@ export default function CartPanel() {
           </ul>
 
           <div className="cart-panel__foot">
-            {bill.freeDeliveryGap > 0 && (
+            {bill.minOrderGap > 0 ? (
+              <p className="side-card__ship" role="status">
+                Add <strong>{rupees(bill.minOrderGap)}</strong> more to reach
+                the {rupees(bill.subtotal + bill.minOrderGap)} minimum order
+              </p>
+            ) : bill.freeDeliveryGap > 0 && (
               <div className="freeship">
                 <div className="freeship__bar">
                   <span
                     style={{
-                      width: `${Math.min((bill.subtotal / 299) * 100, 100)}%`,
+                      width: `${Math.min((bill.subtotal / bill.freeDeliveryAbove) * 100, 100)}%`,
                     }}
                   />
                 </div>
