@@ -18,9 +18,13 @@
 .order-line:last-child {
   border-bottom: none;
 }
-.order-line__art svg {
+.order-line__art svg,
+.order-line__art img {
+  display: block;
   width: 82px;
+  height: auto;
   aspect-ratio: 1 / 1;
+  object-fit: cover;
   border-radius: 10px;
   border: 1px solid var(--sand-deep);
 }
@@ -78,9 +82,13 @@
   border-radius: 12px;
   background: var(--cream);
 }
-.addon__art svg {
+.addon__art svg,
+.addon__art img {
+  display: block;
   width: 54px;
+  height: auto;
   aspect-ratio: 1 / 1;
+  object-fit: cover;
   border-radius: 8px;
 }
 .addon__body {
@@ -1025,7 +1033,8 @@ select.input {
     grid-template-columns: 96px minmax(0, 1fr) auto;
     align-items: center;
   }
-  .order-line__art svg {
+  .order-line__art svg,
+  .order-line__art img {
     width: 96px;
   }
   .order-line__controls {

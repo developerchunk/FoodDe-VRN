@@ -56,6 +56,7 @@ function reducer(state, action) {
               pricePaise: item.pricePaise,
               sattvic: item.sattvic,
               /* kept so the cart can draw the dish without re-fetching */
+              imageUrl: item.imageUrl ?? null,
               art: item.art,
               palette: item.palette,
               qty: 1,

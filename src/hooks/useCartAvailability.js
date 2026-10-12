@@ -20,7 +20,15 @@ import { debounced, onMenuChange } from "../lib/menuLive";
  *
  * It listens for menu changes too: a dish an admin switches off while the
  * guest is filling in checkout is flagged there and then, not at payment.
+ *
+ * And it checks again as time passes. Kitchens close on the clock, which sends
+ * no message: a cart filled in the afternoon and a tab left open until
+ * midnight must not still show those dishes as orderable. So the check re-runs
+ * every minute while the page is in view, and as soon as the guest comes back
+ * to the tab.
  */
+const RECHECK_MS = 60_000;
+
 export function useCartAvailability(lines) {
   const [state, setState] = useState({ status: "loading", unavailable: [] });
 
@@ -63,10 +71,19 @@ export function useCartAvailability(lines) {
     check();
     const soon = debounced(check);
     const stopLive = onMenuChange(soon);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") check();
+    }, RECHECK_MS);
     return () => {
       cancelled = true;
       stopLive();
       soon.cancel();
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
     };
   }, [snapshot, empty]);
 

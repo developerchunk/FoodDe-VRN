@@ -1,7 +1,7 @@
 /**
  * Places real orders against the live database and checks what actually landed.
  *
- *   npm run verify:order
+ *   npm run verify:order -- <room code>
  *
  * This WRITES. Every order it creates is named "ZZ Verification Run" so the
  * rows can be found and deleted afterwards. It uses only the publishable key
@@ -66,9 +66,28 @@ if (!kitchenOpen) {
   );
 }
 
-const { data: addr } = await db.rpc("resolve_address", { p_code: "25dhh3fgsq" });
+/* A real, active room, given when the script is run. Room codes are opaque on
+   purpose, so a guest's key cannot go looking for one -- and a code written
+   into this file goes stale the moment that room is removed. */
+const roomCode = process.argv[2] || process.env.VERIFY_ROOM_CODE;
+if (!roomCode) {
+  console.log(
+    "\n  Give it a room to order to: the code from any active room's sticker\n" +
+      "  (Admin → Accommodation Partners), e.g.\n\n" +
+      "    npm run verify:order -- <room code>\n",
+  );
+  process.exit(1);
+}
+const { data: addr } = await db.rpc("resolve_address", { p_code: roomCode });
 const addressCode = addr?.[0]?.address_id;
-check("a room to deliver to", !!addressCode, addr?.[0]?.place_name);
+check(
+  "a room to deliver to",
+  !!addressCode,
+  addressCode ? `${addr[0].place_name}, room ${addr[0].room_number}` : `${roomCode} is not an active room`,
+);
+/* Without a room every order below is refused for that reason alone, and the
+   checks that expect a refusal would pass without testing anything. */
+if (!addressCode) process.exit(1);
 
 const guest = { name: TEST_NAME, phone: "9876543210", email: null };
 const order = (items, extra = {}) =>
@@ -176,7 +195,11 @@ console.log("\nReading it back\n");
 if (placed) {
   const { data: receipt } = await db.rpc("get_receipt", { p_token: placed.receipt_token });
   check("the receipt token returns the order", !!receipt, receipt?.order_no);
-  check("the receipt shows the room", receipt?.room_number === "101", `room ${receipt?.room_number}`);
+  check(
+    "the receipt shows the room",
+    receipt?.room_number === addr[0].room_number,
+    `room ${receipt?.room_number}, ordered to room ${addr[0].room_number}`,
+  );
   check("the receipt total matches", receipt?.total_paise === placed.bill.total_paise);
   check("no kitchen is named anywhere in the receipt", !JSON.stringify(receipt).match(/kitchen/i));
 

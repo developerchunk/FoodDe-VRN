@@ -123,6 +123,20 @@ const shape = (row) => ({
   tags: [row.is_loved && "bestseller", row.is_spicy && "spicy"].filter(Boolean),
 });
 
+/**
+ * "Goes well with this": dishes from the kitchens already cooking something in
+ * the cart, that can be ordered right now. The database chooses, because only
+ * it knows which kitchen cooks what; only dish ids come back.
+ */
+export async function fetchPairings(itemIds) {
+  if (!supabase || !itemIds.length) return [];
+  const { data, error } = await supabase.rpc("get_pairings", {
+    p_item_ids: itemIds,
+    p_limit: 8,
+  });
+  return error ? [] : (data || []).map((r) => r.id);
+}
+
 export async function fetchMenu() {
   if (!supabase) return { items: [], categories: [], error: "not-configured" };
 

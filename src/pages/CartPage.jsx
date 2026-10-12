@@ -1,10 +1,14 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart-context";
 import { useCoupons } from "../hooks/useCoupons";
 import CouponBox from "../components/CouponBox";
 import { useMenu } from "../hooks/useMenu";
 import QtyStepper from "../components/QtyStepper";
-import DishArt from "../components/DishArt";
+import { DishPicture } from "../components/DishParts";
+import { fetchPairings } from "../lib/menu";
+import { useCartAvailability } from "../hooks/useCartAvailability";
+import UnavailableNotice from "../components/UnavailableNotice";
 import BillSummary from "../components/BillSummary";
 import { rupees } from "../utils/format";
 import { Cloche, TulsiLeaf } from "../components/Icons";
@@ -28,10 +32,32 @@ export default function CartPage() {
   } = useCart();
   const navigate = useNavigate();
 
-  /* Add-ons come from the live menu, and only from kitchens that are open. */
+  /* Kitchens close while carts wait. Say so here, before the guest fills in
+     checkout, rather than at the end of it. */
+  const availability = useCartAvailability(lines);
+  const blocked =
+    availability.status === "ok" && availability.unavailable.length > 0;
+
+  /* Add-ons: the database picks dishes from the kitchens already cooking this
+     order (it alone knows which those are); the live menu supplies the rest
+     and drops anything that stopped being available since. */
   const { items: menu } = useMenu();
-  const suggestions = menu
-    .filter((m) => m.availableNow && !lines.some((l) => l.id === m.id))
+  const cartKey = lines.map((l) => l.id).sort().join(",");
+  const [pairings, setPairings] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPairings(cartKey ? cartKey.split(",") : []).then((ids) => {
+      if (!cancelled) setPairings(ids);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cartKey]);
+
+  const suggestions = pairings
+    .map((id) => menu.find((m) => m.id === id))
+    .filter((m) => m && m.availableNow && !lines.some((l) => l.id === m.id))
     .slice(0, 4);
 
   if (lines.length === 0) {
@@ -77,7 +103,15 @@ export default function CartPage() {
               return (
                 <li key={line.id} className="order-line">
                   <div className="order-line__art">
-                    <DishArt item={line} />
+                    {/* a cart saved before lines kept their photo finds it on the live menu */}
+                    <DishPicture
+                      item={{
+                        ...line,
+                        imageUrl:
+                          line.imageUrl ?? menu.find((m) => m.id === line.id)?.imageUrl,
+                      }}
+                      className=""
+                    />
                   </div>
 
                   <div className="order-line__body">
@@ -127,7 +161,7 @@ export default function CartPage() {
                 {suggestions.map((s) => (
                   <li key={s.id} className="addon">
                     <div className="addon__art">
-                      <DishArt item={s} />
+                      <DishPicture item={s} className="" />
                     </div>
                     <div className="addon__body">
                       <p className="addon__name">{s.name}</p>
@@ -179,6 +213,13 @@ export default function CartPage() {
 
             <BillSummary bill={bill} />
 
+            {blocked && (
+              <UnavailableNotice
+                unavailable={availability.unavailable}
+                onRemove={remove}
+              />
+            )}
+
             {bill.minOrderGap > 0 ? (
               <p className="side-card__ship" role="status">
                 The minimum order is{" "}
@@ -195,7 +236,7 @@ export default function CartPage() {
             <button
               type="button"
               className="btn btn-gold btn-block"
-              disabled={bill.minOrderGap > 0}
+              disabled={blocked || bill.minOrderGap > 0}
               onClick={() => navigate("/checkout")}
             >
               Continue to delivery details

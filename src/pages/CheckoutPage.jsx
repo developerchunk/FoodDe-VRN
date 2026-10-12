@@ -13,6 +13,7 @@ import {
 import { BuildingIcon, QrIcon, TulsiLeaf } from "../components/Icons";
 import { SELLER } from "../utils/seller";
 import { useCartAvailability } from "../hooks/useCartAvailability";
+import UnavailableNotice from "../components/UnavailableNotice";
 import { useAuth } from "../hooks/useAuth";
 import { hasSavedProfile, profileOf } from "../lib/profile";
 import { signInWithGoogle } from "../lib/auth";
@@ -588,32 +589,7 @@ export default function CheckoutPage() {
             )}
 
             {blocked && (
-              <div className="side-card__blocked" role="alert">
-                <strong>
-                  {unavailable.length === 1
-                    ? "One item is no longer available"
-                    : `${unavailable.length} items are no longer available`}
-                </strong>
-                <ul>
-                  {unavailable.map((u) => (
-                    <li key={u.id}>
-                      <span>{u.name}</span>
-                      <em>
-                        {u.gone
-                          ? "no longer on the menu"
-                          : "not being served right now"}
-                      </em>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-block"
-                  onClick={() => unavailable.forEach((u) => remove(u.id))}
-                >
-                  Remove {unavailable.length === 1 ? "it" : "them"} and continue
-                </button>
-              </div>
+              <UnavailableNotice unavailable={unavailable} onRemove={remove} />
             )}
 
             {bill.minOrderGap > 0 && (
