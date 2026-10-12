@@ -28,13 +28,20 @@ const EMPTY = {
 };
 
 const hours = (k) =>
-  k.opens_at && k.closes_at ? `${timeIn(k.opens_at)} – ${timeIn(k.closes_at)}` : "Always open";
+  !k.opens_at || !k.closes_at
+    ? "No hours — closed"
+    : timeIn(k.opens_at) === timeIn(k.closes_at)
+      ? "Open 24 hours"
+      : `${timeIn(k.opens_at)} – ${timeIn(k.closes_at)}`;
 
 function validate(f) {
   const e = {};
   if (f.place_name.trim().length < 2) e.place_name = "A name is required.";
   if (!isMobile(f.whatsapp_number)) e.whatsapp_number = "A 10-digit Indian mobile number.";
-  if (Boolean(f.opens_at) !== Boolean(f.closes_at)) e.closes_at = "Give both opening and closing time, or neither.";
+  /* Without hours a kitchen is closed (migration 0028), so a kitchen saved
+     without them would quietly take its dishes off sale. */
+  if (!f.opens_at) e.opens_at = "When the kitchen starts taking orders.";
+  if (!f.closes_at) e.closes_at = "When it stops. May be after midnight.";
   for (const k of ["latitude", "longitude"]) {
     if (f[k] !== "" && f[k] != null && !Number.isFinite(Number(f[k]))) e[k] = "A number, e.g. 27.5723";
   }
@@ -123,10 +130,10 @@ function KitchenForm({ initial, onSaved, onClose }) {
         </Field>
 
         <h3 className="adm-section-title">Hours</h3>
-        <Field label="Opens at" hint="Leave both empty if always open">
+        <Field label="Opens at" required error={errors.opens_at} hint="Same time in both if open 24 hours">
           <input className="input" type="time" value={f.opens_at} onChange={set("opens_at")} />
         </Field>
-        <Field label="Closes at" error={errors.closes_at} hint="May be after midnight, e.g. 01:00">
+        <Field label="Closes at" required error={errors.closes_at} hint="May be after midnight, e.g. 01:00">
           <input className="input" type="time" value={f.closes_at} onChange={set("closes_at")} />
         </Field>
         <label className="adm-check adm-field--wide">

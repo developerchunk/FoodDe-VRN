@@ -27,7 +27,8 @@ const CASES = [
   ["Fri 09:00  18:00-02:00", "18:00", "02:00", false, "2026-09-25T03:30:00Z", false, "late kitchen, daytime"],
   ["Sun 12:00  sunday off",  "08:00", "23:00", true,  "2026-09-27T06:30:00Z", false, "Sunday-off kitchen, Sunday"],
   ["Fri 09:00  sunday off",  "08:00", "23:00", true,  "2026-09-25T03:30:00Z", true,  "Sunday-off kitchen, Friday"],
-  ["Fri 07:30  no hours set", null,   null,    false, "2026-09-25T02:00:00Z", true,  "unknown hours count as open"],
+  ["Fri 07:30  no hours set", null,   null,    false, "2026-09-25T02:00:00Z", false, "no hours set counts as closed"],
+  ["Fri 03:00  00:00-00:00", "00:00", "00:00", false, "2026-09-24T21:30:00Z", true,  "equal times: open 24 hours"],
 ];
 
 let failures = 0;
