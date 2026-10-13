@@ -22,7 +22,8 @@ export default function Header() {
        localStorage holds can only have changed between navigations, and
        placing an order navigates. */
     void pathname;
-    return listReceipts().length > 0;
+    /* Never on the home page, which offers no way into ordering. */
+    return pathname !== "/" && listReceipts().length > 0;
   }, [pathname]);
 
   /* the browser tab names the guest house too, once it is known */

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { deleteCategory, listCategories, listDishes, saveCategory } from "../api";
+import {
+  deleteCategory,
+  deleteDishImage,
+  listCategories,
+  listDishes,
+  saveCategory,
+  uploadCategoryImage,
+} from "../api";
+import { prepareDishPhoto } from "../image";
+import PhotoField from "../PhotoField";
 import { ConfirmButton, Drawer, Field, LoadState, PageHead, Switch } from "../ui";
 import { useLoad, useNotice } from "../helpers";
 import "./menu.css";
@@ -9,6 +18,10 @@ import "./menu.css";
  * order; switching one off hides it and every dish in it, without touching
  * the dishes themselves. A category with dishes in it cannot be deleted --
  * the dishes need somewhere to be.
+ *
+ * Each category can carry a picture, shown in the round category strip at the
+ * top of the phone menu. Without one, the strip uses a photo of one of its
+ * dishes.
  */
 
 const EMPTY = { name: "", slug: "", sort_order: "0", is_active: true };
@@ -38,6 +51,11 @@ function validate(f) {
   return e;
 }
 
+/* Never let a failed clean-up of an old picture spoil a save that worked. */
+const dropImage = (url) => {
+  if (url) deleteDishImage(url).catch(() => {});
+};
+
 function CategoryForm({ initial, dishCount, onSaved, onDeleted, onClose }) {
   const [f, setF] = useState(() => ({
     ...EMPTY,
@@ -50,8 +68,36 @@ function CategoryForm({ initial, dishCount, onSaved, onDeleted, onClose }) {
   const [slugTouched, setSlugTouched] = useState(Boolean(initial?.id));
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
+  /* The picture, exactly as on the dish form: chosen and shrunk here, uploaded
+     on save, the old one deleted only once the new one is saved. */
+  const [id, setId] = useState(initial?.id);
+  const [savedUrl, setSavedUrl] = useState(initial?.image_url ?? null);
+  const [photo, setPhoto] = useState(null); // { blob, url, width, height, bytes }
+  const [removing, setRemoving] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const notify = useNotice();
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+
+  useEffect(() => () => photo && URL.revokeObjectURL(photo.url), [photo]);
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    /* Cleared so choosing the same file again still fires a change. */
+    e.target.value = "";
+    if (!file) return;
+    setPhotoError("");
+    setProcessing(true);
+    try {
+      const out = await prepareDishPhoto(file);
+      setPhoto({ ...out, url: URL.createObjectURL(out.blob) });
+      setRemoving(false);
+    } catch (err) {
+      setPhotoError(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -59,26 +105,55 @@ function CategoryForm({ initial, dishCount, onSaved, onDeleted, onClose }) {
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setBusy(true);
+    const fields = {
+      name: f.name.trim(),
+      slug: f.slug.trim(),
+      sort_order: Number(f.sort_order),
+      is_active: f.is_active,
+    };
+    let rowId = id;
+    let uploaded = null;
     try {
-      const row = await saveCategory({
-        id: initial?.id,
-        name: f.name.trim(),
-        slug: f.slug.trim(),
-        sort_order: Number(f.sort_order),
-        is_active: f.is_active,
-      });
+      let row;
+      if (!rowId) {
+        /* The picture's file name carries the category id, so the row comes
+           first. A new category whose picture fails is still saved; trying
+           again updates that row rather than adding a second. */
+        row = await saveCategory({ ...fields, image_url: null });
+        rowId = row.id;
+        setId(row.id);
+        setSavedUrl(null);
+        if (photo) {
+          uploaded = await uploadCategoryImage(rowId, photo.blob);
+          row = await saveCategory({ id: rowId, image_url: uploaded });
+        }
+      } else {
+        if (photo) {
+          uploaded = await uploadCategoryImage(rowId, photo.blob);
+          fields.image_url = uploaded;
+        } else if (removing) {
+          fields.image_url = null;
+        }
+        row = await saveCategory({ id: rowId, ...fields });
+      }
+      /* Only now is the old picture unused. */
+      if ((photo || removing) && savedUrl && savedUrl !== row.image_url) dropImage(savedUrl);
       notify(initial?.id ? "Category saved" : "Category added");
       onSaved(row);
     } catch (err) {
-      notify(err.message, "error");
+      dropImage(uploaded);
+      notify(rowId && !id ? `Category added, but the picture did not save: ${err.message}` : err.message, "error");
     } finally {
       setBusy(false);
     }
   };
 
+  const shownUrl = photo?.url ?? (removing ? null : savedUrl);
+
   const remove = async () => {
     try {
       await deleteCategory(initial.id);
+      dropImage(savedUrl);
       notify(`${initial.name} deleted`);
       onDeleted(initial.id);
     } catch (err) {
@@ -145,6 +220,24 @@ function CategoryForm({ initial, dishCount, onSaved, onDeleted, onClose }) {
         <label className="adm-check adm-field--wide">
           <input type="checkbox" checked={f.is_active} onChange={set("is_active")} /> Shown on the menu
         </label>
+        <PhotoField
+          label="Picture"
+          shownUrl={shownUrl}
+          photo={photo}
+          processing={processing}
+          error={photoError}
+          removing={removing && Boolean(savedUrl)}
+          onPick={pick}
+          onRemove={() => {
+            setPhoto(null);
+            setRemoving(true);
+          }}
+          onUndo={() => setRemoving(false)}
+        />
+        <p className="adm-muted adm-field--wide">
+          Shown in the round category row at the top of the menu on phones. Without one, a photo of one of its dishes
+          is used.
+        </p>
         {initial?.id && dishCount > 0 && (
           <p className="adm-muted adm-field--wide">
             {dishCount} {dishCount === 1 ? "dish is" : "dishes are"} in this category, so it cannot be deleted. Switch it
@@ -228,8 +321,17 @@ export default function CategoriesPage() {
               {categories.map((c) => (
                 <tr key={c.id} className={c.is_active ? "" : "is-off"}>
                   <td className="adm-cell-main">
-                    <strong>{c.name}</strong>
-                    <small className="adm-mono">{c.slug}</small>
+                    <span className="adm-row">
+                      {c.image_url ? (
+                        <img className="adm-thumb adm-thumb--round" src={c.image_url} alt="" loading="lazy" width={40} height={40} />
+                      ) : (
+                        <span className="adm-thumb adm-thumb--round adm-thumb--none" aria-hidden="true" />
+                      )}
+                      <span>
+                        <strong>{c.name}</strong>
+                        <small className="adm-mono">{c.slug}</small>
+                      </span>
+                    </span>
                   </td>
                   <td data-label="Order" className="num">
                     {c.sort_order}

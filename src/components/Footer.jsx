@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { maskPhone } from "../utils/format";
 import { SELLER } from "../utils/seller";
 import { useProperty } from "../utils/property";
@@ -11,6 +11,8 @@ import Logo from "./Logo";
 export default function Footer() {
   const house = useProperty();
   const stay = Boolean(house.addressId);
+  /* The home page offers no way into ordering, so not to past orders either. */
+  const home = useLocation().pathname === "/";
 
   return (
     <footer className="site-footer">
@@ -33,9 +35,11 @@ export default function Footer() {
               </li>
             </>
           )}
-          <li>
-            <Link to="/orders">Orders</Link>
-          </li>
+          {!home && (
+            <li>
+              <Link to="/orders">Orders</Link>
+            </li>
+          )}
           <li>
             <Link to="/about">About us</Link>
           </li>

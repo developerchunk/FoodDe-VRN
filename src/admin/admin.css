@@ -606,6 +606,16 @@
   background: var(--sand);
   flex: none;
 }
+/* a category's picture, round as it is on the phone menu */
+.adm-thumb--round {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.adm-thumb--none {
+  display: block;
+  border: 1px dashed var(--sand-deep);
+}
 .adm-row {
   display: flex;
   align-items: center;

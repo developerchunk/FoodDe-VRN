@@ -119,8 +119,14 @@ const BUCKET = "menu-images";
  * the old URL is cached by browsers for a year (it is immutable), so replacing
  * a photo under the same name would leave guests looking at the old one.
  */
-export async function uploadDishImage(dishId, blob) {
-  const path = `dishes/${dishId}-${Date.now().toString(36)}.jpg`;
+export const uploadDishImage = (dishId, blob) => uploadMenuImage("dishes", dishId, blob);
+
+/** A category's picture for the phone menu's category strip; as for dishes. */
+export const uploadCategoryImage = (categoryId, blob) =>
+  uploadMenuImage("categories", categoryId, blob);
+
+async function uploadMenuImage(folder, id, blob) {
+  const path = `${folder}/${id}-${Date.now().toString(36)}.jpg`;
   must(
     await supabase.storage.from(BUCKET).upload(path, blob, {
       contentType: "image/jpeg",
@@ -132,7 +138,8 @@ export async function uploadDishImage(dishId, blob) {
   return data.publicUrl;
 }
 
-/** Best effort: an orphaned photo costs a few kilobytes, never a broken menu. */
+/** Best effort: an orphaned photo costs a few kilobytes, never a broken menu.
+    Works for any photo in the bucket, dish or category. */
 export async function deleteDishImage(url) {
   const marker = `/object/public/${BUCKET}/`;
   const at = url?.indexOf(marker) ?? -1;

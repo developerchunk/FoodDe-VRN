@@ -3,8 +3,9 @@ import { DishPicture } from "./DishParts";
 
 /**
  * The phone's category selector: one row of round pictures, scrolled sideways,
- * the way food apps lay them out. Each category is shown by one of its own
- * dishes, so the row reads as food rather than as a list of words.
+ * the way food apps lay them out. Each category shows the picture chosen for
+ * it in admin, or else one of its own dishes, so the row reads as food rather
+ * than as a list of words.
  *
  * Wider screens have the category rail down the left instead (CategoryRail),
  * so this is hidden there by CSS.
@@ -36,8 +37,19 @@ export default function CategoryStrip({ categories, cover, active, onSelect }) {
               onClick={() => onSelect(c.id)}
             >
               <span className="cat-strip__pic">
-                {cover[c.id] && (
-                  <DishPicture item={cover[c.id]} className="cat-strip__img" />
+                {c.imageUrl ? (
+                  <img
+                    className="cat-strip__img"
+                    src={c.imageUrl}
+                    alt=""
+                    width="480"
+                    height="480"
+                    decoding="async"
+                  />
+                ) : (
+                  cover[c.id] && (
+                    <DishPicture item={cover[c.id]} className="cat-strip__img" />
+                  )
                 )}
               </span>
               <span className="cat-strip__name">{c.name}</span>

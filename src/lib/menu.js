@@ -156,6 +156,8 @@ export async function fetchMenu() {
         name: row.category_name,
         icon: iconFor(row.category_name),
         sort: row.category_sort ?? 0,
+        /* chosen on the admin's Categories page; null until one is */
+        imageUrl: row.category_image_url ?? null,
       });
     }
   }
