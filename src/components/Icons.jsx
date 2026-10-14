@@ -115,6 +115,12 @@ export const ArrowIcon = (p) => (
   </Svg>
 );
 
+export const ChevronIcon = (p) => (
+  <Svg {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Svg>
+);
+
 export const StarIcon = ({ size = 14, className = "" }) => (
   <svg
     viewBox="0 0 24 24"

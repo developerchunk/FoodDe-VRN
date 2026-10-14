@@ -1,6 +1,7 @@
 import { useMenu } from "../hooks/useMenu";
 import { useMinWidth } from "../utils/useMinWidth";
 import MenuItemCard from "../components/MenuItemCard";
+import PartnerMenu from "../components/PartnerMenu";
 import {
   ChefIcon,
   LeafIcon,
@@ -55,6 +56,8 @@ export default function HomePage() {
           <p className="home-hero__scan">
             <QrIcon size={20} /> Scan the QR code in your room to order
           </p>
+
+          <PartnerMenu />
         </div>
 
         <div className="home-hero__media">
