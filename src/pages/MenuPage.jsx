@@ -11,19 +11,33 @@ import CartPanel from "../components/CartPanel";
 import StayCard from "../components/StayCard";
 import { Cloche } from "../components/Icons";
 import { useHideOnScroll } from "../hooks/useHideOnScroll";
+import { floatForNow } from "../lib/dayparts";
 
 /* Below this the category rail is gone and the filter bar hides on the way
    down; must match the 1000px breakpoint in menu.css. */
 const PHONE = "(max-width: 999px)";
 
 export default function MenuPage() {
-  const { items, categories, loading, error } = useMenu();
+  const { items, categories: adminOrder, loading, error } = useMenu();
   const { bill } = useCart();
   const [query, setQuery] = useState("");
   const [quick, setQuick] = useState(null);
   const [sort, setSort] = useState("default");
   const [activeCat, setActiveCat] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  /* The part of the day changes while the page is open; re-ask each minute. */
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  /* what suits this hour comes first; the rest stay in the admin's order */
+  const categories = useMemo(
+    () => floatForNow(adminOrder, items, now),
+    [adminOrder, items, now],
+  );
 
   const sectionRefs = useRef({});
   const railRef = useRef(null);

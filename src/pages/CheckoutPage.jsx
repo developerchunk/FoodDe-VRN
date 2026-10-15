@@ -435,9 +435,6 @@ export default function CheckoutPage() {
               <div className="room-card">
                 <p className="room-card__place">{house.property}</p>
                 <p className="room-card__room">Room {house.room}</p>
-                {house.address && (
-                  <p className="room-card__addr">{house.address}</p>
-                )}
                 {/* Scanning the code in the wrong room, or ordering for a
                     different one, should not mean hunting for another QR. */}
                 <button
@@ -528,13 +525,15 @@ export default function CheckoutPage() {
               <span className="field-label">
   Anything we should know?
               </span>
-              <textarea
+              {/* one line that scrolls sideways as it fills, not a tall box */}
+              <input
                 id="note"
-                className="textarea"
+                type="text"
+                className="input"
                 value={form.note}
                 onChange={set("note")}
                 maxLength={180}
-                placeholder="Less chilli, please. Leave it at the door."
+                placeholder="Less chilli, leave it at the door"
               />
             </label>
 

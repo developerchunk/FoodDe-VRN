@@ -1,6 +1,9 @@
 /* ===== cart page ===== */
 .cart-grid {
   display: grid;
+  /* minmax(0, …): without it a sideways-scrolling row inside (the add-ons)
+     makes the column as wide as all its cards and the page overflows */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: stretch;
 }
@@ -120,6 +123,62 @@
 .addon__add:hover {
   background: var(--ember);
   color: #fff;
+}
+
+/* The suggestions are a row of small cards that slides sideways, like the
+   category strip, at every width — never a tall column or a grid of big tiles. */
+.addons__list {
+  display: flex;
+  gap: 12px;
+  /* run to the card's edges so the next card peeks in, hinting at the swipe */
+  margin: 0 -18px;
+  padding: 2px 18px 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 18px;
+  scrollbar-width: none;
+}
+.addons__list::-webkit-scrollbar {
+  display: none;
+}
+.addon {
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 118px;
+  padding: 6px 6px 8px;
+  border-radius: 10px;
+  scroll-snap-align: start;
+}
+.addon__art svg,
+.addon__art img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 7px;
+}
+.addon__body {
+  flex: none;
+}
+.addon__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.25;
+  /* two lines always, so every card's Add button sits at the same height */
+  min-height: 2.5em;
+}
+.addon__price {
+  font-size: 12.5px;
+  margin-top: 0;
+}
+.addon__add {
+  padding: 5px 10px;
+  font-size: 12.5px;
+  text-align: center;
 }
 
 .note-block {
@@ -275,6 +334,23 @@
 .checkout-grid__main {
   display: grid;
   gap: 18px;
+}
+
+/* On a phone the order is read top to bottom: your details, then what you are
+   paying for, then where it is going. The bill sits in the side column and
+   "Delivering to" in the main one, so the main column dissolves into the grid
+   and its last card is sent below the bill. On a wide screen they stay in
+   their own columns. */
+@media (max-width: 999px) {
+  .checkout-grid__main {
+    display: contents;
+  }
+  .checkout-grid__main > .form-card:last-child {
+    order: 2;
+  }
+  .checkout-grid__side {
+    order: 1;
+  }
 }
 
 .form-card {
@@ -1056,9 +1132,6 @@ select.input {
   .receipt__stamp {
     display: block;
   }
-  .addons__list {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (min-width: 1000px) {
@@ -1290,12 +1363,6 @@ select.input {
   color: var(--ember-deep);
   font-weight: 600;
   margin-top: 2px;
-}
-.room-card__addr {
-  font-size: 13px;
-  color: var(--ink-soft);
-  margin-top: 6px;
-  line-height: 1.5;
 }
 
 /* An unpaid order must not be stamped as though money changed hands. */

@@ -116,6 +116,9 @@ const shape = (row) => ({
   mealTime: row.meal_time || "all_day",
   /* null when served all day, so the card can simply not render the chip */
   mealWindow: mealWindow(row),
+  /* the raw hours, for ranking categories by the time of day */
+  mealStart: row.meal_time && row.meal_time !== "all_day" ? row.meal_starts_at : null,
+  mealEnd: row.meal_time && row.meal_time !== "all_day" ? row.meal_ends_at : null,
   ingredients: row.ingredients,
   serves: row.cooking_time_mins ? `${row.cooking_time_mins} min` : null,
   art: artFor(row.name, row.category_name),

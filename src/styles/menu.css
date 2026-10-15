@@ -109,9 +109,9 @@
   color: var(--ember);
 }
 .chip.is-on {
-  background: var(--ird-teal);
-  border-color: var(--ird-teal);
-  color: var(--cream);
+  background: linear-gradient(165deg, #e2704f, var(--ember-deep));
+  border-color: var(--ember);
+  color: #fff;
 }
 .chip.is-on .chip__icon {
   color: inherit;
@@ -227,13 +227,13 @@
   flex: none;
 }
 .rail__item.is-active {
-  background: var(--ird-teal);
-  color: var(--cream);
-  box-shadow: 0 10px 22px -14px rgba(7, 91, 85, 0.9);
+  background: linear-gradient(165deg, #e2704f, var(--ember-deep));
+  color: #fff;
+  box-shadow: 0 10px 22px -14px rgba(184, 71, 42, 0.9);
 }
 .rail__item.is-active .rail__glyph {
   background: rgba(255, 255, 255, 0.12);
-  color: var(--gold);
+  color: #fff;
 }
 .rail__item.is-active .rail__count {
   background: rgba(255, 255, 255, 0.16);
@@ -908,12 +908,12 @@
   font-variant-numeric: tabular-nums;
 }
 .sheet__row.is-active {
-  background: var(--ird-teal);
-  color: var(--cream);
+  background: linear-gradient(165deg, #e2704f, var(--ember-deep));
+  color: #fff;
 }
 .sheet__row.is-active .sheet__glyph {
   background: rgba(255, 255, 255, 0.12);
-  color: var(--gold);
+  color: #fff;
 }
 .sheet__row.is-active .sheet__count {
   color: var(--cream);
@@ -1397,10 +1397,10 @@
 .cat-strip__item.is-active .cat-strip__pic {
   box-shadow:
     0 0 0 2px var(--paper),
-    0 0 0 4px var(--teal-800);
+    0 0 0 4px var(--ember);
 }
 .cat-strip__item.is-active .cat-strip__name {
-  color: var(--teal-800);
+  color: var(--ember-deep);
   font-weight: 600;
 }
 
