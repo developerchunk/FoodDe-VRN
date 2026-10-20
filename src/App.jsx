@@ -20,6 +20,7 @@ import ReceiptPage from "./pages/ReceiptPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
 import AboutPage from "./pages/AboutPage";
+import PolicyPage from "./pages/PolicyPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 /* Its own chunk: a guest who scans a room's QR code never downloads any of the
@@ -78,6 +79,12 @@ export default function App() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/about" element={<AboutPage />} />
+          {/* reviewed by Razorpay before live payments; linked from every footer */}
+          <Route path="/terms" element={<PolicyPage slug="terms" />} />
+          <Route path="/privacy" element={<PolicyPage slug="privacy" />} />
+          <Route path="/refunds" element={<PolicyPage slug="refunds" />} />
+          <Route path="/delivery" element={<PolicyPage slug="delivery" />} />
+          <Route path="/contact" element={<PolicyPage slug="contact" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>

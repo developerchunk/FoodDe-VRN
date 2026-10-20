@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { maskPhone } from "../utils/format";
 import { SELLER } from "../utils/seller";
 import { useProperty } from "../utils/property";
+import { POLICY_LINKS } from "../pages/policies";
 import Logo from "./Logo";
 
 /**
@@ -52,6 +53,16 @@ export default function Footer() {
           <li>WhatsApp {maskPhone(SELLER.phone)}</li>
         </ul>
       </div>
+
+      {/* On every page, the home page included: Razorpay's reviewers look for
+          them there. */}
+      <nav className="wrap site-footer__policies" aria-label="Our policies">
+        {POLICY_LINKS.map((l) => (
+          <Link key={l.to} to={l.to}>
+            {l.label}
+          </Link>
+        ))}
+      </nav>
 
       <div className="wrap site-footer__base">
         <p>

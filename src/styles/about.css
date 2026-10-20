@@ -43,3 +43,46 @@
 .about__sign span {
   font-size: 15px;
 }
+
+/* Policy pages (Terms, Privacy, Refunds, Delivery, Contact) share this
+   reading layout. */
+.policy__updated {
+  font-size: 14px !important;
+  color: var(--ink-faint) !important;
+}
+.policy__section {
+  margin-top: 32px;
+}
+.policy__heading {
+  font-size: clamp(20px, 3vw, 24px);
+  color: var(--teal-800);
+}
+.policy__list {
+  /* the base styles strip list bullets; a policy reads better with them */
+  list-style: disc;
+  margin: 12px 0 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.policy__list li::marker {
+  color: var(--gold);
+}
+.policy__others {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 2px solid var(--gold-soft);
+}
+.policy__others a {
+  color: var(--teal-700);
+  font-weight: 500;
+}
+.policy__others a:hover {
+  color: var(--teal-900);
+}

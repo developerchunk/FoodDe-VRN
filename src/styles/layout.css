@@ -389,6 +389,19 @@
   gap: 6px;
   max-width: 44ch;
 }
+.site-footer__policies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 24px;
+  font-size: 13.5px;
+}
+.site-footer__policies a {
+  color: rgba(251, 247, 240, 0.72);
+}
+.site-footer__policies a:hover {
+  color: var(--gold);
+}
 .site-footer__base {
   display: grid;
   gap: 4px;
