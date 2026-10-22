@@ -5,7 +5,6 @@ import PartnerMenu from "../components/PartnerMenu";
 import {
   ChefIcon,
   LeafIcon,
-  QrIcon,
   ScooterIcon,
   ShieldIcon,
 } from "../components/Icons";
@@ -51,12 +50,6 @@ export default function HomePage() {
           <p className="home-hero__sub">
             Pure vegetarian meals, delivered to your door.
           </p>
-          {/* Ordering starts from the QR in the room, which knows the room;
-              the home page offers no way into the menu without one. */}
-          <p className="home-hero__scan">
-            <QrIcon size={20} /> Scan the QR code in your room to order
-          </p>
-
           <PartnerMenu />
         </div>
 

@@ -71,8 +71,8 @@ the order fan-out possible, so it is not optional metadata.
   `/menu?id=<code>` for room links; the older `/r/<code>` stickers redirect there). Copy is kept minimal and English only — no
   Hindi text.
 - **Guests enter by scanning their room's QR, never from the home page.** The
-  home page has no menu, cart or orders link — it tells guests to scan the QR
-  in their room, and the floating cart bar is hidden there. Menu and Cart links in
+  home page has no menu, cart or orders link, and the floating cart bar is
+  hidden there. Menu and Cart links in
   the header, the ☰ dropdown and the footer appear only once a room has been
   scanned in that session. `/menu` opened without a room still shows the full
   menu to browse; checkout is what asks for the room's QR.
