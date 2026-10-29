@@ -212,6 +212,12 @@
   font-size: 17px;
   color: rgba(251, 247, 240, 0.78);
 }
+.home-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
 .partner-menu {
   position: relative;
   display: inline-block;

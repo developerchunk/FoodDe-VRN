@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useMenu } from "../hooks/useMenu";
 import { useMinWidth } from "../utils/useMinWidth";
 import MenuItemCard from "../components/MenuItemCard";
@@ -50,7 +51,12 @@ export default function HomePage() {
           <p className="home-hero__sub">
             Pure vegetarian meals, delivered to your door.
           </p>
-          <PartnerMenu />
+          <div className="home-hero__actions">
+            <Link to="/menu" className="btn btn-light">
+              View menu
+            </Link>
+            <PartnerMenu />
+          </div>
         </div>
 
         <div className="home-hero__media">
