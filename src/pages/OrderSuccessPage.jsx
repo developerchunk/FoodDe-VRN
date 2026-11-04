@@ -47,7 +47,7 @@ export default function OrderSuccessPage() {
     (reason) => {
       /* Shut the payment window first, or it stays over the checkout page. */
       closePayment();
-      navigate("/checkout", { replace: true, state: { paymentFailed: reason } });
+      navigate("/cart", { replace: true, state: { paymentFailed: reason } });
     },
     [navigate],
   );
@@ -108,6 +108,27 @@ export default function OrderSuccessPage() {
       document.removeEventListener("visibilitychange", tick);
     };
   }, [moving, refresh]);
+
+  /* Cash on delivery still to be paid: the guest may pay online any time
+     before the rider arrives. A failure here leaves them on this page. */
+  const due =
+    order?.payment_method === "cod" &&
+    !order.is_paid &&
+    OPEN.has(order.status);
+  const payNow = useCallback(async () => {
+    setPaying(true);
+    setPayNote(null);
+    try {
+      const result = await payForOrder({ token: id });
+      if (result.paid) await refresh();
+      else if (result.reason !== "dismissed")
+        setPayNote(result.message ?? "The payment did not go through.");
+    } catch (err) {
+      setPayNote(err.message ?? "Could not start the payment.");
+    } finally {
+      setPaying(false);
+    }
+  }, [id, refresh]);
 
   /* Derived, not animated. */
   const stage = STAGE_FOR[order?.status] ?? 0;
@@ -239,7 +260,13 @@ export default function OrderSuccessPage() {
             </strong>
           </div>
           <div>
-            <small>To pay</small>
+            <small>
+              {order.payment_method === "cod"
+                ? order.is_paid
+                  ? "Paid"
+                  : "To pay on delivery"
+                : "Paid"}
+            </small>
             <strong className="rupee">{rupees(order.total_paise)}</strong>
           </div>
         </div>
@@ -297,12 +324,44 @@ export default function OrderSuccessPage() {
             )}
           </section>
         )}
+        {due && (
+          <section className="card pay-card" aria-label="Payment">
+            <h2 className="pay-card__title">
+              {rupees(order.total_paise)} to pay on delivery
+            </h2>
+            <p className="pay-card__body">
+              Pay the delivery partner in cash or online when it arrives, or
+              pay online now.
+            </p>
+            <button
+              type="button"
+              className="btn btn-gold btn-block"
+              onClick={payNow}
+              disabled={paying}
+            >
+              {paying ? (
+                <>
+                  <span className="spinner" aria-hidden="true" /> Opening
+                  payment…
+                </>
+              ) : (
+                <>Pay {rupees(order.total_paise)} online</>
+              )}
+            </button>
+            {payNote && (
+              <p className="pay-card__note" role="alert">
+                {payNote}
+              </p>
+            )}
+          </section>
+        )}
         <section className="card track" aria-label="Order progress" aria-live="polite">
           <h2 className="track__title">Following your order</h2>
           {cancelled ? (
             <p className="track__cancelled">
-              This order was cancelled. What you paid will be refunded to your
-              original payment method.
+              {order.payment_method === "cod" && !order.is_paid
+                ? "This order was cancelled. Nothing was charged."
+                : "This order was cancelled. What you paid will be refunded to your original payment method."}
             </p>
           ) : (
           <ol className="track__list">
@@ -353,8 +412,8 @@ export default function OrderSuccessPage() {
 
           <div className="summary-card__total">
             <span>
-              {order.status === "pending_payment"
-                ? "Awaiting payment"
+              {order.payment_method === "cod" && !order.is_paid
+                ? "To pay on delivery"
                 : "Total"}
             </span>
             <strong className="rupee">{rupees(order.total_paise)}</strong>

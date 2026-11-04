@@ -17,7 +17,7 @@ import { SELLER } from "../utils/seller";
  * settings the super admin changes, and the bill shows them before payment.
  */
 
-export const UPDATED = "20 October 2026";
+export const UPDATED = "2 November 2026";
 
 const phone = maskPhone(SELLER.phone);
 
@@ -61,7 +61,7 @@ export const POLICIES = {
       {
         h: "Payment",
         p: [
-          "Every order is paid in advance, online, through Razorpay. Your order is confirmed and sent to the kitchen only after the payment succeeds. We never see or store your card, UPI or bank details.",
+          "You can pay online in advance, through Razorpay, or choose cash on delivery and pay the delivery partner in cash or online when your order arrives. An order paid online is confirmed and sent to the kitchen only after the payment succeeds; a cash-on-delivery order is sent to the kitchen when you place it. We never see or store your card, UPI or bank details.",
         ],
       },
       {
@@ -170,7 +170,7 @@ export const POLICIES = {
   refunds: {
     title: "Refund & Cancellation Policy",
     intro: [
-      "Every order is paid in advance. This policy explains when an order can be cancelled and how refunds work.",
+      "This policy explains when an order can be cancelled and how refunds work.",
     ],
     sections: [
       {
@@ -233,7 +233,7 @@ export const POLICIES = {
       {
         h: "When we deliver",
         p: [
-          "Each dish can be ordered only while it is being served, as shown on the menu. Your order is sent to the kitchen once your payment succeeds.",
+          "Each dish can be ordered only while it is being served, as shown on the menu. Your order is sent to the kitchen once your payment succeeds, or straight away if you choose cash on delivery.",
         ],
       },
       {

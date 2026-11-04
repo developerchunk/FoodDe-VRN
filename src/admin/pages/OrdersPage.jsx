@@ -95,6 +95,7 @@ const MESSAGE_KIND = {
   delivery_details: "Pickup details to rider",
   delivery_taken: "Taken, to rider",
   delivery_ack: "Reply to rider",
+  delivery_collect: "Payment link to rider",
   admin_alert: "Alert to admin",
 };
 const RECIPIENT = { kitchen: "Kitchen", delivery: "Rider", property: "Accommodation partner", guest: "Guest", admin: "Admin" };
@@ -267,7 +268,10 @@ function Delivery({ order, partners, busy, run }) {
 }
 
 function MoveOn({ order, busy, run }) {
-  const next = NEXT[order.status];
+  const unpaidCod = order.payment_method === "cod" && !order.collected_at;
+  /* Delivered, for cash on delivery, is recorded with the payment on the
+     collect page, so it is never marked delivered with the money unaccounted. */
+  const next = unpaidCod && order.status === "out_for_delivery" ? null : NEXT[order.status];
   if (!OPEN.has(order.status)) return null;
   return (
     <div className="adm-orders-actions">
@@ -288,10 +292,16 @@ function MoveOn({ order, busy, run }) {
       <ConfirmButton
         className="btn btn-ghost adm-btn-sm adm-orders-reject"
         disabled={busy}
-        confirm={`Cancel order ${order.order_no}? This does not refund the guest. Refund it in the Razorpay dashboard.`}
+        confirm={
+          unpaidCod
+            ? `Cancel order ${order.order_no}? It is cash on delivery and not paid yet, so there is nothing to refund.`
+            : `Cancel order ${order.order_no}? This does not refund the guest. Refund it in the Razorpay dashboard.`
+        }
         onConfirm={() =>
           run(order.id, () => setOrderStatus(order.id, "cancelled"), {
-            done: `Order ${order.order_no} cancelled. Refund it in the Razorpay dashboard.`,
+            done: unpaidCod
+              ? `Order ${order.order_no} cancelled.`
+              : `Order ${order.order_no} cancelled. Refund it in the Razorpay dashboard.`,
           })
         }
       >
@@ -349,6 +359,30 @@ function Messages({ order, busy, run }) {
   );
 }
 
+/* How the order is paid. A cash-on-delivery order also carries the rider's
+   collect page, for when the link has to be passed on by hand. */
+function Payment({ order }) {
+  if (order.payment_method !== "cod") return null;
+  const state = order.collected_at
+    ? order.collected_via === "cash"
+      ? `cash received ${when(order.collected_at)}`
+      : `paid online ${when(order.collected_at)}`
+    : "payment due";
+  return (
+    <p className="adm-muted">
+      Cash on delivery · {state}
+      {!order.collected_at && order.collect_token && OPEN.has(order.status) && (
+        <>
+          {" · "}
+          <a href={`/collect/${order.collect_token}`} target="_blank" rel="noopener">
+            Collect page
+          </a>
+        </>
+      )}
+    </p>
+  );
+}
+
 // --------------------------------------------------------------------- cards
 function OrderHead({ order }) {
   const room = order.room;
@@ -375,6 +409,7 @@ function OrderHead({ order }) {
           </>
         )}
       </p>
+      <Payment order={order} />
       {order.coupon_code && (
         <p className="adm-muted">
           Coupon <span className="adm-mono">{order.coupon_code}</span>

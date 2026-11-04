@@ -50,6 +50,42 @@ so a failure is always visible there and on the admin Orders page.
    in Razorpay), and can record a kitchen's answer given by phone, assign or
    change the rider, and retry any failed message.
 
+### Cash on delivery (migration 0031)
+
+The guest picks **Cash on delivery** at checkout. The `order-cod` edge function
+confirms it with the guest's own session (`confirm_cod_order`) and sends step
+1 straight away — no payment first. Status `paid` and `paid_at` then mean
+"confirmed and with the kitchens"; whether the money is in is `collected_at` /
+`collected_via` (`online` or `cash`). From there it moves exactly as above,
+except:
+
+- The accommodation partner gets `ird_property_order_cod` and the guest
+  `ird_guest_confirmation_cod` (amount to pay on delivery, link to follow it).
+- **Out for delivery**, still unpaid: the guest gets
+  `ird_guest_out_for_delivery_cod` with a link to `/pay/<receipt token>`, and
+  the rider gets a plain-text message (`delivery_collect`, inside the window
+  their Accept / Picked up tap opened) with a link to `/collect/<collect token>`.
+- The collect page has **Online** (a QR of the guest's pay page; the order is
+  delivered the moment the payment lands) and **Cash** (records cash taken and
+  delivers it). The rider's WhatsApp **Delivered** button does not deliver an
+  unpaid COD order; it replies pointing at the link. The admin Orders page
+  shows the payment state and the collect page, and hides "Delivered" for an
+  unpaid COD order.
+- A guest who pays online after cash was taken (or after a cancel) is flagged
+  for the admin to refund.
+
+Deploy: apply `0031`, submit the three new templates with the script below,
+then:
+
+```bash
+supabase functions deploy order-cod --use-api
+supabase functions deploy payment-create-order --use-api
+supabase functions deploy payment-verify --use-api
+supabase functions deploy payment-webhook --no-verify-jwt --use-api
+supabase functions deploy whatsapp-webhook --no-verify-jwt --use-api
+supabase functions deploy whatsapp-dispatch --no-verify-jwt --use-api
+```
+
 ## 1. Templates
 
 Templates belong to a WhatsApp Business Account, and only numbers in that

@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listReceipts, fetchReceipt, fetchMyOrders } from "../lib/orders";
+import { payForOrder } from "../lib/payments";
 import { useAuth } from "../hooks/useAuth";
 import SignInButton from "../components/SignInButton";
 import { rupees, formatDateTime } from "../utils/format";
 import { Cloche } from "../components/Icons";
+
+/* Still on its way, so a cash-on-delivery order can be paid for online. */
+const OPEN = new Set(["paid", "sent_to_kitchen", "preparing", "out_for_delivery"]);
+const payable = (o) => o.payment_method === "cod" && !o.is_paid && OPEN.has(o.status);
 
 /**
  * Orders placed from this device.
@@ -19,6 +24,37 @@ import { Cloche } from "../components/Icons";
 export default function OrdersPage() {
   const [orders, setOrders] = useState(null);
   const { signedIn, loading: authLoading } = useAuth();
+  /* One payment window at a time: the token being paid, and any problem. */
+  const [paying, setPaying] = useState(null);
+  const [payNote, setPayNote] = useState({});
+
+  async function pay(token) {
+    setPaying(token);
+    setPayNote((n) => ({ ...n, [token]: null }));
+    try {
+      const result = await payForOrder({ token });
+      if (result.paid) {
+        /* Read it back rather than assume: the server says whether it is paid. */
+        const fresh = await fetchReceipt(token);
+        if (fresh)
+          setOrders((list) =>
+            list.map((o) => (o.token === token ? { ...o, ...fresh, token } : o)),
+          );
+      } else if (result.reason !== "dismissed") {
+        setPayNote((n) => ({
+          ...n,
+          [token]: result.message ?? "The payment did not go through.",
+        }));
+      }
+    } catch (err) {
+      setPayNote((n) => ({
+        ...n,
+        [token]: err.message ?? "Could not start the payment.",
+      }));
+    } finally {
+      setPaying(null);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return undefined;
@@ -108,7 +144,28 @@ export default function OrdersPage() {
                 {o.items.map((i) => `${i.qty} × ${i.name}`).join(" · ")}
               </p>
             )}
+            {payable(o) && (
+              <p className="history-card__due">
+                Cash on delivery · <strong className="rupee">{rupees(o.total_paise)}</strong> to pay
+              </p>
+            )}
             <div className="history-card__actions">
+              {payable(o) && (
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => pay(o.token)}
+                  disabled={paying !== null}
+                >
+                  {paying === o.token ? (
+                    <>
+                      <span className="spinner" aria-hidden="true" /> Opening…
+                    </>
+                  ) : (
+                    <>Pay {rupees(o.total_paise)} online</>
+                  )}
+                </button>
+              )}
               <Link to={`/receipt/${o.token}`} className="btn btn-ghost">
                 View receipt
               </Link>
@@ -116,6 +173,11 @@ export default function OrdersPage() {
                 Track order
               </Link>
             </div>
+            {payNote[o.token] && (
+              <p className="pay-card__note" role="alert">
+                {payNote[o.token]}
+              </p>
+            )}
           </li>
         ))}
       </ul>

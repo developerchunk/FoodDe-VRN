@@ -79,6 +79,12 @@ export const TEMPLATES = {
       "An In Room Dining order has been placed for Room {{1}} at {{2}}. " +
       "Order number {{3}}. It is paid, and the food will be delivered to the room.",
   },
+  property_order_cod: {
+    name: "ird_property_order_cod",
+    body:
+      "An In Room Dining order has been placed for Room {{1}} at {{2}}. " +
+      "Order number {{3}}. The guest pays on delivery, and the food will be delivered to the room.",
+  },
   guest_confirmation: {
     name: "ird_guest_confirmation",
     body:
@@ -86,6 +92,15 @@ export const TEMPLATES = {
       "It will be delivered to {{3}}, Room {{4}}.\n\n" +
       "Total paid: {{5}}\n\n" +
       "Your receipt: {{6}}\n\n" +
+      "Thank you for ordering with us.",
+  },
+  guest_confirmation_cod: {
+    name: "ird_guest_confirmation_cod",
+    body:
+      "Hi {{1}}, your In Room Dining order {{2}} is confirmed. " +
+      "It will be delivered to {{3}}, Room {{4}}.\n\n" +
+      "To pay on delivery: {{5}}, in cash or online.\n\n" +
+      "Follow it here: {{6}}\n\n" +
       "Thank you for ordering with us.",
   },
   guest_accepted: {
@@ -102,6 +117,14 @@ export const TEMPLATES = {
       "to {{3}}, Room {{4}}.\n\n" +
       "Follow it here: {{5}}\n\n" +
       "Please keep your phone close in case the delivery partner needs directions.",
+  },
+  guest_out_for_delivery_cod: {
+    name: "ird_guest_out_for_delivery_cod",
+    body:
+      "Hi {{1}}, your In Room Dining order {{2}} has been picked up and is on its way " +
+      "to {{3}}, Room {{4}}.\n\n" +
+      "To pay: {{5}}. Pay online here: {{6}}\n\n" +
+      "Or pay the delivery partner in cash or online when it arrives.",
   },
   guest_delivered: {
     name: "ird_guest_delivered",
@@ -146,11 +169,14 @@ const REPLIES = {
     delivered: (n: string) => `Marked order ${n} as delivered. Thank you.`,
     already_delivered: (n: string) => `Order ${n} is already marked as delivered.`,
     not_yours: (n: string) => `Order ${n} is assigned to another delivery partner.`,
+    collect_first: (n: string) =>
+      `Order ${n} is cash on delivery and its payment is not recorded yet. ` +
+      "Open the payment link we sent you and tap Online or Cash. That marks it delivered.",
     closed: (n: string) => `Order ${n} is no longer active. No action is needed.`,
   },
 } as const;
 
-type Kind = keyof typeof TEMPLATES | keyof typeof REPLIES;
+type Kind = keyof typeof TEMPLATES | keyof typeof REPLIES | "delivery_collect";
 
 /* Meta's "no such approved template / template paused or disabled" codes. */
 const TEMPLATE_UNUSABLE = /^(132001|132015|132016)\b/;
@@ -238,7 +264,7 @@ async function loadOrder(db: SupabaseClient, orderId: string) {
     .from("orders")
     .select(
       "id, order_no, guest_name, guest_phone, note, total_paise, receipt_token, " +
-        "created_at, paid_at, " +
+        "created_at, paid_at, payment_method, collected_at, collect_token, " +
         "address:addresses(room_number, place:places(name, address, area, city, pin_code, latitude, longitude))",
     )
     .eq("id", orderId)
@@ -276,6 +302,10 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
     tickets.find((t) => t.kitchen_id === id)?.kitchen?.place_name ?? "A kitchen";
   /* Only kitchens that accepted are somewhere a rider should go. */
   const accepted = tickets.filter((t) => t.status === "accepted");
+  /* Cash on delivery whose money is not in yet: the guest and the
+     accommodation partner are told it is still to be paid. */
+  const due = o.payment_method === "cod" && !o.collected_at;
+  const firstName = String(o.guest_name || "").split(" ")[0] || "there";
 
   if (kind === "kitchen_ack" || kind === "delivery_ack") {
     const replies = REPLIES[kind] as Record<string, (n: string, d: string) => string>;
@@ -283,6 +313,21 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
     const text = write(o.order_no, ctx.decision ?? "");
     return { template: "", params: [], text, freeText: true };
   }
+
+  /* The rider tapped Accept and Picked up on this order moments ago, so the
+     24-hour window is open and the link needs no template. */
+  if (kind === "delivery_collect") {
+    const text =
+      `Order ${o.order_no} is cash on delivery. Collect ${rupees(o.total_paise)} from ` +
+      `${firstName} at ${place.name}, Room ${room}.\n\n` +
+      "When you hand it over, open this link and tap Online or Cash:\n" +
+      `${siteUrl()}/collect/${o.collect_token}`;
+    return { template: "", params: [], text, freeText: true };
+  }
+
+  /* Which template a kind is written with: the cash-on-delivery wording while
+     the money is still to come. */
+  let tpl: keyof typeof TEMPLATES = kind as keyof typeof TEMPLATES;
 
   let params: string[];
   let buttons: Message["buttons"];
@@ -356,21 +401,35 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
       params = [o.order_no];
       break;
     case "property_order":
+      if (due) tpl = "property_order_cod";
       params = [room, istTime(o.paid_at ?? o.created_at), o.order_no];
       break;
     case "guest_confirmation":
+      if (due) tpl = "guest_confirmation_cod";
       params = [
-        String(o.guest_name || "").split(" ")[0] || "there",
+        firstName,
         o.order_no,
         place.name,
         room,
         rupees(o.total_paise),
-        `${siteUrl()}/receipt/${o.receipt_token}`,
+        due ? `${siteUrl()}/order/${o.receipt_token}` : `${siteUrl()}/receipt/${o.receipt_token}`,
       ];
       break;
     case "guest_out_for_delivery":
+      if (due) {
+        tpl = "guest_out_for_delivery_cod";
+        params = [
+          firstName,
+          o.order_no,
+          place.name,
+          room,
+          rupees(o.total_paise),
+          `${siteUrl()}/pay/${o.receipt_token}`,
+        ];
+        break;
+      }
       params = [
-        String(o.guest_name || "").split(" ")[0] || "there",
+        firstName,
         o.order_no,
         place.name,
         room,
@@ -418,7 +477,7 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
       throw new Error(`no message is written for kind ${kind}`);
   }
 
-  const t: Template = TEMPLATES[kind];
+  const t: Template = TEMPLATES[tpl];
   return { template: t.name, params, text: fill(t.body, params), buttons, fallback: t.fallback };
 }
 

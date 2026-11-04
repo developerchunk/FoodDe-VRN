@@ -51,6 +51,52 @@ export async function placeOrder({ addressCode, lines, guest, coupon, note }) {
   return data;
 }
 
+/**
+ * Cash on delivery: the order just placed goes to the kitchens now, unpaid.
+ *
+ * Sent with the guest's own session, so only the guest who placed it can do
+ * this. Resolves the order number; throws a sentence the guest can act on.
+ */
+export async function confirmCashOnDelivery(token) {
+  await ensureGuestSession();
+  const { data, error } = await supabase.functions.invoke("order-cod", {
+    body: { token },
+  });
+  if (error) {
+    if (error.context?.status === 410) {
+      const body = await error.context.json?.().catch(() => null);
+      throw new Error(
+        body?.unavailable
+          ? `Sorry, ${body.unavailable} is no longer available. Remove it from your order to continue.`
+          : "Something in your order is no longer available. Please check your order.",
+      );
+    }
+    throw new Error("Could not place the order. Please try again.");
+  }
+  return data;
+}
+
+/** The rider's view of a cash-on-delivery order. The collect token is the authorisation. */
+export async function fetchCollect(token) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("get_collect", { p_token: token });
+  return error ? null : data;
+}
+
+/**
+ * The rider hands the order over: "cash" records cash taken, "online" only
+ * works once the guest's payment has gone through. Either way it is then
+ * delivered.
+ */
+export async function collectPayment(token, method) {
+  const { data, error } = await supabase.rpc("rider_collect", {
+    p_token: token,
+    p_method: method,
+  });
+  if (error) throw new Error("Could not record that. Please try again.");
+  return data;
+}
+
 /** Reads one order back. Holding the token is the authorisation. */
 export async function fetchReceipt(token) {
   if (!supabase) return null;

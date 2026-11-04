@@ -1,17 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart-context";
+import { useMenu } from "../hooks/useMenu";
 import BillSummary from "../components/BillSummary";
+import QtyStepper from "../components/QtyStepper";
+import { DishPicture } from "../components/DishParts";
 import SignUpPrompt from "../components/SignUpPrompt";
+import Sheet from "../components/Sheet";
 import { rupees, formatPhone } from "../utils/format";
-import { placeOrder } from "../lib/orders";
+import { fetchPairings } from "../lib/menu";
+import { confirmCashOnDelivery, placeOrder } from "../lib/orders";
 import {
   codeFromScanned,
   useProperty,
   useResolveRoom,
 } from "../utils/property";
-import { BuildingIcon, QrIcon, TulsiLeaf } from "../components/Icons";
-import { SELLER } from "../utils/seller";
+import {
+  BuildingIcon,
+  ChevronIcon,
+  Cloche,
+  QrIcon,
+  TulsiLeaf,
+  UserIcon,
+} from "../components/Icons";
 import { useCartAvailability } from "../hooks/useCartAvailability";
 import UnavailableNotice from "../components/UnavailableNotice";
 import { useAuth } from "../hooks/useAuth";
@@ -22,48 +33,118 @@ import { canScanQr } from "../utils/qr";
 
 const PROFILE_KEY = "brajrasoi.profile.v1";
 const PROMPT_KEY = "brajrasoi.signupPrompt.v1";
+/* What the guest has filled in so far, for this tab only: a trip to the
+   coupons screen and back must not empty the form or reset how they pay. */
+const DRAFT_KEY = "ird.checkoutDraft.v1";
 
 const emptyForm = {
   name: "",
   phone: "",
   email: "",
   emailOptIn: false,
-  note: "",
   remember: true,
 };
 
+function loadDraft() {
+  try {
+    return JSON.parse(sessionStorage.getItem(DRAFT_KEY)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /* If they have ordered here before, pre-fill — still never forced to sign up. */
 function loadProfile() {
+  const draft = loadDraft();
+  if (draft?.form) return { ...emptyForm, ...draft.form };
   try {
     const saved = JSON.parse(localStorage.getItem(PROFILE_KEY));
-    return saved
-      ? { ...emptyForm, ...saved }
-      : emptyForm;
+    /* `note` was a field here once; the cart's instructions replaced it */
+    // eslint-disable-next-line no-unused-vars
+    const { note, ...rest } = saved ?? {};
+    return saved ? { ...emptyForm, ...rest } : emptyForm;
   } catch {
     return emptyForm;
   }
 }
 
+const PAYMENTS = [
+  { id: "online", title: "Pay online", sub: "UPI, cards, net banking" },
+  { id: "cod", title: "Cash on delivery", sub: "Pay in cash or online when it arrives" },
+];
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+    <path d="M3 8.5 6 12l7-8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/**
+ * The whole checkout on one page, kept short: where it goes and who it is for
+ * at the top, the food, the offers, the bill folded to one line, and the pay
+ * button always in reach at the bottom. Changing the room, the guest's details,
+ * the note or the way of paying each opens a sheet rather than growing the
+ * page. Coupons have a screen of their own (/cart/coupons).
+ *
+ * Online, the order is placed and the payment window opens; nothing reaches a
+ * kitchen until it goes through. Cash on delivery sends it to the kitchens at
+ * once, and the money is taken at the door.
+ */
 export default function CheckoutPage() {
-  const { lines, bill, instructions, coupon, flash, remove } =
-    useCart();
+  const {
+    lines,
+    bill,
+    coupon,
+    instructions,
+    add,
+    decrement,
+    remove,
+    clear,
+    setInstructions,
+    flash,
+  } = useCart();
+  const navigate = useNavigate();
 
   /* A cart can outlive the hours that made its dishes orderable. place_order
      refuses the whole order in that case; catching it here means the guest is
-     told before they fill anything in, not after. */
+     told before they try, not after. */
   const availability = useCartAvailability(lines);
   const unavailable = availability.unavailable;
   const blocked = availability.status === "ok" && unavailable.length > 0;
-  const navigate = useNavigate();
+
   /* Sent here by the order page when a payment failed or timed out. */
   const failedPayment = useLocation().state?.paymentFailed ?? null;
+
+  /* Add-ons: the database picks dishes from the kitchens already cooking this
+     order (it alone knows which those are); the live menu supplies the rest
+     and drops anything that stopped being available since. */
+  const { items: menu } = useMenu();
+  const cartKey = lines.map((l) => l.id).sort().join(",");
+  const [pairings, setPairings] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPairings(cartKey ? cartKey.split(",") : []).then((ids) => {
+      if (!cancelled) setPairings(ids);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cartKey]);
+
+  const suggestions = pairings
+    .map((id) => menu.find((m) => m.id === id))
+    .filter((m) => m && m.availableNow && !lines.some((l) => l.id === m.id))
+    .slice(0, 6);
+
+  /* Which sheet is open: "room", "details", "note", "pay" or none. */
+  const [sheet, setSheet] = useState(null);
+  const closeSheet = useCallback(() => setSheet(null), [setSheet]);
+
   const house = useProperty();
   const resolveRoom = useResolveRoom();
   const [roomCode, setRoomCode] = useState("");
   const [roomLookup, setRoomLookup] = useState({ busy: false, error: null });
-  /* Held separately from "we have no room at all": a guest correcting a room
-     still has a good one, and must be able to change their mind. */
-  const [changingRoom, setChangingRoom] = useState(false);
   const [scanning, setScanning] = useState(false);
 
   /* A scanned sticker gives back the whole link, not the bare id. */
@@ -76,7 +157,7 @@ export default function CheckoutPage() {
       busy: false,
       error: result.ok ? null : "That QR code is not one of ours.",
     });
-    if (result.ok) setChangingRoom(false);
+    if (result.ok) setSheet(null);
   }
 
   async function findRoom(e) {
@@ -86,18 +167,23 @@ export default function CheckoutPage() {
     setRoomLookup({ busy: false, error: result.ok ? null : result.error });
     if (result.ok) {
       setRoomCode("");
-      setChangingRoom(false);
+      setSheet(null);
     }
   }
 
-  function cancelChange() {
-    setChangingRoom(false);
-    setRoomCode("");
-    setRoomLookup({ busy: false, error: null });
-  }
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
+  const [payment, setPayment] = useState(() => loadDraft()?.payment ?? "online");
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ form, payment }));
+    } catch {
+      /* private mode — the form simply starts from the profile again */
+    }
+  }, [form, payment]);
   const [placing, setPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState(null);
 
   /* A real account, not the anonymous session every guest already has. */
   const { signedIn, user } = useAuth();
@@ -119,7 +205,7 @@ export default function CheckoutPage() {
   }
 
   /* Offered once per browsing session — declining must not mean being asked
-     again on the way back from the cart. */
+     again. */
   const [prompt, setPrompt] = useState(() => {
     try {
       return sessionStorage.getItem(PROMPT_KEY) !== "seen";
@@ -137,10 +223,6 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (lines.length === 0 && !placing) navigate("/cart", { replace: true });
-  }, [lines.length, placing, navigate]);
-
   const set = (key) => (e) => {
     const value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -153,25 +235,29 @@ export default function CheckoutPage() {
     [form.phone],
   );
 
-  function validate() {
+  function check() {
     const next = {};
     if (form.name.trim().length < 3)
       next.name = "Please tell us your full name";
     if (phoneDigits.length !== 10) next.phone = "Enter the 10-digit number";
     else if (!/^[6-9]/.test(phoneDigits))
       next.phone = "Indian mobile numbers start with 6, 7, 8 or 9";
+    return next;
+  }
+  const detailsDone = Object.keys(check()).length === 0;
+
+  function saveDetails(e) {
+    e.preventDefault();
+    const next = check();
     setErrors(next);
-    return Object.keys(next).length === 0;
+    if (Object.keys(next).length === 0) setSheet(null);
   }
 
-  const [placeError, setPlaceError] = useState(null);
-
-  async function submit(e) {
-    e.preventDefault();
+  async function submit() {
     setPlaceError(null);
 
-    /* Belt and braces: the button is disabled, but a stale render or a keyboard
-       submit should not get past this either. The server would refuse anyway. */
+    /* Belt and braces: the button is disabled, but a stale render should not
+       get past this either. The server would refuse anyway. */
     if (blocked) {
       setPlaceError(
         "Some items are no longer available. Remove them to place the order.",
@@ -179,19 +265,16 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!validate()) {
-      const first = document.querySelector(".input.invalid, .textarea.invalid");
-      first?.focus();
-      first?.scrollIntoView({ behavior: "smooth", block: "center" });
+    /* Room service needs a room, and someone to bring it to. What is missing
+       opens where it is filled in. */
+    if (!house.addressId) {
+      setSheet("room");
       return;
     }
-
-    /* Room service needs a room. Without a scanned code there is nowhere to
-       deliver to, so there is nothing sensible to submit. */
-    if (!house.addressId) {
-      setPlaceError(
-        "Please scan the QR code in your room so we know where to bring your order.",
-      );
+    const missing = check();
+    if (Object.keys(missing).length) {
+      setErrors(missing);
+      setSheet("details");
       return;
     }
 
@@ -199,8 +282,7 @@ export default function CheckoutPage() {
 
     if (form.remember) {
       try {
-        const keep = { ...form };
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(keep));
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
       } catch {
         /* ignore */
       }
@@ -216,26 +298,45 @@ export default function CheckoutPage() {
           phone: phoneDigits,
           email: form.email.trim() || null,
         },
-        note: [instructions.trim(), form.note.trim()]
-          .filter(Boolean)
-          .join(" · "),
+        note: instructions.trim(),
       });
 
-      /* The cart stays until the payment succeeds. An unpaid order is not an
-         order, and a guest sent back here to try again must still have their
-         food in front of them. OrderSuccessPage clears it once paid. */
+      if (payment === "cod") {
+        /* Confirmed means sent to the kitchens: the cart's work is done. */
+        await confirmCashOnDelivery(placed.receipt_token);
+        clear();
+      }
+      /* Paying online, the cart stays until the payment succeeds. An unpaid
+         order is not an order, and a guest sent back here to try again must
+         still have their food in front of them. OrderSuccessPage clears it
+         once paid. */
       navigate(`/order/${placed.receipt_token}`, { replace: true });
     } catch (err) {
-      /* The order was not created, so the cart is deliberately left intact. */
+      /* Nothing reached a kitchen, so the cart is deliberately left intact. */
       setPlaceError(err.message);
       setPlacing(false);
     }
   }
 
-  const sattvicCount = lines.filter((l) => l.sattvic).length;
+  if (lines.length === 0 && !placing) {
+    return (
+      <main className="wrap page page--narrow" id="main">
+        <div className="empty-state card empty-state--page">
+          <Cloche size={44} />
+          <h1 className="section-title">Your cart is empty</h1>
+          <Link to="/menu" className="btn btn-primary">
+            Back to the menu
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const method = PAYMENTS.find((p) => p.id === payment);
+  const offerShown = bill.discount > 0 ? bill.couponCode : null;
 
   return (
-    <main className="wrap page" id="main">
+    <main className="wrap page co-page" id="main">
       <SignUpPrompt
         /* The session arrives a tick after mount, and again on the way
            back from Google, so this is derived rather than stored: someone
@@ -252,380 +353,428 @@ export default function CheckoutPage() {
         }}
       />
 
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to="/menu">Menu</Link>
-        <span aria-hidden="true">›</span>
-        <Link to="/cart">Your order</Link>
-        <span aria-hidden="true">›</span>
-        <span aria-current="page">Delivery details</span>
-      </nav>
+      <h1 className="sr-only">Checkout</h1>
 
-      <header className="page__head">
-        <div>
-          <p className="eyebrow">Step 2 of 2</p>
-          <h1 className="page__title">Where should we bring it?</h1>
-          <p className="page__sub">
-            Three details and we get going.
-          </p>
+      {/* Where it goes and who it is for: one line each, changed in a sheet. */}
+      <section className="card co-to" aria-label="Delivery">
+        <button type="button" className="co-to__row" onClick={() => setSheet("room")}>
+          <BuildingIcon size={19} />
+          {house.addressId ? (
+            <span className="co-to__text">
+              <strong>{house.property}</strong>
+              <span>Room {house.room}</span>
+            </span>
+          ) : (
+            <span className="co-to__text co-to__text--ask">
+              <strong>Add your room</strong>
+              <span>Scan the QR code in your room</span>
+            </span>
+          )}
+          <ChevronIcon size={17} />
+        </button>
+        <button type="button" className="co-to__row" onClick={() => setSheet("details")}>
+          <UserIcon size={19} />
+          {detailsDone ? (
+            <span className="co-to__text">
+              <strong>{form.name.trim()}</strong>
+              <span>+91 {formatPhone(phoneDigits)}</span>
+            </span>
+          ) : (
+            <span className="co-to__text co-to__text--ask">
+              <strong>Add your details</strong>
+              <span>Your name and WhatsApp number</span>
+            </span>
+          )}
+          <ChevronIcon size={17} />
+        </button>
+      </section>
+
+      <section className="card co-items" aria-label="Items in your order">
+        <ul>
+          {lines.map((line) => (
+            <li key={line.id} className="co-item">
+              <span className="veg-mark" aria-hidden="true" />
+              <div className="co-item__name">
+                <p>{line.name}</p>
+                {line.sattvic && (
+                  <small>
+                    <TulsiLeaf size={10} /> No onion–garlic
+                  </small>
+                )}
+              </div>
+              <QtyStepper
+                qty={line.qty}
+                label={line.name}
+                size="sm"
+                onAdd={() => add(line)}
+                onRemove={() => decrement(line.id)}
+              />
+              <strong className="co-item__amt rupee">
+                {rupees(line.pricePaise * line.qty)}
+              </strong>
+            </li>
+          ))}
+        </ul>
+
+        {blocked && <UnavailableNotice unavailable={unavailable} onRemove={remove} />}
+
+        <div className="co-chips">
+          <Link to="/menu" className="co-chip">
+            <span aria-hidden="true">+</span> Add items
+          </Link>
+          <button type="button" className="co-chip" onClick={() => setSheet("note")}>
+            {instructions.trim() ? <CheckIcon /> : <span aria-hidden="true">✎</span>}
+            Cooking requests
+          </button>
         </div>
-      </header>
+      </section>
 
-      <form className="checkout-grid" onSubmit={submit} noValidate>
-        <section className="checkout-grid__main">
-          <div className="card form-card">
-            <div className="form-card__head">
-              <BuildingIcon size={22} />
-              <div>
-                <h2 className="form-card__title">Your details</h2>
-                <p className="form-card__sub">
-                  Just enough to reach your door.
-                </p>
-              </div>
-            </div>
-
-            {fromProfile && hasSavedProfile(user) && (
-              <p className="checkout-from-profile">
-                Filled in from your <Link to="/profile">profile</Link>. Changes
-                here are for this order only.
-              </p>
-            )}
-
-            <label className="field" htmlFor="name">
-              <span className="field-label">
-                Full name <span className="req">*</span>
-              </span>
-              <input
-                id="name"
-                className={`input ${errors.name ? "invalid" : ""}`}
-                value={form.name}
-                onChange={set("name")}
-                placeholder="e.g. Radhika Sharma"
-                autoComplete="name"
-                aria-describedby={errors.name ? "name-err" : undefined}
-              />
-              {errors.name && (
-                <span className="field-error" id="name-err">
-                  {errors.name}
-                </span>
-              )}
-            </label>
-
-            <div className="field">
-              <label className="field-label" htmlFor="phone">
-                WhatsApp mobile number <span className="req">*</span>
-              </label>
-              <div className="phone-group">
-                <span className="phone-prefix">
-                  <svg
-                    className="wa-icon"
-                    viewBox="0 0 24 24"
-                    width="22"
-                    height="22"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 0 1 12 4zm4.3 10.6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3 0-.5l-.7-1.6c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.8.8-.9 1.8-.4 2.9a9.4 9.4 0 0 0 4.4 4.4c1.4.6 2.4.6 3.1.2.4-.2.9-.7 1-1.2.1-.4.1-.7 0-.8l-.2-.3z" />
-                  </svg>
-                  +91
-                </span>
-                <input
-                  id="phone"
-                  className={`input ${errors.phone ? "invalid" : ""}`}
-                  value={formatPhone(form.phone)}
-                  onChange={(e) => {
-                    setForm((f) => ({
-                      ...f,
-                      phone: e.target.value.replace(/\D/g, "").slice(0, 10),
-                    }));
-                    setErrors((p) => (p.phone ? { ...p, phone: null } : p));
-                  }}
-                  inputMode="numeric"
-                  placeholder="98765 43210"
-                  autoComplete="tel-national"
-                  aria-describedby="phone-hint"
-                />
-              </div>
-              {errors.phone ? (
-                <span className="field-error">{errors.phone}</span>
-              ) : (
-                <span className="field-hint" id="phone-hint">
-                  We send order updates here on WhatsApp.
-                </span>
-              )}
-            </div>
-
-            <label className="field" htmlFor="email">
-              <span className="field-label">
-                E-mail address <span className="opt">optional</span>
-              </span>
-              <input
-                id="email"
-                type="email"
-                className={`input ${errors.email ? "invalid" : ""}`}
-                value={form.email}
-                onChange={set("email")}
-                placeholder="radhika@example.com"
-                autoComplete="email"
-                inputMode="email"
-              />
-              {errors.email ? (
-                <span className="field-error">{errors.email}</span>
-              ) : (
-                <span className="field-hint">
-                  To save this order to your email.
-                </span>
-              )}
-            </label>
-
-            {/* An account already keeps the receipt, so this is only for
-                guests. Every guest has an anonymous user, so this asks whether
-                they are signed in, not whether a user object exists. */}
-            {!signedIn && (
-              <label className="remember remember--email">
-                <input
-                  type="checkbox"
-                  checked={form.emailOptIn}
-                  onChange={set("emailOptIn")}
-                  disabled={!form.email.trim()}
-                />
-                <span className="checkbox__box" aria-hidden="true" />
-                <span>Save this order to this e-mail</span>
-              </label>
-            )}
-
-            <div className="consent-note">
-              <span className="consent-note__mark" aria-hidden="true">
-                <TulsiLeaf size={14} />
-              </span>
-              <p>
-                We will use this mobile number to{" "}
-                <strong>call and coordinate with you</strong> for your order
-                delivery, and send you{" "}
-                <strong>order history, receipts and support</strong>.
-              </p>
-            </div>
-          </div>
-
-          <div className="card form-card">
-            <div className="form-card__head">
-              <svg
-                viewBox="0 0 24 24"
-                width="22"
-                height="22"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="10" r="2.4" />
-              </svg>
-              <div>
-                <h2 className="form-card__title">Delivering to</h2>
-                <p className="form-card__sub">
-                  From the code you scanned.
-                </p>
-              </div>
-            </div>
-
-            {house.addressId && !changingRoom ? (
-              <div className="room-card">
-                <p className="room-card__place">{house.property}</p>
-                <p className="room-card__room">Room {house.room}</p>
-                {/* Scanning the code in the wrong room, or ordering for a
-                    different one, should not mean hunting for another QR. */}
-                <button
-                  type="button"
-                  className="room-card__change"
-                  onClick={() => setChangingRoom(true)}
-                >
-                  Change room
-                </button>
-              </div>
-            ) : (
-              <div className="room-find">
-                <p className="room-find__lead">
-                  There is a QR code in your room. Scan it.
-                </p>
-
-                {scanning ? (
-                  <QrScanner onCode={onScanned} onClose={() => setScanning(false)} />
-                ) : (
-                  <>
-                    {canScanQr() && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-teal btn-block"
-                          onClick={() => setScanning(true)}
-                        >
-                          <QrIcon size={17} /> Scan QR code
-                        </button>
-                        <p className="room-find__or">
-                          <span>or</span>
-                        </p>
-                      </>
-                    )}
-
-                    <label className="field-label" htmlFor="roomCode">
-                      QR Code ID
-                    </label>
-                    <div className="room-find__row">
-                      <input
-                        id="roomCode"
-                        className="input"
-                        value={roomCode}
-                        onChange={(e) => setRoomCode(e.target.value)}
-                        placeholder="e.g. 25dhh3fgsq"
-                        autoComplete="off"
-                        autoCapitalize="none"
-                        spellCheck="false"
-                        aria-invalid={roomLookup.error ? "true" : undefined}
-                        onKeyDown={(e) => {
-                          /* The checkout form is around this: Enter would
-                             submit an order that has nowhere to go. */
-                          if (e.key === "Enter") findRoom(e);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-teal"
-                        onClick={findRoom}
-                        disabled={roomLookup.busy || !roomCode.trim()}
-                      >
-                        {roomLookup.busy ? "Checking…" : "Find room"}
-                      </button>
-                    </div>
-                    <p className="field-hint">
-                      Not your room number. It is printed under the QR code.
-                    </p>
-                  </>
-                )}
-                {roomLookup.error && (
-                  <p className="side-card__error" role="alert">
-                    {roomLookup.error}
-                  </p>
-                )}
-                {changingRoom && (
+      {suggestions.length > 0 && (
+        <section className="card co-meal" aria-labelledby="meal-title">
+          <h2 id="meal-title" className="co-label">
+            Complete your meal
+          </h2>
+          <ul className="co-meal__list">
+            {suggestions.map((s) => (
+              <li key={s.id} className="co-meal__item">
+                <div className="co-meal__art">
+                  <DishPicture item={s} className="" />
                   <button
                     type="button"
-                    className="room-find__cancel"
-                    onClick={cancelChange}
+                    className="co-meal__add"
+                    onClick={() => add(s)}
+                    aria-label={`Add ${s.name}`}
                   >
-                    Keep {house.property} · Room {house.room}
+                    +
                   </button>
-                )}
-              </div>
+                </div>
+                <p className="co-meal__name">
+                  <span className="veg-mark" aria-hidden="true" /> {s.name}
+                </p>
+                <p className="co-meal__price rupee">{rupees(s.pricePaise)}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="card co-save" aria-labelledby="save-title">
+        <h2 id="save-title" className="co-label">
+          Savings corner
+        </h2>
+        <Link to="/cart/coupons" className="co-save__row">
+          <span className="co-save__tag" aria-hidden="true">%</span>
+          <span className="co-save__text">
+            {offerShown ? (
+              <>
+                <strong>
+                  {rupees(bill.discount)} saved with {offerShown}
+                </strong>
+                <span>View all coupons ›</span>
+              </>
+            ) : (
+              <>
+                <strong>Apply coupon</strong>
+                <span>View all coupons ›</span>
+              </>
             )}
+          </span>
+          {offerShown ? (
+            <span className="co-save__ok">
+              <CheckIcon /> Applied
+            </span>
+          ) : (
+            <ChevronIcon size={17} className="co-save__go" />
+          )}
+        </Link>
+        {bill.subtotal > 0 && bill.delivery === 0 ? (
+          <div className="co-save__row">
+            <span className="co-save__tag co-save__tag--teal" aria-hidden="true">
+              ₹
+            </span>
+            <span className="co-save__text">
+              <strong>Free delivery</strong>
+            </span>
+            <span className="co-save__ok">
+              <CheckIcon /> Applied
+            </span>
+          </div>
+        ) : (
+          bill.freeDeliveryGap > 0 && (
+            <p className="co-save__hint">
+              Add <strong>{rupees(bill.freeDeliveryGap)}</strong> more and delivery is on us.
+            </p>
+          )
+        )}
+      </section>
 
-            <label className="field" htmlFor="note">
-              <span className="field-label">
-  Anything we should know?
+      <BillSummary bill={bill} />
+
+      {bill.minOrderGap > 0 && (
+        <p className="co-note co-note--warn" role="status">
+          The minimum order is {rupees(bill.subtotal + bill.minOrderGap)}.{" "}
+          <Link to="/menu">Add {rupees(bill.minOrderGap)} more</Link> to place it.
+        </p>
+      )}
+      {failedPayment && payment === "online" && (
+        <p className="co-note co-note--warn" role="alert">
+          <strong>{failedPayment}</strong> Your food is still here — try again.
+        </p>
+      )}
+
+      {/* Always in reach: how it is paid, and the button that pays. */}
+      <div className="pay-bar">
+        {placeError && (
+          <p className="pay-bar__error" role="alert">
+            {placeError}
+          </p>
+        )}
+        <div className="pay-bar__inner">
+          <button type="button" className="pay-bar__method" onClick={() => setSheet("pay")}>
+            <small>
+              Pay using <ChevronIcon size={11} className="pay-bar__up" />
+            </small>
+            <strong>{method.title}</strong>
+          </button>
+          <button
+            type="button"
+            className="btn btn-gold pay-bar__go"
+            onClick={submit}
+            disabled={placing || blocked || bill.minOrderGap > 0}
+          >
+            {placing ? (
+              <>
+                <span className="spinner" aria-hidden="true" /> Placing…
+              </>
+            ) : payment === "cod" ? (
+              <>Place order · {rupees(bill.total)}</>
+            ) : (
+              <>Pay {rupees(bill.total)}</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <Sheet open={sheet === "room"} title="Delivering to" onClose={closeSheet}>
+        {house.addressId && (
+          <p className="co-sheet__current">
+            Now: <strong>{house.property}</strong> · Room {house.room}
+          </p>
+        )}
+        {scanning ? (
+          <QrScanner onCode={onScanned} onClose={() => setScanning(false)} />
+        ) : (
+          <>
+            {canScanQr() && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-block"
+                  onClick={() => setScanning(true)}
+                >
+                  <QrIcon size={17} /> Scan QR code
+                </button>
+                <p className="room-find__or">
+                  <span>or</span>
+                </p>
+              </>
+            )}
+            <form onSubmit={findRoom}>
+              <label className="field-label" htmlFor="roomCode">
+                QR Code ID
+              </label>
+              <div className="room-find__row">
+                <input
+                  id="roomCode"
+                  className="input"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value)}
+                  placeholder="e.g. 25dhh3fgsq"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck="false"
+                  aria-invalid={roomLookup.error ? "true" : undefined}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={roomLookup.busy || !roomCode.trim()}
+                >
+                  {roomLookup.busy ? "Checking…" : "Find room"}
+                </button>
+              </div>
+              <p className="field-hint">
+                Not your room number. It is printed under the QR code.
+              </p>
+            </form>
+          </>
+        )}
+        {roomLookup.error && (
+          <p className="side-card__error" role="alert">
+            {roomLookup.error}
+          </p>
+        )}
+      </Sheet>
+
+      <Sheet open={sheet === "details"} title="Your details" onClose={closeSheet}>
+        <form onSubmit={saveDetails} noValidate>
+          {fromProfile && hasSavedProfile(user) && (
+            <p className="checkout-from-profile">
+              Filled in from your <Link to="/profile">profile</Link>. Changes
+              here are for this order only.
+            </p>
+          )}
+
+          <label className="field" htmlFor="name">
+            <span className="field-label">
+              Full name <span className="req">*</span>
+            </span>
+            <input
+              id="name"
+              className={`input ${errors.name ? "invalid" : ""}`}
+              value={form.name}
+              onChange={set("name")}
+              placeholder="e.g. Radhika Sharma"
+              autoComplete="name"
+              aria-describedby={errors.name ? "name-err" : undefined}
+            />
+            {errors.name && (
+              <span className="field-error" id="name-err">
+                {errors.name}
               </span>
-              {/* one line that scrolls sideways as it fills, not a tall box */}
-              <input
-                id="note"
-                type="text"
-                className="input"
-                value={form.note}
-                onChange={set("note")}
-                maxLength={180}
-                placeholder="Less chilli, leave it at the door"
-              />
-            </label>
+            )}
+          </label>
 
-            <label className="remember">
+          <div className="field">
+            <label className="field-label" htmlFor="phone">
+              WhatsApp mobile number <span className="req">*</span>
+            </label>
+            <div className="phone-group">
+              <span className="phone-prefix">+91</span>
+              <input
+                id="phone"
+                className={`input ${errors.phone ? "invalid" : ""}`}
+                value={formatPhone(form.phone)}
+                onChange={(e) => {
+                  setForm((f) => ({
+                    ...f,
+                    phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                  }));
+                  setErrors((p) => (p.phone ? { ...p, phone: null } : p));
+                }}
+                inputMode="numeric"
+                placeholder="98765 43210"
+                autoComplete="tel-national"
+                aria-describedby="phone-hint"
+              />
+            </div>
+            {errors.phone ? (
+              <span className="field-error">{errors.phone}</span>
+            ) : (
+              <span className="field-hint" id="phone-hint">
+                We send order updates here on WhatsApp.
+              </span>
+            )}
+          </div>
+
+          <label className="field" htmlFor="email">
+            <span className="field-label">
+              E-mail address <span className="opt">optional</span>
+            </span>
+            <input
+              id="email"
+              type="email"
+              className="input"
+              value={form.email}
+              onChange={set("email")}
+              placeholder="radhika@example.com"
+              autoComplete="email"
+              inputMode="email"
+            />
+          </label>
+
+          {/* An account already keeps the receipt, so this is only for
+              guests. Every guest has an anonymous user, so this asks whether
+              they are signed in, not whether a user object exists. */}
+          {!signedIn && (
+            <label className="remember remember--email">
               <input
                 type="checkbox"
-                checked={form.remember}
-                onChange={set("remember")}
+                checked={form.emailOptIn}
+                onChange={set("emailOptIn")}
+                disabled={!form.email.trim()}
               />
               <span className="checkbox__box" aria-hidden="true" />
-              <span>Remember my details on this device for next time</span>
+              <span>Save this order to this e-mail</span>
             </label>
-          </div>
+          )}
 
-        </section>
+          <label className="remember">
+            <input
+              type="checkbox"
+              checked={form.remember}
+              onChange={set("remember")}
+            />
+            <span className="checkbox__box" aria-hidden="true" />
+            <span>Remember my details on this device</span>
+          </label>
 
-        <aside className="checkout-grid__side">
-          <div className="card side-card">
-            <h2 className="side-card__title">
-              {bill.itemCount} {bill.itemCount === 1 ? "item" : "items"} from{" "}
-              {SELLER.name}
-            </h2>
+          <p className="co-sheet__fine">
+            We use this number to call you about the delivery, and to send your
+            order updates, receipts and support on WhatsApp.
+          </p>
 
-            <ul className="mini-lines">
-              {lines.map((l) => (
-                <li key={l.id}>
-                  <span className="veg-mark" aria-hidden="true" />
-                  <span className="mini-lines__name">
-                    {l.name} <em>× {l.qty}</em>
-                  </span>
-                  <span className="rupee">{rupees(l.price * l.qty)}</span>
-                </li>
-              ))}
-            </ul>
+          <button type="submit" className="btn btn-primary btn-block">
+            Save
+          </button>
+        </form>
+      </Sheet>
 
-            {sattvicCount > 0 && (
-              <p className="sattvic-note">
-                <TulsiLeaf size={13} />
-                {sattvicCount === lines.length
-                  ? "Every dish here is from the sattvic kitchen — no onion, no garlic."
-                  : `${sattvicCount} of ${lines.length} dishes are from the sattvic kitchen.`}
-              </p>
-            )}
+      <Sheet open={sheet === "note"} title="Cooking requests" onClose={closeSheet}>
+        <label className="field" htmlFor="note">
+          <span className="field-label">Anything we should know?</span>
+          <textarea
+            id="note"
+            className="textarea"
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            maxLength={220}
+            rows={3}
+            placeholder="Less chilli, please ring the bell twice"
+          />
+          <span className="field-hint">{220 - instructions.length} characters left</span>
+        </label>
+        <button type="button" className="btn btn-primary btn-block" onClick={closeSheet}>
+          Done
+        </button>
+      </Sheet>
 
-            <BillSummary bill={bill} />
-
-            {failedPayment && (
-              <p className="side-card__retry" role="alert">
-                <strong>{failedPayment}</strong> Your food is still here — try
-                again.
-              </p>
-            )}
-
-            {blocked && (
-              <UnavailableNotice unavailable={unavailable} onRemove={remove} />
-            )}
-
-            {bill.minOrderGap > 0 && (
-              <p className="side-card__ship" role="status">
-                The minimum order is{" "}
-                {rupees(bill.subtotal + bill.minOrderGap)}.{" "}
-                <Link to="/menu">Add {rupees(bill.minOrderGap)} more</Link> to
-                place it.
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="btn btn-gold btn-block"
-              disabled={placing || blocked || bill.minOrderGap > 0}
+      <Sheet open={sheet === "pay"} title="Pay using" onClose={closeSheet}>
+        <div className="pay-choice" role="radiogroup" aria-label="Pay using">
+          {PAYMENTS.map((p) => (
+            <label
+              key={p.id}
+              className={`pay-choice__option ${payment === p.id ? "is-on" : ""}`}
             >
-              {placing ? (
-                <>
-                  <span className="spinner" aria-hidden="true" /> Sending to the
-                  kitchen…
-                </>
-              ) : (
-                <>Place order · {rupees(bill.total)}</>
-              )}
-            </button>
-            {placeError && (
-              <p className="side-card__error" role="alert">
-                {placeError}
-              </p>
-            )}
-            <p className="side-card__fine">
-              Pay now — nothing reaches the kitchen until it goes through.
-              Order updates come on WhatsApp.
-            </p>
-          </div>
-        </aside>
-      </form>
+              <input
+                type="radio"
+                name="payment"
+                value={p.id}
+                checked={payment === p.id}
+                onChange={() => {
+                  setPayment(p.id);
+                  setSheet(null);
+                }}
+              />
+              <span className="pay-choice__dot" aria-hidden="true" />
+              <span className="pay-choice__text">
+                <strong>{p.title}</strong>
+                <small>{p.sub}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+      </Sheet>
     </main>
   );
 }

@@ -39,12 +39,19 @@ Deno.serve(async (req) => {
 
   const { data: order, error: readErr } = await db
     .from("orders")
-    .select("id, order_no, total_paise, status, razorpay_order_id, guest_name, guest_phone, guest_email")
+    .select(
+      "id, order_no, total_paise, status, payment_method, collected_at, razorpay_order_id, " +
+        "guest_name, guest_phone, guest_email",
+    )
     .eq("receipt_token", token)
     .maybeSingle();
   if (readErr) return json({ error: "could not read that order" }, 500);
   if (!order) return json({ error: "no such order" }, 404);
-  if (order.status !== "pending_payment") {
+  /* Cash on delivery is paid online at the door, if at all: the order is
+     already with the kitchens, so only whether the money is in matters. */
+  const cod = order.payment_method === "cod";
+  if (cod ? order.collected_at || ["cancelled", "failed"].includes(order.status)
+          : order.status !== "pending_payment") {
     /* Not an error the guest can act on, and worth distinguishing from a
        failure so the page can simply show the receipt. */
     return json({ error: "that order is already paid", order_no: order.order_no }, 409);
@@ -53,11 +60,13 @@ Deno.serve(async (req) => {
      before Razorpay is asked for anything, and again when its order is
      attached. 410 so the page can tell the guest which dish and send them back
      to the cart, rather than showing a generic failure. */
-  const { data: gone, error: goneErr } = await db.rpc("unavailable_in_order", {
-    p_order_id: order.id,
-  });
-  if (goneErr) return json({ error: "could not read that order" }, 500);
-  if (gone) return json({ error: "no longer available", unavailable: gone }, 410);
+  if (!cod) {
+    const { data: gone, error: goneErr } = await db.rpc("unavailable_in_order", {
+      p_order_id: order.id,
+    });
+    if (goneErr) return json({ error: "could not read that order" }, 500);
+    if (gone) return json({ error: "no longer available", unavailable: gone }, 410);
+  }
 
   /* Razorpay's own floor, and a total below it means something is wrong here. */
   if (!Number.isInteger(order.total_paise) || order.total_paise < 100) {

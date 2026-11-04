@@ -1304,7 +1304,8 @@
   .menu-layout__rail {
     display: block;
   }
-  .sheet {
+  /* the rail replaces the category sheet; other sheets stay usable */
+  .sheet:not(.sheet--form) {
     display: none;
   }
 }

@@ -184,6 +184,7 @@ export async function saveSetting(key, value) {
 const ORDER = `
   id, order_no, receipt_token, status, created_at, paid_at, guest_name, guest_phone,
   note, total_paise, subtotal_paise, discount_paise, coupon_code,
+  payment_method, collect_token, collected_at, collected_via,
   needs_attention, attention_note, riders_offered_at, rider_assigned_at,
   delivery_partner_id,
   room:addresses(room_number, place:places(name, area)),

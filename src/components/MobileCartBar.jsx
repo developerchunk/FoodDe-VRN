@@ -13,7 +13,10 @@ export default function MobileCartBar() {
   if (
     !bill.itemCount ||
     hiddenOn.includes(pathname) ||
-    pathname.startsWith("/order")
+    pathname.startsWith("/order") ||
+    pathname.startsWith("/cart/") ||
+    pathname.startsWith("/pay/") ||
+    pathname.startsWith("/collect/")
   )
     return null;
 

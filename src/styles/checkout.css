@@ -196,6 +196,13 @@
   position: sticky;
   top: calc(var(--header-h) + 20px);
 }
+/* The checkout summary carries the payment choice, offers and the bill. On a
+   short screen, held in place it would hide its own button. */
+@media (max-height: 959px) {
+  .checkout-grid .side-card {
+    position: static;
+  }
+}
 .side-card__title {
   font-size: 17px;
   margin-bottom: 14px;
@@ -295,10 +302,12 @@
   gap: 12px;
   font-size: 14px;
 }
-.bill__row dt {
+.bill__row dt,
+.bill__label {
   color: var(--ink-soft);
 }
-.bill__row dd {
+.bill__row dd,
+.bill__amount {
   margin: 0;
   color: var(--teal-900);
 }
@@ -315,43 +324,143 @@
   padding-top: 12px;
   border-top: 1.5px solid var(--sand-deep);
   font-size: 17px;
+  align-items: baseline;
 }
-.bill__row--total dt {
+.bill__row--total dt,
+.bill__row--total .bill__label {
   color: var(--teal-900);
-  font-weight: 500;
-}
-.bill__row--total dd {
   font-weight: 600;
-  font-size: 20px;
+  font-size: 18px;
+}
+.bill__row--total dd,
+.bill__row--total .bill__amount {
+  font-weight: 700;
+  font-size: 24px;
+}
+
+/* Taxes & charges: one quiet line, opened on request. */
+.bill__charges > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+.bill__charges > summary::-webkit-details-marker {
+  display: none;
+}
+.bill__row--charges .bill__label,
+.bill__row--charges .bill__amount {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+.bill__row--charges .bill__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.bill__chev {
+  transition: transform 0.16s ease;
+}
+.bill__charges[open] .bill__chev {
+  transform: rotate(180deg);
+}
+.bill__charge-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--cream);
+}
+.bill__row--sub {
+  font-size: 12.5px;
+}
+.bill__row--sub .bill__label,
+.bill__row--sub .bill__amount {
+  color: var(--ink-faint);
+}
+
+/* How it is paid: the first thing in the summary. */
+.pay-choice {
+  border: 0;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pay-choice legend {
+  padding: 0;
+}
+.pay-choice__option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border: 1.5px solid var(--sand-deep);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.pay-choice__option.is-on {
+  border-color: var(--teal-700);
+  background: color-mix(in srgb, var(--teal) 5%, var(--paper));
+}
+.pay-choice__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.pay-choice__dot {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.6px solid var(--sand-deep);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 3px var(--paper);
+}
+.pay-choice__option.is-on .pay-choice__dot {
+  border-color: var(--teal-700);
+  background: var(--teal-700);
+}
+.pay-choice__option input:focus-visible ~ .pay-choice__dot {
+  outline: 2.5px solid var(--marigold-deep);
+  outline-offset: 2px;
+}
+.pay-choice__text {
+  display: grid;
+  gap: 1px;
+  line-height: 1.3;
+}
+.pay-choice__text strong {
+  font-size: 14.5px;
+  color: var(--teal-900);
+  font-weight: 600;
+}
+.pay-choice__text small {
+  font-size: 12px;
+  color: var(--ink-faint);
 }
 
 /* ===== checkout ===== */
 .checkout-grid {
   display: grid;
+  /* minmax(0, …): the add-ons row scrolls sideways, and without it the column
+     grows as wide as all its cards and the page overflows */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: stretch;
 }
 .checkout-grid__main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
+  align-content: start;
 }
 
-/* On a phone the order is read top to bottom: your details, then what you are
-   paying for, then where it is going. The bill sits in the side column and
-   "Delivering to" in the main one, so the main column dissolves into the grid
-   and its last card is sent below the bill. On a wide screen they stay in
-   their own columns. */
-@media (max-width: 999px) {
-  .checkout-grid__main {
-    display: contents;
-  }
-  .checkout-grid__main > .form-card:last-child {
-    order: 2;
-  }
-  .checkout-grid__side {
-    order: 1;
-  }
-}
+/* On a phone the page reads top to bottom: the food, who it is for, where it
+   goes, then how it is paid and the button that places it. */
 
 .form-card {
   padding: 22px 20px;
@@ -771,6 +880,14 @@ select.input {
   color: var(--ink-soft);
   margin-top: 12px;
   line-height: 1.5;
+}
+.history-card__due {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+.history-card__due strong {
+  color: var(--teal-900);
 }
 .history-card__actions {
   display: flex;
@@ -1409,6 +1526,7 @@ select.input {
 /* An order that exists but has not been paid for. Gold, like the pay action
    itself — this is a step still to take, not something that went wrong. */
 .pay-card {
+  padding: 20px 18px;
   border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
   background: color-mix(in srgb, var(--gold) 6%, var(--ivory, #fffdf6));
 }
@@ -1717,4 +1835,628 @@ select.input {
   color: var(--teal-700);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* ===== cash on delivery: the guest's pay page and the rider's ===== */
+.pay-page .eyebrow,
+.collect .eyebrow {
+  margin-bottom: 0.2rem;
+}
+.pay-page .btn + .btn,
+.pay-page__back,
+.collect .btn + .btn {
+  margin-top: 0.6rem;
+}
+.pay-page__done,
+.collect__note {
+  margin: 0 0 1.1rem;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.collect__where {
+  margin-bottom: 0.4rem;
+}
+.collect__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-top: 0.6rem;
+}
+.collect__choices .btn {
+  min-height: 64px;
+  font-size: 1.1rem;
+}
+.collect__qr {
+  display: grid;
+  place-items: center;
+  width: min(260px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto 0.9rem;
+  padding: 10px;
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+.collect__qr img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.collect__wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.collect__tick {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--veg-soft);
+  color: var(--veg);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* ===== checkout: one short column, pay bar always in reach ===== */
+.co-page {
+  max-width: 640px;
+  display: grid;
+  /* minmax(0, …): the sideways meal row must not widen the column */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  padding-bottom: 24px;
+}
+/* the fixed pay bar must never sit over the footer's last lines */
+body:has(.pay-bar) {
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+}
+.co-label {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+
+/* where it goes, who it is for */
+.co-to {
+  padding: 4px 16px;
+}
+.co-to__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  text-align: left;
+  color: var(--teal-800);
+}
+.co-to__row + .co-to__row {
+  border-top: 1px dashed var(--sand-deep);
+}
+.co-to__row > svg:last-child {
+  color: var(--ink-faint);
+  transform: rotate(-90deg);
+  flex: none;
+}
+.co-to__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.co-to__text strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teal-900);
+}
+.co-to__text span {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+.co-to__text--ask strong {
+  color: var(--ember-deep);
+}
+
+/* the food */
+.co-items {
+  padding: 6px 16px 14px;
+}
+.co-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--sand-deep);
+}
+.co-item__name p {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--teal-900);
+  line-height: 1.3;
+}
+.co-item__name small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--tulsi);
+}
+.co-item__amt {
+  min-width: 52px;
+  text-align: right;
+  font-size: 14.5px;
+  color: var(--teal-900);
+}
+.co-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-top: 14px;
+  scrollbar-width: none;
+}
+.co-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--sand-deep);
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  background: var(--paper);
+}
+.co-chip:hover {
+  border-color: var(--teal-700);
+  color: var(--teal-800);
+}
+.co-items .side-card__blocked {
+  margin-top: 12px;
+}
+
+/* complete your meal */
+.co-meal {
+  padding: 16px 0 14px 16px;
+}
+.co-meal__list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-right: 16px;
+  scrollbar-width: none;
+}
+.co-meal__item {
+  flex: none;
+  width: 108px;
+}
+.co-meal__art {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: var(--sand);
+}
+.co-meal__art img,
+.co-meal__art svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.co-meal__add {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ember-deep);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+.co-meal__name {
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--teal-900);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.co-meal__name .veg-mark {
+  width: 11px;
+  height: 11px;
+  vertical-align: -1px;
+}
+.co-meal__price {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* savings corner */
+.co-save {
+  padding: 16px 16px 6px;
+}
+.co-save__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 12px;
+  color: inherit;
+}
+.co-save__row + .co-save__row {
+  border-top: 1px dashed var(--sand-deep);
+}
+.co-save__tag {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--ember);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.co-save__tag--teal {
+  background: var(--teal-700);
+}
+.co-save__text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.co-save__text strong {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--teal-900);
+}
+.co-save__text span {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+.co-save__ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--veg);
+  font-weight: 500;
+}
+.co-save__go {
+  color: var(--ink-faint);
+  transform: rotate(-90deg);
+}
+.co-save__hint {
+  font-size: 12.5px;
+  color: var(--marigold-deep);
+  background: var(--marigold-soft);
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 4px 0 10px;
+}
+
+/* the bill, folded to one line */
+.co-bill > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.co-bill > summary::-webkit-details-marker {
+  display: none;
+}
+.co-bill__sum {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+.co-bill__icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+.co-bill__lead {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+.co-bill__lead strong {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--teal-900);
+}
+.co-bill__lead small {
+  font-size: 12.5px;
+  color: var(--veg);
+}
+.co-bill__chev {
+  color: var(--ink-faint);
+  transition: transform 0.16s ease;
+}
+.co-bill[open] .co-bill__chev {
+  transform: rotate(180deg);
+}
+.co-bill__rows {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px 16px 58px;
+}
+.co-bill__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+.co-bill__row--off {
+  color: var(--veg);
+}
+.co-bill__row--total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sand-deep);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--teal-900);
+}
+
+.co-note {
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  line-height: 1.5;
+}
+.co-note--warn {
+  color: var(--ember-deep);
+  background: var(--ember-soft);
+}
+
+/* the pay bar */
+.pay-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  background: var(--paper);
+  border-top: 1px solid var(--sand-deep);
+  box-shadow: 0 -8px 24px -16px rgba(4, 50, 47, 0.35);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+.pay-bar__inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pay-bar__error {
+  max-width: 640px;
+  margin: 0 auto 8px;
+  font-size: 12.5px;
+  color: var(--ember-deep);
+}
+.pay-bar__method {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+.pay-bar__method small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pay-bar__up {
+  transform: rotate(180deg);
+}
+.pay-bar__method strong {
+  font-size: 14.5px;
+  color: var(--teal-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pay-bar__go {
+  flex: 1.25;
+  min-height: 52px;
+  border-radius: 12px;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+/* sheets holding a form: full width on a phone, a centred card when wide */
+.sheet--form .sheet__panel {
+  max-height: 88vh;
+}
+.sheet__x {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink-faint);
+  padding: 0 4px;
+}
+.sheet--form .sheet__head {
+  align-items: center;
+  margin-bottom: 14px;
+}
+.sheet__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+.sheet__body .remember {
+  margin-bottom: 12px;
+}
+@media (min-width: 700px) {
+  .sheet--form {
+    justify-content: center;
+    align-items: center;
+  }
+  .sheet--form .sheet__panel {
+    width: 480px;
+    border-radius: 20px;
+    padding-bottom: 20px;
+  }
+  .sheet--form .sheet__grip {
+    display: none;
+  }
+}
+.co-sheet__current {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+.co-sheet__fine {
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin: 2px 0 14px;
+}
+
+/* the coupons screen */
+.co-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.co-top__back {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--teal-900);
+}
+.co-top__back svg {
+  transform: rotate(180deg);
+}
+.co-top__title {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--teal-900);
+}
+.co-top__sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.coupons__form {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--sand-deep);
+  border-radius: 14px;
+  background: var(--paper);
+  padding: 4px 6px 4px 16px;
+}
+.coupons__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  padding: 12px 0;
+  text-transform: uppercase;
+  outline: none;
+  color: var(--teal-900);
+}
+.coupons__input::placeholder {
+  text-transform: none;
+}
+.coupons__apply {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ember-deep);
+  padding: 10px;
+}
+.coupons__apply:disabled {
+  color: var(--ink-faint);
+}
+.coupons__group {
+  display: grid;
+  gap: 10px;
+}
+.coupons__label {
+  font-size: 16px;
+  margin-top: 6px;
+}
+.coupon-card {
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-left: 6px solid var(--ember);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.coupon-card.is-locked {
+  border-left-color: var(--sand-deep);
+}
+.coupon-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.coupon-card__code {
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--teal-900);
+}
+.coupon-card__act {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ember-deep);
+}
+.coupon-card__act:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+.coupon-card__save {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--veg);
+}
+.coupon-card__label {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--sand-deep);
+  font-size: 13px;
+  color: var(--ink-soft);
 }

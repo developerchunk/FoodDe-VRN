@@ -69,6 +69,23 @@ const SAMPLES: Record<string, string[]> = {
     "₹498",
     "https://inroomdining.in/receipt/2f6c1d0e",
   ],
+  ird_property_order_cod: ["101", "30 Sept, 7:42 pm", "IRD-1001"],
+  ird_guest_confirmation_cod: [
+    "Asha",
+    "IRD-1001",
+    "Rishi Bhawan Guest House",
+    "101",
+    "₹498",
+    "https://inroomdining.in/order/2f6c1d0e",
+  ],
+  ird_guest_out_for_delivery_cod: [
+    "Asha",
+    "IRD-1001",
+    "Rishi Bhawan Guest House",
+    "101",
+    "₹498",
+    "https://inroomdining.in/pay/2f6c1d0e",
+  ],
 };
 
 const [waba, flag] = Deno.args;

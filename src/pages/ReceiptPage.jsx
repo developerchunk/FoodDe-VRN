@@ -58,6 +58,19 @@ export default function ReceiptPage() {
   /* get_receipt returns one flat row: line items in `items`, every amount in
      integer paise, and the room rather than a street address. */
   const items = order.items || [];
+  /* A cash-on-delivery order is with the kitchens before it is paid, so its
+     status says nothing about the money; is_paid does. */
+  const cod = order.payment_method === "cod";
+  const paid = order.is_paid ?? order.status !== "pending_payment";
+  const paymentLine = cod
+    ? paid
+      ? order.collected_via === "cash"
+        ? "Paid in cash"
+        : "Paid online"
+      : "Cash on delivery"
+    : paid
+      ? "Paid"
+      : "Not yet paid";
   const shareText = encodeURIComponent(
     `In Room Dining — order ${order.order_no}\n` +
       `${order.place_name}, Room ${order.room_number}\n` +
@@ -116,10 +129,10 @@ export default function ReceiptPage() {
       >
         <header className="receipt__head">
           <span
-            className={`receipt__stamp ${order.status === "pending_payment" ? "receipt__stamp--unpaid" : ""}`}
+            className={`receipt__stamp ${paid ? "" : "receipt__stamp--unpaid"}`}
             aria-hidden="true"
           >
-            {order.status === "pending_payment" ? "Unpaid" : "Paid"}
+            {paid ? "Paid" : "Unpaid"}
           </span>
           <div className="receipt__brand">
             <span className="receipt__mark">
@@ -144,9 +157,7 @@ export default function ReceiptPage() {
           </div>
           <div>
             <small>Payment</small>
-            <strong>
-              {order.status === "pending_payment" ? "Not yet paid" : "Paid"}
-            </strong>
+            <strong>{paymentLine}</strong>
           </div>
           <div>
             <small>Status</small>
@@ -155,7 +166,9 @@ export default function ReceiptPage() {
                 order.status === "pending_payment" ? "" : "receipt__paid"
               }
             >
-              {STATUS_LABEL[order.status] ?? order.status}
+              {cod && order.status === "paid"
+                ? "Confirmed"
+                : STATUS_LABEL[order.status] ?? order.status}
             </strong>
           </div>
         </div>
@@ -246,7 +259,7 @@ export default function ReceiptPage() {
           </div>
           <div className="receipt__grand">
             <dt>
-              {order.status === "pending_payment" ? "Total due" : "Total paid"}
+              {paid ? "Total paid" : "Total due"}
             </dt>
             <dd className="rupee">{rupeesExact(order.total_paise)}</dd>
           </div>
