@@ -70,7 +70,9 @@ function loadProfile() {
 
 const PAYMENTS = [
   { id: "online", title: "Pay online", sub: "UPI, cards, net banking" },
-  { id: "cod", title: "Cash on delivery", sub: "Pay in cash or online when it arrives" },
+  /* Shown, not yet offered: the backend is live, the guest's WhatsApp
+     messages for it are still in Meta's review. Drop `soon` to switch it on. */
+  { id: "cod", title: "Cash on delivery", sub: "Pay in cash or online when it arrives", soon: true },
 ];
 
 const CheckIcon = () => (
@@ -173,7 +175,10 @@ export default function CheckoutPage() {
 
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
-  const [payment, setPayment] = useState(() => loadDraft()?.payment ?? "online");
+  const [payment, setPayment] = useState(() => {
+    const saved = loadDraft()?.payment;
+    return PAYMENTS.some((p) => p.id === saved && !p.soon) ? saved : "online";
+  });
 
   useEffect(() => {
     try {
@@ -754,13 +759,14 @@ export default function CheckoutPage() {
           {PAYMENTS.map((p) => (
             <label
               key={p.id}
-              className={`pay-choice__option ${payment === p.id ? "is-on" : ""}`}
+              className={`pay-choice__option ${payment === p.id ? "is-on" : ""} ${p.soon ? "is-soon" : ""}`}
             >
               <input
                 type="radio"
                 name="payment"
                 value={p.id}
                 checked={payment === p.id}
+                disabled={p.soon}
                 onChange={() => {
                   setPayment(p.id);
                   setSheet(null);
@@ -768,7 +774,10 @@ export default function CheckoutPage() {
               />
               <span className="pay-choice__dot" aria-hidden="true" />
               <span className="pay-choice__text">
-                <strong>{p.title}</strong>
+                <strong>
+                  {p.title}
+                  {p.soon && <em className="pay-choice__soon">Coming soon</em>}
+                </strong>
                 <small>{p.sub}</small>
               </span>
             </label>
