@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { track, trackOnce } from "../lib/track";
 
 const STAY_KEY = "ird.stay.v1";
 
@@ -103,7 +104,11 @@ function useResolvedProperty() {
 
       /* An unknown, retired or unresolvable code leaves the guest on the plain
          site rather than stranding them on an error page. */
-      if (cancelled || error || !data?.length) return;
+      if (cancelled || error) return;
+      if (!data?.length) {
+        track("qr_invalid", { method: "link" });
+        return;
+      }
 
       const stay = stayFrom(data[0]);
 
@@ -113,6 +118,8 @@ function useResolvedProperty() {
         /* private mode: the stay lasts this page rather than the session */
       }
       setHouse(stay);
+      /* once per room per visit: reloading the page is not a second scan */
+      trackOnce(`scan:${stay.addressId}`, "qr_scan", { method: "link" });
     })();
 
     return () => {
@@ -129,7 +136,7 @@ function useResolvedProperty() {
    * QR does not: one code returns one room, and the table stays unreadable, so
    * there is still no way to walk the codes and find other rooms.
    */
-  const resolveRoom = useCallback(async (raw) => {
+  const resolveRoom = useCallback(async (raw, method = "typed") => {
     const code = normaliseRoomCode(raw);
     if (!code) return { ok: false, error: "Enter the code printed in your room." };
     if (!/^[a-z0-9]+$/.test(code))
@@ -141,8 +148,10 @@ function useResolvedProperty() {
       p_code: code,
     });
     if (error) return { ok: false, error: "We cannot look that up right now." };
-    if (!data?.length)
+    if (!data?.length) {
+      track("qr_invalid", { method });
       return { ok: false, error: "We do not recognise that code. Check it and try again." };
+    }
 
     const stay = stayFrom(data[0]);
     try {
@@ -151,6 +160,7 @@ function useResolvedProperty() {
       /* private mode: the stay lasts this page rather than the session */
     }
     setHouse(stay);
+    trackOnce(`scan:${stay.addressId}`, "qr_scan", { method });
     return { ok: true, stay };
   }, []);
 

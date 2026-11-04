@@ -1,0 +1,186 @@
+/* Activity — builds on analytics.css: one teal for data, ink for words. */
+
+.adm-act-privacy {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  background: var(--teal-100);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 14px;
+}
+
+.adm-act-controls {
+  display: grid;
+  gap: 12px;
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.adm-act-presets {
+  display: flex;
+  flex-wrap: wrap;
+  border-radius: 18px;
+  gap: 2px;
+}
+.adm-act-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: end;
+}
+.adm-act-ctl {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 0 1 220px;
+}
+.adm-act-ctl > span {
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.adm-act-ctl .input {
+  padding: 9px 12px;
+  font-size: 14.5px;
+  min-height: 42px;
+}
+
+/* ---- funnel: bars of one hue, the number and the drop beside each */
+.adm-act-funnel {
+  list-style: none;
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1px solid var(--sand-deep);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 10px;
+}
+.adm-act-funnel li {
+  display: grid;
+  grid-template-columns: minmax(120px, 170px) 1fr auto;
+  grid-template-areas: "label track n" "label pct pct";
+  gap: 2px 12px;
+  align-items: center;
+}
+.adm-act-funnel__label {
+  grid-area: label;
+  font-size: 14px;
+}
+.adm-act-funnel__track {
+  grid-area: track;
+  height: 14px;
+  background: var(--sand);
+  border-radius: 0 4px 4px 0;
+  overflow: hidden;
+}
+.adm-act-funnel__bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--teal-600);
+  border-radius: 0 4px 4px 0;
+}
+.adm-act-funnel__n {
+  grid-area: n;
+  font-feature-settings: "tnum";
+  color: var(--teal-900);
+  min-width: 3ch;
+  text-align: right;
+}
+.adm-act-funnel__pct {
+  grid-area: pct;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+@media (max-width: 539px) {
+  .adm-act-funnel li {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "label n" "track track" "pct pct";
+  }
+}
+
+/* ---- heatmap: day of week by hour, opacity of one teal */
+.adm-act-heat {
+  grid-column: 1 / -1;
+}
+.adm-act-heat__scroll {
+  overflow-x: auto;
+}
+.adm-act-heat__grid {
+  display: grid;
+  grid-template-columns: 36px repeat(24, minmax(16px, 1fr));
+  gap: 2px;
+  min-width: 460px;
+}
+.adm-act-heat__row {
+  display: contents;
+}
+.adm-act-heat__hour,
+.adm-act-heat__day {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+}
+.adm-act-heat__day {
+  align-self: center;
+}
+.adm-act-heat__cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background:
+    linear-gradient(rgb(18 140 130 / var(--a)), rgb(18 140 130 / var(--a))),
+    var(--sand);
+}
+.adm-act-heat__cell:focus,
+.adm-act-heat__cell.is-hover {
+  outline: 2px solid var(--teal-900);
+  outline-offset: 1px;
+}
+.adm-act-heat__read {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 8px 0 4px;
+  min-height: 1.4em;
+}
+
+.adm-act-up,
+.adm-act-down {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.adm-act-up {
+  color: var(--veg);
+}
+.adm-act-down {
+  color: var(--ember-deep);
+}
+
+.adm-act-pair {
+  display: grid;
+  gap: 0 20px;
+}
+@media (min-width: 1100px) {
+  .adm-act-pair {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.adm-act-log td small {
+  display: block;
+  color: var(--ink-faint);
+}
+.adm-act-visit {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--teal-800);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 6px 0;
+  min-height: 32px;
+}

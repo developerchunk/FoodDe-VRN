@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { track } from "./track";
 
 /**
  * Razorpay Standard Checkout.
@@ -56,9 +57,28 @@ function loadCheckoutScript() {
  * { paid: false, reason: "dismissed" } if the guest closed the modal, and
  * rejects only on something they cannot act on.
  */
-export async function payForOrder({ token, onStatus }) {
+export async function payForOrder({ token, onStatus, items }) {
   if (!supabase) throw new Error("Payments are not configured.");
+  try {
+    const result = await openPayment({ token, onStatus });
+    /* Counted here, the one place every payment passes through. `items` is
+       the dishes being paid for, when the page knows them, so the super
+       admin can tell what was added and then actually bought. */
+    if (result.paid && !result.alreadyPaid)
+      track("payment_success", { value: result.amount, ...(items?.length ? { items } : {}) });
+    else if (!result.paid)
+      track(result.reason === "dismissed" ? "payment_dismissed"
+        : result.reason === "unverified" ? "payment_unverified"
+        : result.reason === "unavailable" ? "payment_error"
+        : "payment_failed", { reason: result.code ?? result.reason });
+    return result;
+  } catch (err) {
+    track("payment_error", { reason: String(err?.message ?? "").slice(0, 80) });
+    throw err;
+  }
+}
 
+async function openPayment({ token, onStatus }) {
   onStatus?.("starting");
   const { data: created, error: createErr } = await supabase.functions.invoke(
     "payment-create-order",
@@ -91,6 +111,7 @@ export async function payForOrder({ token, onStatus }) {
 
   await loadCheckoutScript();
   onStatus?.("open");
+  track("payment_open", { value: created.amount });
 
   return new Promise((resolve, reject) => {
     const rzp = new window.Razorpay({
@@ -135,7 +156,7 @@ export async function payForOrder({ token, onStatus }) {
           return;
         }
         openInstance = null;
-        resolve({ paid: true, orderNo: verified.order_no });
+        resolve({ paid: true, orderNo: verified.order_no, amount: created.amount });
       },
       modal: {
         ondismiss: () => {
@@ -149,6 +170,9 @@ export async function payForOrder({ token, onStatus }) {
       resolve({
         paid: false,
         reason: "failed",
+        /* Razorpay's own short reason ("payment_cancelled", "insufficient
+           funds" and the like): what the super admin sees as why it failed */
+        code: String(e?.error?.reason || e?.error?.description || "").slice(0, 80) || undefined,
         message: e?.error?.description || "The payment did not go through.",
       });
     });

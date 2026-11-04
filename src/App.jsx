@@ -24,6 +24,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AboutPage from "./pages/AboutPage";
 import PolicyPage from "./pages/PolicyPage";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { track } from "./lib/track";
 
 /* Its own chunk: a guest who scans a room's QR code never downloads any of the
    admin site. */
@@ -33,6 +34,15 @@ function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
     if (!isMenuPath(pathname)) window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
+/* One anonymous page view per route change (lib/track drops staff pages). */
+function PageViews() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    track("page_view");
   }, [pathname]);
   return null;
 }
@@ -73,6 +83,7 @@ export default function App() {
         Skip to content
       </a>
       <ScrollToTop />
+      <PageViews />
       <Header />
       <ErrorBoundary>
         <Routes>

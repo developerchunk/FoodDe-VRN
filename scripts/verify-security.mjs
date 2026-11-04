@@ -83,6 +83,17 @@ await check("order_tickets — private", blocked, () =>
 await check("message_log — private", blocked, () =>
   db.from("message_log").select("id"),
 );
+/* Anonymous activity (0033): written only through track_events, read only
+   through the super admin's functions. */
+await check("activity_events — closed both ways", refused, () =>
+  db.from("activity_events").select("id"),
+);
+await check("activity_events — cannot be written directly", refused, () =>
+  db.from("activity_events").insert({ sid: "00000000-0000-4000-8000-000000000000", name: "page_view" }),
+);
+await check("track_events — the way in, empty batch", allowed, () =>
+  db.rpc("track_events", { p_sid: "00000000-0000-4000-8000-000000000000", p_device: null, p_events: [] }),
+);
 
 /* The menu tables are now fully closed: everything a guest sees arrives via
    get_menu(), which computes availability from kitchen hours internally and
@@ -104,15 +115,18 @@ await check("get_menu() exposes no kitchen id", (data, error) =>
   !error && (data ?? []).every((r) => !("kitchen_id" in r)), () => db.rpc("get_menu"),
 );
 
-/* Writes must go through the edge function, which recomputes the price. */
+/* Writes must go through the edge function, which recomputes the price.
+   The amounts clear the minimum-order trigger (0025), which runs before row
+   level security and would otherwise answer first -- a check that passes on
+   "below the minimum" proves nothing about who may insert. */
 await check("orders — cannot be inserted from a browser", refused, () =>
   db.from("orders").insert({
     order_no: "HACK-1",
     address_id: "aaaaaaaaaa",
     guest_name: "x",
     guest_phone: "9999999999",
-    subtotal_paise: 1,
-    total_paise: 1,
+    subtotal_paise: 1_000_000,
+    total_paise: 1_000_000,
   }),
 );
 /* An UPDATE that RLS denies reports success with nothing changed rather than
@@ -194,6 +208,15 @@ if (anonErr) {
   );
   await check("admin_analytics — refused to a guest", refused, () =>
     db.rpc("admin_analytics", { p_period: "today" }),
+  );
+  await check("admin_activity — refused to a guest", refused, () =>
+    db.rpc("admin_activity", { p_from: "2026-11-01T00:00:00Z", p_to: "2026-11-02T00:00:00Z", p_unit: "hour" }),
+  );
+  await check("admin_activity_log — refused to a guest", refused, () =>
+    db.rpc("admin_activity_log", { p_from: "2026-11-01T00:00:00Z", p_to: "2026-11-02T00:00:00Z" }),
+  );
+  await check("activity_events — still closed to a guest", refused, () =>
+    db.from("activity_events").select("id"),
   );
   await check("admin_set_order_status — refused to a guest", refused, () =>
     db.rpc("admin_set_order_status", {

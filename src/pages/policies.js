@@ -148,7 +148,13 @@ export const POLICIES = {
       {
         h: "What is kept on your device",
         p: [
-          "Your browser keeps your cart, the room you scanned, links to your recent receipts and, if you ask us to remember them, your checkout details. These stay on your device. We do not use analytics or advertising trackers.",
+          "Your browser keeps your cart, the room you scanned, links to your recent receipts and, if you ask us to remember them, your checkout details. These stay on your device. We do not use advertising trackers.",
+        ],
+      },
+      {
+        h: "Anonymous site activity",
+        p: [
+          "To improve the menu and fix what gets in the way of ordering, we count what happens on the site: which pages are opened, which room's QR code was scanned, which dishes are looked at, added or removed, and whether a payment went through. Each visit is given a random number by your browser that is forgotten when you close the tab. It is never linked to your name, mobile number, email, Google account or orders, and we do not record your IP address. These counts are seen only by In Room Dining's owners and are never sold or used for advertising.",
         ],
       },
       {

@@ -7,7 +7,7 @@ download it. Who gets in is decided by the database (`admin_users`, migration
 | Role | Sees |
 |---|---|
 | `admin` | Orders · Menu · Kitchens · Categories · Accommodation Partners · Delivery partners |
-| `super_admin` | Analytics (today / daily / weekly / monthly) · Coupons (the best eligible one applies itself) · Settings (delivery charge, packing charge, free-delivery threshold, minimum order, alerts number) — read-only everywhere else |
+| `super_admin` | Analytics (today / daily / weekly / monthly) · Activity (anonymous guest activity, any range or hours) · Coupons (the best eligible one applies itself) · Settings (delivery charge, packing charge, free-delivery threshold, minimum order, alerts number) — read-only everywhere else |
 
 One person may hold both roles (one row each).
 
@@ -60,4 +60,11 @@ and asks for Google again. Guests' sessions are not affected.
   admin is using.
 - **`npm run import`** still loads kitchens and dishes from `csv/`, but only
   *adds* places and rooms — it never overwrites what admins edited.
+- **Activity** (migration `0033`) counts what guests do — room scans, dishes
+  opened, added and removed, checkout, pay taps, failed payments — by visit, a
+  random id each browser tab makes up and forgets when it closes. It is never
+  linked to a user, phone, email or order, and events are sent with the
+  publishable key only, so the database never sees who is signed in. Local
+  development logs events to the console instead of sending them. The table is
+  closed to every API role; only the super admin's functions read it.
 - **Cancelling an order does not refund it.** Refund in the Razorpay dashboard.

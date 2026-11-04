@@ -254,6 +254,34 @@ export const retryMessage = (messageId) => act("admin_retry_message", { p_messag
 export const loadAnalytics = async (period) =>
   must(await supabase.rpc("admin_analytics", { p_period: period }));
 
+/** Anonymous site activity for a range (migration 0033). Instants are ISO
+    strings; hours are IST hours of the day, [from, to). */
+export const loadActivity = async ({ from, to, unit, hourFrom, hourTo, prevFrom, prevTo }) =>
+  must(
+    await supabase.rpc("admin_activity", {
+      p_from: from,
+      p_to: to,
+      p_unit: unit,
+      p_hour_from: hourFrom,
+      p_hour_to: hourTo,
+      p_prev_from: prevFrom ?? null,
+      p_prev_to: prevTo ?? null,
+    }),
+  );
+
+/** The raw events, newest first; `before` is the last id already shown. */
+export const loadActivityLog = async ({ from, to, before, limit = 100, name, sid }) =>
+  must(
+    await supabase.rpc("admin_activity_log", {
+      p_from: from,
+      p_to: to,
+      p_before: before ?? null,
+      p_limit: limit,
+      p_name: name || null,
+      p_sid: sid || null,
+    }),
+  );
+
 export const listCoupons = async () =>
   must(await supabase.from("coupons").select("*").order("created_at", { ascending: false }));
 

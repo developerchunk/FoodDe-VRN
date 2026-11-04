@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AddControl, DishPicture } from "./DishParts";
 import { rupees } from "../utils/format";
+import { track } from "../lib/track";
 import { ChiliIcon, ClockIcon, StarIcon, TulsiLeaf } from "./Icons";
 
 /**
@@ -15,6 +16,11 @@ import { ChiliIcon, ClockIcon, StarIcon, TulsiLeaf } from "./Icons";
  */
 export default function DishSheet({ item, showAdd = true, onClose }) {
   const closeRef = useRef(null);
+
+  /* Opened means looked at: counted against how often it is then added. */
+  useEffect(() => {
+    track("dish_view", { item: item.id });
+  }, [item.id]);
 
   useEffect(() => {
     const before = document.activeElement;

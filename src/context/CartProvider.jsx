@@ -9,6 +9,7 @@ import {
 import { CartContext } from "./cart-context";
 import { DEFAULT_CHARGES, computeBill, freeDeliveryGap } from "../utils/pricing";
 import { fetchPricing, priceOrder } from "../lib/orders";
+import { track } from "../lib/track";
 
 const CART_KEY = "brajrasoi.cart.v1";
 
@@ -194,12 +195,22 @@ export function CartProvider({ children }) {
       bill,
       qtyOf,
       toast,
+      /* Every change to the cart is counted where it happens (lib/track
+         adds the page), so the super admin sees what is added on the menu
+         and what is taken back out at checkout. */
       add: (item) => {
         dispatch({ type: "add", item });
         flash(`${item.name} added to your order`);
+        track("cart_add", { item: item.id, value: item.pricePaise });
       },
-      decrement: (id) => dispatch({ type: "decrement", id }),
-      remove: (id) => dispatch({ type: "remove", id }),
+      decrement: (id) => {
+        dispatch({ type: "decrement", id });
+        track("cart_remove", { item: id, qty: 1 });
+      },
+      remove: (id) => {
+        dispatch({ type: "remove", id });
+        track("cart_remove", { item: id, qty: state.lines.find((l) => l.id === id)?.qty ?? 1 });
+      },
       clear: () => dispatch({ type: "clear" }),
       setInstructions: (value) => dispatch({ type: "instructions", value }),
       /* Applying is just holding the code; the database decides its worth, and
@@ -209,6 +220,7 @@ export function CartProvider({ children }) {
         const code = String(rawCode || "").trim().toUpperCase();
         if (!code) return;
         dispatch({ type: "coupon", code });
+        track("coupon_apply", { code: code.slice(0, 20) });
       },
       /* No coupon at all, even one that would apply by itself. Applying any
          code, or tapping an offer, brings one back. */

@@ -12,6 +12,7 @@ import StayCard from "../components/StayCard";
 import { Cloche } from "../components/Icons";
 import { useHideOnScroll } from "../hooks/useHideOnScroll";
 import { floatForNow } from "../lib/dayparts";
+import { track } from "../lib/track";
 
 /* Below this the category rail is gone and the filter bar hides on the way
    down; must match the 1000px breakpoint in menu.css. */
@@ -76,6 +77,16 @@ export default function MenuPage() {
     for (const item of filtered) map[item.cat] = (map[item.cat] || 0) + 1;
     return map;
   }, [filtered]);
+
+  /* What guests look for, and whether the menu had it: counted once the
+     typing settles, trimmed, and only how many dishes matched goes with it. */
+  const searched = query.trim().toLowerCase().slice(0, 40);
+  const matches = filtered.length;
+  useEffect(() => {
+    if (searched.length < 2) return undefined;
+    const t = setTimeout(() => track("menu_search", { q: searched, results: matches }), 1500);
+    return () => clearTimeout(t);
+  }, [searched, matches]);
 
   const visibleCats = categories.filter((c) => (counts[c.id] || 0) > 0);
 

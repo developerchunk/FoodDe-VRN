@@ -12,6 +12,7 @@ import PlacesPage from "./pages/PlacesPage";
 import DeliveryPage from "./pages/DeliveryPage";
 import SettingsPage from "./pages/SettingsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import ActivityPage from "./pages/ActivityPage";
 import CouponsPage from "./pages/CouponsPage";
 import "./admin.css";
 
@@ -35,6 +36,7 @@ const ADMIN_NAV = [
 ];
 const SUPER_NAV = [
   { to: "analytics", label: "Analytics" },
+  { to: "activity", label: "Activity" },
   { to: "coupons", label: "Coupons" },
   { to: "settings", label: "Settings" },
 ];
@@ -319,6 +321,7 @@ export default function AdminApp() {
           {isSuper && (
             <>
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="activity" element={<ActivityPage />} />
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </>

@@ -30,6 +30,7 @@ import { hasSavedProfile, profileOf } from "../lib/profile";
 import { signInWithGoogle } from "../lib/auth";
 import QrScanner from "../components/QrScanner";
 import { canScanQr } from "../utils/qr";
+import { track } from "../lib/track";
 
 const PROFILE_KEY = "brajrasoi.profile.v1";
 const PROMPT_KEY = "brajrasoi.signupPrompt.v1";
@@ -139,6 +140,14 @@ export default function CheckoutPage() {
     .filter((m) => m && m.availableNow && !lines.some((l) => l.id === m.id))
     .slice(0, 6);
 
+  /* Reaching checkout with something in the cart, once per arrival: what it
+     was worth is what is lost if the visit ends without paying. */
+  const hasLines = lines.length > 0;
+  useEffect(() => {
+    if (hasLines) track("checkout_view", { value: bill.total, items: lines.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasLines]);
+
   /* Which sheet is open: "room", "details", "note", "pay" or none. */
   const [sheet, setSheet] = useState(null);
   const closeSheet = useCallback(() => setSheet(null), [setSheet]);
@@ -154,7 +163,7 @@ export default function CheckoutPage() {
     setScanning(false);
     const code = codeFromScanned(text);
     setRoomLookup({ busy: true, error: null });
-    const result = await resolveRoom(code);
+    const result = await resolveRoom(code, "camera");
     setRoomLookup({
       busy: false,
       error: result.ok ? null : "That QR code is not one of ours.",
@@ -273,6 +282,7 @@ export default function CheckoutPage() {
     /* Room service needs a room, and someone to bring it to. What is missing
        opens where it is filled in. */
     if (!house.addressId) {
+      track("room_needed");
       setSheet("room");
       return;
     }
@@ -284,6 +294,7 @@ export default function CheckoutPage() {
     }
 
     setPlacing(true);
+    track("checkout_submit", { value: bill.total, items: lines.length, method: payment });
 
     if (form.remember) {
       try {
@@ -306,9 +317,11 @@ export default function CheckoutPage() {
         note: instructions.trim(),
       });
 
+      track("order_placed", { value: bill.total, method: payment });
       if (payment === "cod") {
         /* Confirmed means sent to the kitchens: the cart's work is done. */
         await confirmCashOnDelivery(placed.receipt_token);
+        track("cod_confirmed", { value: bill.total, items: lines.map((l) => l.id) });
         clear();
       }
       /* Paying online, the cart stays until the payment succeeds. An unpaid
@@ -318,6 +331,7 @@ export default function CheckoutPage() {
       navigate(`/order/${placed.receipt_token}`, { replace: true });
     } catch (err) {
       /* Nothing reached a kitchen, so the cart is deliberately left intact. */
+      track("order_error", { reason: String(err.message ?? "").slice(0, 80) });
       setPlaceError(err.message);
       setPlacing(false);
     }

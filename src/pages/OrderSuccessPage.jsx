@@ -5,6 +5,7 @@ import { useCart } from "../context/cart-context";
 import { PAY_WINDOW_S, closePayment, payForOrder } from "../lib/payments";
 import { rupees, maskPhone, formatDateTime } from "../utils/format";
 import { Cloche, ClockIcon } from "../components/Icons";
+import { track } from "../lib/track";
 
 const STAGES = [
   { id: "confirmed", title: "Order received", body: "Waiting for the kitchen to accept it." },
@@ -34,7 +35,7 @@ const POLL_MS = 15_000;
 export default function OrderSuccessPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { add, clear } = useCart();
+  const { add, clear, lines } = useCart();
   const { order, loading, refresh } = useReceipt(id);
   const [paying, setPaying] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(PAY_WINDOW_S);
@@ -56,7 +57,8 @@ export default function OrderSuccessPage() {
     setPaying(true);
     setPayNote(null);
     try {
-      const result = await payForOrder({ token: id });
+      /* The cart is still this order until it is paid (see CheckoutPage). */
+      const result = await payForOrder({ token: id, items: lines.map((l) => l.id) });
       if (result.paid) {
         /* Only now is the order real. */
         clear();
@@ -74,7 +76,7 @@ export default function OrderSuccessPage() {
     } finally {
       setPaying(false);
     }
-  }, [id, refresh, clear, backToCheckout]);
+  }, [id, refresh, clear, backToCheckout, lines]);
 
   /* Open the modal once, as soon as the order is known to be unpaid. Placing
      the order and paying for it are one act from the guest's side. */
@@ -89,6 +91,7 @@ export default function OrderSuccessPage() {
   useEffect(() => {
     if (!unpaid) return undefined;
     if (secondsLeft <= 0) {
+      track("payment_timeout");
       backToCheckout("Your last payment timed out.");
       return undefined;
     }
