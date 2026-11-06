@@ -47,25 +47,19 @@ export const TEMPLATES = {
       "Tap Accept to take this delivery. The first delivery partner to accept gets it.",
     buttons: ["Accept", "Reject"],
   },
+  /* Mirrors the approved template word for word, as it was edited in
+     WhatsApp Manager: one guest field (the name) and the guest house to call. */
   delivery_details: {
     name: "ird_delivery_pickup_v2",
     body:
-      "Pickup for In Room Dining order {{1}}.\n\n" +
-      "Collect from: {{2}}\n\n" +
-      "Deliver to: {{3}}, Room {{4}}, {{5}}\n\n" +
-      "Guest: {{6}}, {{7}}\n\n" +
-      "Please call the guest only if you cannot find the room. " +
-      "Tap Picked up when you have collected the food, and Delivered once the guest has it.",
+      "*Pickup for IRD order: {{1}}.*\n\n" +
+      "*Collect from:*\n{{2}}\n\n" +
+      "*Deliver to:*\n{{3}}, \nRoom {{4}}, \n{{5}}\n\n" +
+      "Guest: {{6}}\n\n" +
+      "Please call the guest house, if you cannot find the room. \n\n" +
+      "Tap Picked up when you have collected the food. \n\n" +
+      'And, once delivered, please click the "Delivered".',
     buttons: ["Picked up", "Delivered"],
-    fallback: {
-      name: "ird_delivery_pickup",
-      body:
-        "Pickup for In Room Dining order {{1}}.\n\n" +
-        "Collect from: {{2}}\n\n" +
-        "Deliver to: {{3}}, Room {{4}}, {{5}}\n\n" +
-        "Guest: {{6}}, {{7}}\n\n" +
-        "Please call the guest only if you cannot find the room.",
-    },
   },
   delivery_taken: {
     name: "ird_delivery_taken",
@@ -380,7 +374,6 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
         room,
         [fullAddress(place), mapLink(place, place.name)].filter(Boolean).join(" — Map: "),
         o.guest_name,
-        `+${toWaNumber(o.guest_phone) ?? o.guest_phone}`,
       ];
       if (fill(TEMPLATES.delivery_details.body, params).length > MAX_TEXT) {
         params[1] = accepted

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useReceipt } from "../hooks/useReceipt";
 import { payForOrder } from "../lib/payments";
@@ -11,12 +11,16 @@ import { Cloche } from "../components/Icons";
  * The link the guest is sent on WhatsApp when the order leaves the kitchen,
  * and the page the rider's QR opens. Only a cash-on-delivery order still to be
  * paid offers to take money; anything else says where it stands.
+ *
+ * Opening the link is the guest asking to pay, so Razorpay opens by itself,
+ * once. Closing it leaves the page and its button to try again.
  */
 export default function PayPage() {
   const { id } = useParams();
   const { order, loading, refresh } = useReceipt(id);
   const [paying, setPaying] = useState(false);
   const [note, setNote] = useState(null);
+  const opened = useRef(false);
 
   async function pay() {
     setPaying(true);
@@ -31,6 +35,18 @@ export default function PayPage() {
       setPaying(false);
     }
   }
+
+  const due =
+    order?.payment_method === "cod" &&
+    !order.is_paid &&
+    !["cancelled", "failed"].includes(order.status);
+
+  useEffect(() => {
+    if (!due || opened.current) return;
+    opened.current = true;
+    pay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [due]);
 
   if (loading) {
     return (
@@ -53,11 +69,6 @@ export default function PayPage() {
       </main>
     );
   }
-
-  const due =
-    order.payment_method === "cod" &&
-    !order.is_paid &&
-    !["cancelled", "failed"].includes(order.status);
 
   return (
     <main className="wrap page page--narrow" id="main">

@@ -31,7 +31,6 @@ const SAMPLES: Record<string, string[]> = {
     "101",
     "Parikrama Marg, Ramnagar Colony, Vrindavan 281121 — Map: https://maps.google.com/?q=27.563452,77.696353",
     "Asha",
-    "+919876543210",
   ],
   ird_guest_out_for_delivery: [
     "Asha",
