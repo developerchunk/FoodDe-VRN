@@ -299,11 +299,6 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
   /* Cash on delivery whose money is not in yet: the guest and the
      accommodation partner are told it is still to be paid. */
   const due = o.payment_method === "cod" && !o.collected_at;
-  /* Until it is paid, every link the guest gets opens the payment page, which
-     opens Razorpay by itself and links on to the tracking page. */
-  const followUrl = due
-    ? `${siteUrl()}/pay/${o.receipt_token}`
-    : `${siteUrl()}/order/${o.receipt_token}`;
   const firstName = String(o.guest_name || "").split(" ")[0] || "there";
 
   if (kind === "kitchen_ack" || kind === "delivery_ack") {
@@ -410,7 +405,7 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
         place.name,
         room,
         rupees(o.total_paise),
-        due ? followUrl : `${siteUrl()}/receipt/${o.receipt_token}`,
+        due ? `${siteUrl()}/order/${o.receipt_token}` : `${siteUrl()}/receipt/${o.receipt_token}`,
       ];
       break;
     case "guest_out_for_delivery":
@@ -422,7 +417,7 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
           place.name,
           room,
           rupees(o.total_paise),
-          followUrl,
+          `${siteUrl()}/pay/${o.receipt_token}`,
         ];
         break;
       }
@@ -446,7 +441,7 @@ export function compose(row: Row, { order: o, items, tickets }: Loaded): Message
       params = [
         String(o.guest_name || "").split(" ")[0] || "there",
         o.order_no,
-        followUrl,
+        `${siteUrl()}/order/${o.receipt_token}`,
       ];
       break;
     case "admin_alert": {
