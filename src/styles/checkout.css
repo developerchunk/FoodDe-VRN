@@ -428,22 +428,6 @@
   outline: 2.5px solid var(--marigold-deep);
   outline-offset: 2px;
 }
-.pay-choice__option.is-soon {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-.pay-choice__soon {
-  margin-left: 8px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--gold-soft);
-  color: var(--gold-deep);
-  font-size: 10.5px;
-  font-style: normal;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  vertical-align: 1px;
-}
 .pay-choice__text {
   display: grid;
   gap: 1px;
