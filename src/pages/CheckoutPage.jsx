@@ -69,9 +69,10 @@ function loadProfile() {
   }
 }
 
+/* Cash on delivery comes first and is the default. */
 const PAYMENTS = [
-  { id: "online", title: "Pay online", sub: "UPI, cards, net banking" },
   { id: "cod", title: "Cash on delivery", sub: "Pay in cash or online when it arrives" },
+  { id: "online", title: "Pay online", sub: "UPI, cards, net banking" },
 ];
 
 const CheckIcon = () => (
@@ -182,7 +183,7 @@ export default function CheckoutPage() {
 
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
-  const [payment, setPayment] = useState(() => loadDraft()?.payment ?? "online");
+  const [payment, setPayment] = useState(() => loadDraft()?.payment ?? PAYMENTS[0].id);
 
   useEffect(() => {
     try {
