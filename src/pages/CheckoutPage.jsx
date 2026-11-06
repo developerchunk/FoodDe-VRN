@@ -69,7 +69,9 @@ function loadProfile() {
   }
 }
 
-/* Cash on delivery comes first and is the default. */
+/* Cash on delivery comes first and is the default, up to COD_MAX_PAISE.
+   confirm_cod_order (migration 0034) holds the same limit. */
+const COD_MAX_PAISE = 250000;
 const PAYMENTS = [
   { id: "cod", title: "Cash on delivery", sub: "Pay in cash or online when it arrives" },
   { id: "online", title: "Pay online", sub: "UPI, cards, net banking" },
@@ -183,15 +185,19 @@ export default function CheckoutPage() {
 
   const [form, setForm] = useState(loadProfile);
   const [errors, setErrors] = useState({});
-  const [payment, setPayment] = useState(() => loadDraft()?.payment ?? PAYMENTS[0].id);
+  const [chosen, setPayment] = useState(() => loadDraft()?.payment ?? PAYMENTS[0].id);
+  /* Above the limit an order is paid online in advance. The guest's choice is
+     kept, so taking a dish out brings cash on delivery back. */
+  const codAllowed = bill.total <= COD_MAX_PAISE;
+  const payment = chosen === "cod" && !codAllowed ? "online" : chosen;
 
   useEffect(() => {
     try {
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ form, payment }));
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ form, payment: chosen }));
     } catch {
       /* private mode — the form simply starts from the profile again */
     }
-  }, [form, payment]);
+  }, [form, chosen]);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState(null);
 
@@ -531,6 +537,12 @@ export default function CheckoutPage() {
           <Link to="/menu">Add {rupees(bill.minOrderGap)} more</Link> to place it.
         </p>
       )}
+      {!codAllowed && (
+        <p className="co-note" role="status">
+          Cash on delivery is available up to {rupees(COD_MAX_PAISE)}. Orders above that are
+          paid online in advance.
+        </p>
+      )}
       {failedPayment && payment === "online" && (
         <p className="co-note co-note--warn" role="alert">
           <strong>{failedPayment}</strong> Your food is still here — try again.
@@ -766,28 +778,36 @@ export default function CheckoutPage() {
 
       <Sheet open={sheet === "pay"} title="Pay using" onClose={closeSheet}>
         <div className="pay-choice" role="radiogroup" aria-label="Pay using">
-          {PAYMENTS.map((p) => (
-            <label
-              key={p.id}
-              className={`pay-choice__option ${payment === p.id ? "is-on" : ""}`}
-            >
-              <input
-                type="radio"
-                name="payment"
-                value={p.id}
-                checked={payment === p.id}
-                onChange={() => {
-                  setPayment(p.id);
-                  setSheet(null);
-                }}
-              />
-              <span className="pay-choice__dot" aria-hidden="true" />
-              <span className="pay-choice__text">
-                <strong>{p.title}</strong>
-                <small>{p.sub}</small>
-              </span>
-            </label>
-          ))}
+          {PAYMENTS.map((p) => {
+            const off = p.id === "cod" && !codAllowed;
+            return (
+              <label
+                key={p.id}
+                className={`pay-choice__option ${payment === p.id ? "is-on" : ""} ${off ? "is-off" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value={p.id}
+                  checked={payment === p.id}
+                  disabled={off}
+                  onChange={() => {
+                    setPayment(p.id);
+                    setSheet(null);
+                  }}
+                />
+                <span className="pay-choice__dot" aria-hidden="true" />
+                <span className="pay-choice__text">
+                  <strong>{p.title}</strong>
+                  <small>
+                    {off
+                      ? `Up to ${rupees(COD_MAX_PAISE)}. Pay online in advance for this order.`
+                      : p.sub}
+                  </small>
+                </span>
+              </label>
+            );
+          })}
         </div>
       </Sheet>
     </main>

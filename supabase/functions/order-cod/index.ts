@@ -46,6 +46,10 @@ Deno.serve(async (req) => {
        online, so the page can name it and send the guest back to the cart. */
     const m = error.message.match(/no longer available: (.*)$/);
     if (m) return json({ error: "no longer available", unavailable: m[1] }, 410);
+    /* Above the cash-on-delivery limit (migration 0034): it is paid online. */
+    if (/over the cash on delivery limit/.test(error.message)) {
+      return json({ error: "over the cash on delivery limit" }, 409);
+    }
     console.error("confirm_cod_order failed", error.message);
     return json({ error: "could not place that order" }, 422);
   }

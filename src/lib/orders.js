@@ -71,6 +71,9 @@ export async function confirmCashOnDelivery(token) {
           : "Something in your order is no longer available. Please check your order.",
       );
     }
+    if (error.context?.status === 409) {
+      throw new Error("Cash on delivery is available up to ₹2,500. Please pay online for this order.");
+    }
     throw new Error("Could not place the order. Please try again.");
   }
   return data;
